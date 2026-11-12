@@ -1,5 +1,6 @@
 #requires -Version 7.0
 param(
+    [string]$Iscc,
     [switch]$AllowDirty,
     [switch]$NoSetup
 )
@@ -14,8 +15,25 @@ function Invoke-Checked([string]$File, [string[]]$Arguments) {
     if ($LASTEXITCODE -ne 0) { throw "$File failed with exit code $LASTEXITCODE." }
 }
 
+function Resolve-Iscc {
+    if ($Iscc) {
+        if (Test-Path -LiteralPath $Iscc -PathType Leaf) { return $Iscc }
+        throw "ISCC.exe not found at $Iscc."
+    }
+    $command = Get-Command 'ISCC.exe' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($command) { return $command.Source }
+    $candidates = @()
+    if ($env:LOCALAPPDATA) { $candidates += Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe' }
+    if (${env:ProgramFiles(x86)}) { $candidates += Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe' }
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    throw 'ISCC.exe not found; install Inno Setup 6 or pass -Iscc.'
+}
+
 $dirty = [bool](git -C $RepoRoot status --porcelain)
 if ($dirty -and -not $AllowDirty) { throw 'Working tree is not clean; commit first or pass -AllowDirty.' }
+$isccPath = if ($NoSetup) { $null } else { Resolve-Iscc }
 
 $outRoot = Join-Path $RepoRoot '_OUT'
 $stage = Join-Path $outRoot ('stage-' + [guid]::NewGuid().ToString('N'))
@@ -64,4 +82,19 @@ if ($NoSetup) {
     return
 }
 
+$version = (Get-Item -LiteralPath (Join-Path $bin 'APS.ControlCommunity.exe')).VersionInfo.FileVersion
+$outDir = Join-Path $outRoot $(if ($dirty) { 'Installer-dirty' } else { 'Installer' })
+[void][IO.Directory]::CreateDirectory($outDir)
+Get-ChildItem -LiteralPath $outDir -File | Where-Object { $_.Name -like 'ControlCommunitySetup-*.exe' -or $_.Name -eq 'SHA256SUMS.txt' } |
+    Remove-Item -Force
+
+Invoke-Checked $isccPath @("/DBuildStage=$stage", "/DMyAppVersion=$version", "/O$outDir", (Join-Path $PSScriptRoot 'ControlCommunitySetup.iss'))
+
+$setup = Join-Path $outDir "ControlCommunitySetup-$version.exe"
+if (-not (Test-Path -LiteralPath $setup -PathType Leaf)) { throw "Installer not produced: $setup" }
+$hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+[IO.File]::WriteAllText((Join-Path $outDir 'SHA256SUMS.txt'), "$hash  $(Split-Path $setup -Leaf)`n", [Text.UTF8Encoding]::new($false))
+
 Remove-Item -LiteralPath $stage -Recurse -Force
+Write-Output "Installer: $setup"
+Write-Output "SHA256: $hash"
