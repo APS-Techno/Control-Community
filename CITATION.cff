@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use APS Control Community in your research, please cite the preprint below."
+title: "APS Control Community"
+type: software
+authors:
+  - name: "APS Technology"
+version: 1.6.3
+repository-code: "https://github.com/APS-Techno/Control-Community"
+license: Apache-2.0
+preferred-citation:
+  type: article
+  title: "Agent-authored deposition recipes for X-ray multilayer mirrors: schema-bound LLM control of a magnetron sputtering system with reflectivity-verified outcomes"
+  authors:
+    - family-names: Penkov
+      given-names: "Oleksiy V."
+    - family-names: Fu
+      given-names: Haoyu
+    - family-names: Zhan
+      given-names: Yueying
+    - family-names: Wu
+      given-names: Pengyuan
+    - family-names: Jin
+      given-names: Jiong
+  journal: "arXiv"
+  year: 2026
+  month: 9
+  notes: "arXiv:2609.12796, preprint"
+  url: "https://arxiv.org/abs/2609.12796"

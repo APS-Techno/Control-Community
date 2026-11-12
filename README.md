@@ -10,6 +10,55 @@ Open source Control and Emulator stack for teaching and experiments. It ships wi
 
 Demo devices (`Control/HW_Libraries/Demo`, emulated in `Emulator/Devices/Demo_Devices`) use line-based ASCII over TCP: `LanPowerSupply` (DC, pulsed DC, RF), `LanThrottleController`, `LanRotaryDrive`, `LanTransferRobot`.
 
+## Install
+
+Requirements: Windows 10 or 11 (x64) and the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0). Use the "Desktop Runtime", not the base "Runtime". The installer does not include .NET. If the runtime is missing, the installer tells you and gives the download link.
+
+1. Download `ControlCommunitySetup-<version>.exe` and `SHA256SUMS.txt` from [GitHub Releases](https://github.com/APS-Techno/Control-Community/releases).
+2. Check the download. In PowerShell, run `Get-FileHash .\ControlCommunitySetup-<version>.exe`. The hash must match the line in `SHA256SUMS.txt`.
+3. Run the installer. It installs for the current user only and does not need administrator rights. The installer is not code-signed, so Windows SmartScreen can show a warning. Click "More info", then "Run anyway".
+
+The installer puts the files in `%LOCALAPPDATA%\Programs\APS Control Community`:
+
+|Folder|Contents|
+|---|---|
+|`bin`|Control, Emulator and plugins|
+|`Configs`|The `Sputter`, `ADS` and `Cluster` profiles|
+|`mcp`|The MCP bridge (`APS.Mcp.exe`)|
+|`tools`|`Enable-AgentAccess.ps1`|
+|`Backups`|Earlier copies of the profiles (made by an upgrade)|
+
+First start:
+
+1. Start "APS Emulator Community" from the Start menu.
+2. In the Emulator, open "Open Project...", select `Sputter`, `ADS` or `Cluster`, and keep "Also point Control at this project" selected. This sets the same profile for Control.
+3. Start "APS Control Community".
+
+Upgrade: each install sets the three shipped profiles back to the version of the installer. Control writes calibration changes into `HWConf.xml`. Before the installer replaces the profiles, it copies them to `Backups\Configs-<date>-<time>\`. Your own profiles in other folders, the `AuditLog` and `Snapshots` folders, `bin\RootConfig.xml` and the agent settings do not change.
+
+### Agent access
+
+The agent server is off after installation. To turn it on, start "Enable agent access" from the Start menu. The script:
+
+- turns on the agent server in `bin\AgentServer.xml` for the local computer only (`127.0.0.1`),
+- makes a new random API key with the `Recipe` tier (read, validate, upload, start and abort recipes; no manual device commands),
+- writes the key to `mcp\apsmcp.json` for the bridge,
+- shows the command that registers the bridge with Claude Code: `claude mcp add aps-control -- "<install folder>\mcp\APS.Mcp.exe" --config "<install folder>\mcp\apsmcp.json"`.
+
+Restart Control after you run the script. Each run makes a new key and replaces the previous one. To give the key the `Manual` tier (manual device commands too), run the script with `-Manual`:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File "%LOCALAPPDATA%\Programs\APS Control Community\tools\Enable-AgentAccess.ps1" -Manual
+```
+
+On the first connection the bridge accepts the server certificate and writes its SHA-256 fingerprint to stderr. To pin it, put the value in `certSha256` in `mcp\apsmcp.json`. Tools, tiers and the full bridge setup: [`Mcp/README.md`](Mcp/README.md).
+
+Uninstall removes the program files, `mcp\apsmcp.json` and the agent certificate. It keeps `Backups`, logs and run data.
+
+### Cite
+
+If you use this software in research, cite the preprint in [`CITATION.cff`](CITATION.cff).
+
 ## Build
 
 Requirements: Windows, .NET SDK 10.0.100 or later.
