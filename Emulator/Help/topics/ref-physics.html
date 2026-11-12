@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Physics Model</title>
+</head>
+<body>
+
+<h1>Physics Model</h1>
+
+<p>The emulator uses a simplified but physically grounded model to simulate
+chamber pressure dynamics, pump behavior, gas flow, and venting. All parameters
+are configurable via <code>EmulatorConfig.xml</code> and
+<code>HWConf.Emulator.xml</code>.</p>
+
+<h2>Core Equations</h2>
+
+<p>Pressure evolution is computed each tick using the following sequence:</p>
+
+<h3>1. Effective Pump Speed</h3>
+<pre>S_eff = pumpSpeed * throttle^2</pre>
+<p>The throttle valve position (0.0&ndash;1.0) quadratically modulates the pump
+speed, modeling conductance-limited flow through the valve aperture.</p>
+
+<h3>2. Equilibrium Pressure</h3>
+<pre>P_eq = basePressure + (totalFlow * 1.267e-2 + leakRate) / S_eff</pre>
+<p>The steady-state pressure the chamber would reach given the current gas load
+(MFC flow + leak rate) and effective pumping speed. The constant
+<code>1.267e-2</code> (760 Torr &times; 1 cm&sup3; / 60 s) converts sccm flow to Torr&middot;L/s.</p>
+
+<h3>3. Time Constant</h3>
+<pre>tau = volume / S_eff</pre>
+<p>The pumpdown time constant in seconds, determined by the ratio of chamber
+volume to effective pump speed.</p>
+
+<h3>4. Exponential Decay Factor</h3>
+<pre>alpha = 1 - exp(-dt / tau)</pre>
+<p>Where <code>dt</code> is the tick interval (default 100ms). This factor
+determines how quickly pressure approaches equilibrium each tick.</p>
+
+<h3>5. Pressure Update</h3>
+<pre>P_new = P + (P_target - P) * alpha</pre>
+<p>An exponential approach to the target pressure. This produces the
+characteristic exponential pumpdown curve seen in real vacuum systems.</p>
+
+<h2>Chamber Parameters</h2>
+
+<table>
+<tr>
+  <th>Parameter</th>
+  <th>Sputter Main Chamber</th>
+</tr>
+<tr>
+  <td>Volume</td>
+  <td>200 L</td>
+</tr>
+<tr>
+  <td>Initial Pressure</td>
+  <td>0.01 Torr</td>
+</tr>
+<tr>
+  <td>Base Pressure</td>
+  <td>1 &times; 10<sup>&minus;7</sup> Torr</td>
+</tr>
+<tr>
+  <td>Leak Rate</td>
+  <td>1 &times; 10<sup>&minus;6</sup> Torr&middot;L/s</td>
+</tr>
+<tr>
+  <td>Pumpdown Tau</td>
+  <td>5 s</td>
+</tr>
+</table>
+
+<h2>Pump Speeds</h2>
+
+<table>
+<tr><th>Pump</th><th>Speed</th><th>Notes</th></tr>
+<tr><td>TP (Turbo)</td><td>700 L/s</td><td>Nominal speed; inlet pressure and throttle reduce effective speed</td></tr>
+<tr><td>SP1 (Scroll 1)</td><td>6 L/s</td><td>Backing pump</td></tr>
+</table>
+
+<h2>Special Physics</h2>
+
+<h3>Pump Speed Falloff</h3>
+<p>Real scroll pumps lose effectiveness as pressure drops toward their base
+pressure. The emulator models this by reducing effective pump speed as pressure
+approaches base, preventing unrealistically fast pumpdown at low pressures.</p>
+
+<h3>Turbo Pump Crossover and Backing</h3>
+<p>The model reduces turbo speed smoothly as inlet pressure rises:
+<code>S = S_nominal * speedFraction / (1 + P / crossoverPressure)</code>.
+The gate and foreline valves must be open for pumping to reach the chamber.
+Control interlocks set the permitted start and gate-opening conditions.</p>
+<p>A turbo with a <code>backingPump</code> attribute also has a modeled foreline
+volume. The backing pump removes gas through the open foreline valve. Turbo
+exhaust adds gas to that volume. Pumping stops when foreline pressure reaches
+<code>forelineLimit</code>, even if the rotor still turns. This is an idealized
+teaching model, not a manufacturer pump curve.</p>
+
+<h3>Venting Conductance</h3>
+<p>When vent valves open, gas flows into the chamber at a rate determined by
+the valve conductance:</p>
+
+<table>
+<tr><th>Valve</th><th>Conductance</th><th>Chamber</th></tr>
+<tr><td>A1 (vent)</td><td>3.0 L/s</td><td>Main</td></tr>
+</table>
+
+<p>Venting drives pressure toward 760 Torr (atmosphere) using the same
+exponential model as pumpdown.</p>
+
+<h3>Measurement Channels and Status</h3>
+<p>Each pressure or temperature sensor has its own 0.1% Gaussian noise.
+Separate sensor devices are independent measurement channels; two displays of
+one sensor are not. A pressure sensor can declare <code>minPressure</code>
+and <code>maxPressure</code>, in Torr. Outside that range its reading is a
+status, not zero: <strong>UNDER</strong> or <strong>OVER</strong>.
+An invalid reading is <strong>INVALID</strong>. Saved states preserve these
+statuses.</p>
+<p>A sensor with <code>property="SimTime"</code> reports simulation seconds
+without measurement noise. A sensor with <code>property="ForelinePressure"</code>
+and <code>source="TP"</code> reads that turbo's modeled foreline. Neither a
+clock nor a foreline gauge is a second chamber-pressure gauge.</p>
+<p>A sensor with <code>property="Thickness"</code> reports the cumulative modeled
+film thickness in nm, without noise. It never shows UNDER or OVER. It stays 0
+unless the <code>&lt;Deposition&gt;</code> element is configured.</p>
+
+<h3>Film Growth and Target Poisoning</h3>
+<p>With a <code>&lt;Deposition&gt;</code> element in <code>EmulatorConfig.xml</code>,
+each magnetron source in current mode has a nitride coverage
+<code>&theta;</code> (0 = metal target, 1 = fully poisoned target). It starts at 0
+and persists between discharges. With <code>q</code> the actual flow (sccm) of
+the reactive MFC and <code>i</code> the discharge current (A, zero when there is
+no discharge):</p>
+<pre>d&theta;/dt = poisonRate &middot; q &middot; (1 &minus; &theta;) &minus; cleanRate &middot; i &middot; &theta;
+V = V_magnetron + poisonedVoltageShift &middot; &theta;
+rate = ratePerAmp &middot; i &middot; (1 &minus; &theta; &middot; (1 &minus; poisonedRateFraction))
+h += rate &middot; dt   (only while the shutter exposes the substrate)</pre>
+<p>For constant <code>q</code> and <code>i</code>, <code>&theta;</code> approaches
+<code>poisonRate&middot;q / (poisonRate&middot;q + cleanRate&middot;i)</code>.
+The discharge needs output on, chamber pressure at or above the discharge
+threshold, and a current above zero. A closed shutter blocks growth but not
+poisoning. The target also nitrides without plasma while the reactive gas
+flows, and <code>&theta;</code> holds when both gas and plasma are off. A
+simulation reset sets <code>h</code> and <code>&theta;</code> to 0.</p>
+<p>The higher voltage and lower rate of a poisoned silicon target follow the
+trend reported by Depla et al., &ldquo;Target poisoning during reactive magnetron
+sputtering, Part I,&rdquo; Surf. Coat. Technol. 2003 (the Si target voltage rises
+with the N<sub>2</sub> fraction). The rate constants are teaching values, not fitted
+to a real target.</p>
+
+<h2>Configuration</h2>
+
+<p>All physics parameters can be adjusted in two configuration files:</p>
+<ul>
+    <li><strong>EmulatorConfig.xml</strong> &mdash; chamber volumes, base pressures,
+    leak rates, pumpdown time constants, noise level, pump speeds</li>
+    <li><strong>HWConf.Emulator.xml</strong> &mdash; per-device attributes such as
+    conductance, vent rates, and speed settings</li>
+</ul>
+<p>See <a href="ref-config-files.html">Configuration Reference</a> for the
+complete element and attribute listing.</p>
+
+</body>
+</html>

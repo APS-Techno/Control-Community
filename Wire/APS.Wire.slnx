@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="APS.Wire.Tests/APS.Wire.Tests.csproj" />
+  <Project Path="APS.Wire/APS.Wire.csproj" />
+</Solution>

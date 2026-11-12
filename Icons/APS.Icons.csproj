@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <RootNamespace>APS.Icons</RootNamespace>
+    <AssemblyName>APS.Icons</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <OutputPath>$(ApsBinDir)</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Generator\**" />
+    <Compile Remove="Tests\**" />
+  </ItemGroup>
+
+  <Target Name="GeneratePngs" BeforeTargets="ResolveReferences">
+    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)Generator\SvgToPng.csproj&quot; -- &quot;$(MSBuildThisFileDirectory)svg&quot; &quot;$(MSBuildThisFileDirectory)png&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+    <ItemGroup>
+      <EmbeddedResource Include="png\**\*.png" />
+    </ItemGroup>
+  </Target>
+
+</Project>

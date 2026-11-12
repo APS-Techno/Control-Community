@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Overview</title>
+</head>
+<body>
+<h1>APS System Emulator</h1>
+
+<p>The APS System Emulator is a protocol-level hardware simulator for the APS
+vacuum deposition system. It allows the APS System Control software to run without
+physical hardware by emulating the PLC and the network-attached instruments at the
+communication protocol level.</p>
+
+<h2>What It Does</h2>
+<ul>
+    <li><strong>Emulates a Siemens S7-200 PLC</strong> via ISO-on-TCP (port 102)</li>
+    <li><strong>Emulates TCP instruments</strong> such as the demo LAN power supplies</li>
+    <li><strong>Simulates vacuum physics</strong> &mdash; chamber pressure, pump curves, gas flow, temperature</li>
+    <li><strong>Provides a live dashboard</strong> showing vacuum state, valve positions, MFC flows, power sources, and log messages</li>
+    <li><strong>Supports log replay</strong> for playing back recorded deposition cycles</li>
+</ul>
+
+<h2>How It Works</h2>
+<p>The Control software connects to the Emulator using the same protocols it uses
+with real hardware &mdash; no code changes needed. The Emulator listens on the
+configured TCP endpoints, responding to commands with realistic simulated
+data.</p>
+
+<pre>
+Control Software
+    |
+    +-- S7-200 TCP (port 102) -------&gt; S7 Protocol Server
+    +-- TCP:5025 (PSU1) -------------&gt; TCP Serial Server
+    +-- TCP:5026 (PSU2) -------------&gt; TCP Serial Server
+</pre>
+
+<h2>Architecture</h2>
+<p>The Emulator runs a 100ms tick loop that updates all device states and physics
+calculations. Protocol layers bridge the simulated devices to the Control
+software:</p>
+<ul>
+    <li><strong>S7 Protocol Server</strong> &mdash; ISO-on-TCP for PLC register read/write</li>
+    <li><strong>TCP Serial Server</strong> &mdash; direct TCP for Ethernet-native instruments</li>
+    <li><strong>Virtual Serial Adapter</strong> &mdash; COM port pairs via com0com/FVSP, available for serial devices</li>
+</ul>
+
+<h2>Emulated Devices</h2>
+<table>
+    <tr><th>Category</th><th>Devices (Sputter demo system)</th><th>Protocol</th></tr>
+    <tr><td>Valves</td><td>9 solenoid valves (V1, V2, M1, M2, PP, FL, A1, Sh1, Sh2)</td><td>S7 PLC bits</td></tr>
+    <tr><td>MFCs</td><td>2 mass flow controllers (Ar1, N21)</td><td>S7 PLC floats</td></tr>
+    <tr><td>Pumps</td><td>1 scroll pump (SP1) + 1 turbo pump (TP)</td><td>S7 PLC bits</td></tr>
+    <tr><td>Sensors</td><td>2 sensors (main pressure, temperature)</td><td>S7 PLC floats</td></tr>
+    <tr><td>Power Supplies</td><td>PSU1 (pulsed DC), PSU2 (RF) &mdash; demo LAN power supplies</td><td>TCP SCPI</td></tr>
+    <tr><td>Motion</td><td>Substrate lift stage (VS), substrate rotation</td><td>S7 PLC</td></tr>
+</table>
+</body>
+</html>

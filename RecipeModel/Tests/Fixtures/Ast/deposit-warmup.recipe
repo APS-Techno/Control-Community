@@ -1,0 +1,7 @@
+# deposit + warmup round-trip fixture
+warmup 60 Si BN
+
+loop 3
+  deposit Ion CleaningTime 1
+  deposit BN $timeBN Home
+endloop

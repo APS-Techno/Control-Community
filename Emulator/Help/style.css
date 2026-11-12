@@ -1,0 +1,149 @@
+/* APS System Emulator Help — Dark Theme
+   Palette matches DarkModeHelper: #0D1B2A bg, #162032 panel, #C8D6E5 text, #48A9FE accent */
+
+body {
+    background-color: #0D1B2A;
+    color: #C8D6E5;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px 28px;
+}
+
+h1 {
+    color: #48A9FE;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    border-bottom: 1px solid #283B5B;
+    padding-bottom: 8px;
+}
+
+h2 {
+    color: #48A9FE;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 24px 0 10px 0;
+}
+
+h3 {
+    color: #7EC8E3;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 18px 0 8px 0;
+}
+
+p {
+    margin: 0 0 12px 0;
+}
+
+a {
+    color: #4EC9B0;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+code {
+    background: #162032;
+    color: #CE9178;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: 'Cascadia Mono', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+pre {
+    background: #162032;
+    border: 1px solid #283B5B;
+    border-radius: 4px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: 'Cascadia Mono', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #C8D6E5;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 13px;
+}
+
+th {
+    background: #162032;
+    color: #48A9FE;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid #283B5B;
+    font-weight: 600;
+}
+
+td {
+    padding: 6px 12px;
+    border: 1px solid #283B5B;
+}
+
+tr:nth-child(even) {
+    background: #111D2E;
+}
+
+tr:nth-child(odd) {
+    background: #0D1B2A;
+}
+
+ul, ol {
+    margin: 8px 0 12px 0;
+    padding-left: 24px;
+}
+
+li {
+    margin-bottom: 4px;
+}
+
+strong {
+    color: #E2E8F0;
+}
+
+em {
+    color: #A0B4CC;
+}
+
+.note {
+    background: #1A2744;
+    border-left: 3px solid #48A9FE;
+    padding: 10px 14px;
+    margin: 12px 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.warning {
+    background: #2A1A0A;
+    border-left: 3px solid #FFAA33;
+    padding: 10px 14px;
+    margin: 12px 0;
+    border-radius: 0 4px 4px 0;
+    color: #FFD699;
+}
+
+.key {
+    display: inline-block;
+    background: #162032;
+    border: 1px solid #283B5B;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Mono', 'Consolas', monospace;
+    font-size: 12px;
+    color: #C8D6E5;
+}

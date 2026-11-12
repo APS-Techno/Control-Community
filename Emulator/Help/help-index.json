@@ -1,0 +1,44 @@
+{
+  "topics": [
+    {
+      "title": "Overview",
+      "file": "overview.html"
+    },
+    {
+      "title": "Setup",
+      "children": [
+        { "title": "Prerequisites", "file": "setup-prerequisites.html" },
+        { "title": "Virtual COM Ports", "file": "setup-virtual-ports.html" },
+        { "title": "Network Configuration", "file": "setup-network.html" },
+        { "title": "Configuration Files", "file": "setup-configuration.html" }
+      ]
+    },
+    {
+      "title": "Using the Emulator",
+      "children": [
+        { "title": "Starting & Stopping", "file": "usage-starting.html" },
+        { "title": "Vacuum Tab", "file": "usage-dashboard-vacuum.html" },
+        { "title": "Power Sources Tab", "file": "usage-dashboard-power.html" },
+        { "title": "Configuration Tab", "file": "usage-dashboard-config.html" },
+        { "title": "Log Viewer Tab", "file": "usage-dashboard-log.html" },
+        { "title": "Log Replay", "file": "usage-log-replay.html" },
+        { "title": "Sound Effects", "file": "usage-sound.html" }
+      ]
+    },
+    {
+      "title": "Technical Reference",
+      "children": [
+        { "title": "Port Mapping", "file": "ref-port-mapping.html" },
+        { "title": "PLC Memory Map", "file": "ref-plc-memory-map.html" },
+        { "title": "Vacuum Devices", "file": "ref-devices-vacuum.html" },
+        { "title": "Physics Model", "file": "ref-physics.html" },
+        { "title": "Protocols", "file": "ref-protocols.html" },
+        { "title": "Configuration Reference", "file": "ref-config-files.html" }
+      ]
+    },
+    {
+      "title": "Troubleshooting",
+      "file": "troubleshooting.html"
+    }
+  ]
+}

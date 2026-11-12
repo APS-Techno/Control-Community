@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Port Mapping</title>
+</head>
+<body>
+
+<h1>Port Mapping</h1>
+
+<p>The emulator bridges the gap between SystemControl and virtual hardware using
+TCP listeners and, for serial devices, virtual null-modem pairs. Each emulated
+serial device occupies a COM port pair: the <em>device port</em> (emulator side)
+connects to the <em>host port</em> (Control side) through a null-modem driver such
+as com0com or FVSP.</p>
+
+<h2>Network Device Map</h2>
+
+<table>
+<tr>
+  <th>Device</th>
+  <th>IP Address</th>
+  <th>Port</th>
+  <th>Protocol</th>
+  <th>Notes</th>
+</tr>
+<tr>
+  <td>S7-200 PLC</td>
+  <td>192.168.127.208</td>
+  <td>102</td>
+  <td>ISO-on-TCP (S7comm)</td>
+  <td>TSAP 0x0200 / 0x0200</td>
+</tr>
+<tr>
+  <td>PSU1</td>
+  <td>127.0.0.1</td>
+  <td>5025</td>
+  <td>SCPI over TCP</td>
+  <td>LF-terminated commands</td>
+</tr>
+<tr>
+  <td>PSU2</td>
+  <td>127.0.0.1</td>
+  <td>5026</td>
+  <td>SCPI over TCP</td>
+  <td>LF-terminated commands</td>
+</tr>
+</table>
+
+<h2>Connection Architecture</h2>
+
+<pre>
+  SystemControl                              Emulator
+  ============                              ========
+
+    TCP:102  ---&gt;  192.168.127.208:102       S7 Protocol Server
+    TCP:5025 ---&gt;  127.0.0.1:5025            PSU1 SCPI Server
+    TCP:5026 ---&gt;  127.0.0.1:5026            PSU2 SCPI Server
+</pre>
+
+<h2>Framing Modes</h2>
+
+<p>Each serial or TCP device uses a framing mode that determines how message
+boundaries are detected:</p>
+
+<table>
+<tr>
+  <th>Framing Mode</th>
+  <th>Delimiter / Method</th>
+</tr>
+<tr>
+  <td><code>CrLf</code></td>
+  <td>Carriage Return + Line Feed (<code>\r\n</code>)</td>
+</tr>
+<tr>
+  <td><code>Cr</code></td>
+  <td>Carriage Return (<code>\r</code>)</td>
+</tr>
+<tr>
+  <td><code>Lf</code></td>
+  <td>Line Feed (<code>\n</code>)</td>
+</tr>
+<tr>
+  <td><code>ModbusRTU</code></td>
+  <td>3.5-character silence gap + CRC16</td>
+</tr>
+<tr>
+  <td><code>AdditiveSum16</code></td>
+  <td>Fixed-length 22-byte frame (20-byte payload + 2-byte big-endian additive sum)</td>
+</tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Graphs panel="pnlGraphs">
+	<Graph>TM Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-8</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#1E90FF</Color>
+		<Sensor>TM_pm</Sensor>
+	</Graph>
+	<Graph>LL Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-6</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#32CD32</Color>
+		<Sensor>LL_pm</Sensor>
+	</Graph>
+	<Graph>C1 Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-8</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#DC143C</Color>
+		<Sensor>C1_pm</Sensor>
+	</Graph>
+	<Graph>
+		C1 Temperature
+		<Units>deg. C</Units>
+		<Format>linear</Format>
+		<Min>0</Min>
+		<Max>150</Max>
+		<YAxis>T</YAxis>
+		<Color>#00008B</Color>
+		<Sensor>C1_tmp</Sensor>
+	</Graph>
+	<Graph>C2 Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-8</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#FF8C00</Color>
+		<Sensor>C2_pm</Sensor>
+	</Graph>
+	<Graph>C2 Temperature
+		<Units>deg. C</Units>
+		<Format>linear</Format>
+		<Min>0</Min>
+		<Max>150</Max>
+		<YAxis>T</YAxis>
+		<Color>#FF8C00</Color>
+		<Sensor>C2_tmp</Sensor>
+	</Graph>
+	<Graph>C3 Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-8</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#9932CC</Color>
+		<Sensor>C3_pm</Sensor>
+	</Graph>
+	<Graph>C3 Temperature
+		<Units>deg. C</Units>
+		<Format>linear</Format>
+		<Min>0</Min>
+		<Max>150</Max>
+		<YAxis>T</YAxis>
+		<Color>#9932CC</Color>
+		<Sensor>C3_tmp</Sensor>
+	</Graph>
+	<Graph>C4 Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-8</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#008B8B</Color>
+		<Sensor>C4_pm</Sensor>
+	</Graph>
+	<Graph>C4 Temperature
+		<Units>deg. C</Units>
+		<Format>linear</Format>
+		<Min>0</Min>
+		<Max>150</Max>
+		<YAxis>T</YAxis>
+		<Color>#008B8B</Color>
+		<Sensor>C4_tmp</Sensor>
+	</Graph>
+</Graphs>

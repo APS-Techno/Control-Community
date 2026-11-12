@@ -1,0 +1,4 @@
+valve HV open
+mfc Ar1 5
+pump TP1 on
+pwait pm 5 60

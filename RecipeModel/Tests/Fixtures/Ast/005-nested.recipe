@@ -1,0 +1,6 @@
+# pump down then sample
+loop 3
+  if pm < 5
+    valve HV open
+  endif
+endloop

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Configuration Files</title>
+</head>
+<body>
+
+<h1>Configuration Files</h1>
+
+<p>The emulator reads two XML configuration files at startup. Understanding
+their layout and location is important for customizing device parameters
+and physics behavior.</p>
+
+<h2>EmulatorConfig.xml</h2>
+
+<p>This is the emulator's primary configuration file. At runtime it is loaded
+from <code>Configs/EmulatorConfig.xml</code> relative to the executable
+directory.</p>
+
+<h3>Key Elements</h3>
+
+<table>
+<tr>
+  <th>Element / Attribute</th>
+  <th>Purpose</th>
+</tr>
+<tr>
+  <td><code>HWConfigPath</code></td>
+  <td>Absolute path to <code>HWConf.Emulator.xml</code> (the hardware
+  definition used by the emulator)</td>
+</tr>
+<tr>
+  <td><code>Engine TickIntervalMs</code></td>
+  <td>Physics engine tick rate in milliseconds (default 100)</td>
+</tr>
+<tr>
+  <td><code>S7Server</code></td>
+  <td>S7 protocol server settings (bind address, data-block layout)</td>
+</tr>
+<tr>
+  <td><code>Serial</code></td>
+  <td>Virtual COM port assignments for each serial device</td>
+</tr>
+<tr>
+  <td><code>TcpSerial</code></td>
+  <td>TCP-based instrument connections (e.g., PSU1 on port 5025)</td>
+</tr>
+<tr>
+  <td><code>Physics noiseStddev</code></td>
+  <td>Standard deviation of Gaussian noise added to simulated sensor
+  readings (set to 0 for deterministic output)</td>
+</tr>
+</table>
+
+<h2>HWConf.Emulator.xml</h2>
+
+<p>Located in the project folder under <code>Configs</code>,
+this file is a variant of the hardware configuration that SystemControl
+uses (<code>HWConf.xml</code>). It defines the same device tree &mdash; PLCs,
+valves, gauges, power supplies &mdash; but may contain emulator-specific
+overrides such as adjusted address offsets or disabled devices.</p>
+
+<p>The emulator resolves this file through the <code>HWConfigPath</code> element
+in <code>EmulatorConfig.xml</code>.</p>
+
+<div class="warning">
+<strong>Warning &mdash; sync requirement:</strong> The emulator loads configuration
+from the <code>bin/Configs/</code> directory at runtime, not from the source
+tree. After editing <code>EmulatorConfig.xml</code> in the source
+(<code>Emulator/Configs/</code>), you must copy the updated file to
+<code>bin/Configs/</code> or rebuild the project so the build system copies it
+automatically. Running with a stale copy is a common source of
+&ldquo;config changes have no effect&rdquo; issues.
+</div>
+
+<h2>Config Search Order</h2>
+
+<p>When the emulator starts, it looks for <code>EmulatorConfig.xml</code> in these
+locations, using the first one found:</p>
+
+<ol>
+<li><code>Configs/EmulatorConfig.xml</code> relative to the executable directory
+(the normal runtime location in <code>bin/Configs/</code>).</li>
+<li><code>EmulatorConfig.xml</code> in the executable directory itself.</li>
+<li>The source-tree path
+<code>Emulator/Configs/EmulatorConfig.xml</code> (development fallback).</li>
+</ol>
+
+</body>
+</html>

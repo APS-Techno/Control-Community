@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Power Sources Tab</title>
+</head>
+<body>
+<h1>Power Sources Tab</h1>
+
+<p>The Power Sources tab displays all emulated power supplies and their current state
+in a grid view.</p>
+
+<h2>Grid Columns</h2>
+<table>
+    <tr><th>Column</th><th>Description</th></tr>
+    <tr><td>Name</td><td>Device name as defined in configuration (e.g. PSU1, PSU2)</td></tr>
+    <tr><td>Port</td><td>COM port or TCP endpoint the device is bound to</td></tr>
+    <tr><td>Link Status</td><td>Connection state between the emulator and the protocol layer</td></tr>
+    <tr><td>Type</td><td>Power supply type (DC, Pulsed DC, RF)</td></tr>
+    <tr><td>Voltage</td><td>Output voltage in volts</td></tr>
+    <tr><td>Current</td><td>Output current in amps</td></tr>
+    <tr><td>Power</td><td>Output power in watts</td></tr>
+    <tr><td>Output</td><td>Output enable state (On/Off) &mdash; clickable to toggle</td></tr>
+</table>
+
+<h2>Link Status</h2>
+<p>The Link Status column indicates the health of each device connection:</p>
+<table>
+    <tr><th>Status</th><th>Meaning</th></tr>
+    <tr><td><strong>OK</strong></td><td>Virtual COM port pair is open and communicating normally</td></tr>
+    <tr><td><strong>Port Down</strong></td><td>The emulator-side COM port could not be opened (port missing or in use)</td></tr>
+    <tr><td><strong>No Peer</strong></td><td>The emulator-side port is open but no client has connected to the other end of the pair</td></tr>
+    <tr><td><strong>&mdash;</strong></td><td>TCP-based device &mdash; no COM port link status applies</td></tr>
+</table>
+
+<h2>Toggling Output</h2>
+<p>Click the <strong>Output</strong> cell for any power supply to toggle its output on or
+off. When output is enabled, the device will report non-zero voltage, current, and power
+values based on its configured setpoints. When output is disabled, all readings drop to
+zero.</p>
+<p>This toggle simulates the front-panel output button on the physical power supply.
+The Control software can also enable/disable output via protocol commands, which will be
+reflected in the grid immediately.</p>
+</body>
+</html>

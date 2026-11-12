@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<panels>
+  <panel>
+    <id>SysControl</id>
+    <caption>System</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.OperationsPanel</type>
+    <event>ButtonClickEvent</event>
+    <msghandler>EmbedRecipeButtonClick</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>0</left>
+    <top>5</top>
+  </panel>
+  <panel>
+    <id>PSU1</id>
+    <caption>PSU1 (M1)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>85</left>
+    <top>5</top>
+  </panel>
+  <panel>
+    <id>PSU2</id>
+    <caption>PSU2 (M2)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>85</left>
+    <top>26</top>
+  </panel>
+</panels>

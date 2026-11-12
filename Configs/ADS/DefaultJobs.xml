@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<JobsList  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Jobs>
+    <Job>
+      <File>example1.recipe</File>
+      <Title>Example Job 1</Title>
+      <Status>Completed</Status>
+      <Date>2023-04-01</Date>
+      <Time>12:00</Time>
+    </Job>
+    <Job>
+      <File>example2.recipe</File>
+      <Title>Example Job 2</Title>
+      <Status>In porgress ...</Status>
+      <Date>2023-04-02</Date>
+      <Time>13:00</Time>
+    </Job>
+    <Job>
+      <File>example2.recipe</File>
+      <Title>Example Job 2</Title>
+      <Status>Pending</Status>
+      <Date>2023-04-02</Date>
+      <Time>13:00</Time>
+    </Job>
+    <Job>
+      <File>example2.recipe</File>
+      <Title>Example Job 2</Title>
+      <Status>Pending</Status>
+      <Date>2023-04-02</Date>
+      <Time>13:00</Time>
+    </Job>
+    <Job>
+      <File>example2.recipe</File>
+      <Title>Example Job 2</Title>
+      <Status>Pending</Status>
+      <Date>2023-04-02</Date>
+      <Time>13:00</Time>
+    </Job>	
+    <!-- More Job entries can be added here -->
+  </Jobs>
+</JobsList>

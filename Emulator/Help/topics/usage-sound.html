@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Sound Effects</title>
+</head>
+<body>
+<h1>Sound Effects</h1>
+
+<p>The Emulator can produce synthesized sound effects that mimic the audible feedback
+of the real vacuum system hardware. Sounds are triggered by state changes in valves
+and pumps during simulation or log replay, and by stepper/stage motion during
+live simulation.</p>
+
+<h2>Sound Table</h2>
+<table>
+    <tr><th>Event</th><th>Sound</th><th>Description</th></tr>
+    <tr>
+        <td>Valve open</td>
+        <td>Pneumatic chpok</td>
+        <td>120 Hz tone burst, 100ms duration &mdash; simulates the pneumatic actuator
+            firing to open a solenoid valve</td>
+    </tr>
+    <tr>
+        <td>Valve close</td>
+        <td>Snap</td>
+        <td>55ms duration &mdash; simulates the spring-return snap of a solenoid valve
+            closing</td>
+    </tr>
+    <tr>
+        <td>Pump on</td>
+        <td>Rising tone</td>
+        <td>Frequency sweep from 280 Hz to 310 Hz over 180ms &mdash; simulates a scroll
+            pump motor spinning up</td>
+    </tr>
+    <tr>
+        <td>Pump off</td>
+        <td>Falling tone</td>
+        <td>Frequency sweep from 220 Hz to 130 Hz over 150ms &mdash; simulates a scroll
+            pump motor winding down</td>
+    </tr>
+    <tr>
+        <td>Motor moving</td>
+        <td>Stepper whine</td>
+        <td>Continuous 600 Hz buzzing loop while any stepper drive or stage
+            is moving (including Seek Home); stops when all
+            motion completes</td>
+    </tr>
+</table>
+
+<h2>Enabling Sound</h2>
+<p>Sound effects are controlled by the <strong>Sound</strong> checkbox on the Log Replay
+tab. When checked, sounds play during both live simulation and log replay whenever a
+valve or pump changes state, and while motors are moving.</p>
+
+<h2>Technical Details</h2>
+<p>All sounds are synthesized in real-time by the <code>SoundManager</code> &mdash; no
+external audio files are used. The synthesis parameters:</p>
+<ul>
+    <li><strong>Format:</strong> 16-bit mono PCM</li>
+    <li><strong>Sample rate:</strong> 22,050 Hz</li>
+    <li><strong>Generation:</strong> waveforms are computed sample-by-sample and played via
+        the Windows audio API</li>
+</ul>
+<p>Because sounds are synthesized programmatically, they have minimal memory footprint
+and no dependency on external sound files.</p>
+</body>
+</html>

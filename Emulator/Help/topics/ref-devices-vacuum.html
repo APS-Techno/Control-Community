@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Vacuum Devices</title>
+</head>
+<body>
+
+<h1>Vacuum Devices</h1>
+
+<p>This page documents the emulated vacuum-side devices of the Sputter demo system,
+including their PLC addresses and emulation behavior. The device list comes from
+<code>HWConf.Emulator.xml</code> of the Sputter project.</p>
+
+<h2>Valves</h2>
+
+<p>Nine solenoid valves are controlled via PLC marker bits. Each valve is a simple
+on/off device mapped to a single bit.</p>
+
+<table>
+<tr><th>Valve</th><th>Role</th><th>MB Address</th></tr>
+<tr><td>A1</td><td>Air vent</td><td><code>MB2.1</code></td></tr>
+<tr><td>M1</td><td>Magnetron 1</td><td><code>MB2.3</code></td></tr>
+<tr><td>PP</td><td>Pre-pump</td><td><code>MB2.4</code></td></tr>
+<tr><td>FL</td><td>Fore line</td><td><code>MB2.6</code></td></tr>
+<tr><td>Sh1</td><td>Magnetron 1 shutter</td><td><code>MB3.3</code></td></tr>
+<tr><td>Sh2</td><td>Magnetron 2 shutter</td><td><code>MB3.4</code></td></tr>
+<tr><td>V1</td><td>Ar inlet</td><td><code>MB12.1</code></td></tr>
+<tr><td>V2</td><td>N2 inlet</td><td><code>MB12.2</code></td></tr>
+<tr><td>M2</td><td>Magnetron 2</td><td><code>MB12.7</code></td></tr>
+</table>
+
+<p>Special valve behaviors:</p>
+<ul>
+    <li><strong>A1</strong> &mdash; Vent valve with a conductance of 3.0 L/s into the main chamber.</li>
+    <li><strong>Sound</strong> &mdash; Valve state changes trigger audio feedback in the emulator
+    dashboard (click / hiss for vent valves).</li>
+</ul>
+
+<h2>Mass Flow Controllers (MFCs)</h2>
+
+<p>Two MFCs regulate process gas flow, each represented by a setpoint/readback
+float pair in DB1:</p>
+
+<table>
+<tr><th>MFC</th><th>Setpoint</th><th>Readback</th><th>Gas</th><th>Inlet valve</th></tr>
+<tr><td>Ar1</td><td><code>DB1:160</code></td><td><code>DB1:164</code></td><td>Argon</td><td>V1</td></tr>
+<tr><td>N21</td><td><code>DB1:168</code></td><td><code>DB1:172</code></td><td>Nitrogen</td><td>V2</td></tr>
+</table>
+
+<p>The emulator applies a <strong>first-order lag filter</strong> so that the
+readback ramps smoothly toward the setpoint over several tick cycles, mimicking
+the response time of a real MFC.</p>
+
+<h2>Backing Pump</h2>
+
+<table>
+<tr><th>Pump</th><th>MB Address</th><th>Pump Speed</th><th>Chamber</th></tr>
+<tr><td>SP1</td><td><code>MB0.5</code></td><td>6 L/s</td><td>Main chamber</td></tr>
+</table>
+
+<p>Pump speed falls off as pressure decreases toward base pressure (see
+<a href="ref-physics.html">Physics Model</a>).</p>
+
+<h2>Turbo Pump</h2>
+
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>Command bit</td><td><code>MB0.4</code></td></tr>
+<tr><td>Status byte</td><td><code>DB1:17</code> (bits 1&ndash;4)</td></tr>
+<tr><td>Pump Speed</td><td>700 L/s</td></tr>
+<tr><td>Gate valve</td><td>GVM</td></tr>
+<tr><td>Foreline valve</td><td>FL</td></tr>
+<tr><td>Crossover Pressure</td><td>0.5 Torr</td></tr>
+</table>
+
+<p>The turbo pump spins up while its command bit is set. During spin-up the status
+byte reports accelerating, then at normal speed, with rotation detected while
+the rotor turns. The pump only reaches the chamber while the gate and foreline
+valves are open.</p>
+
+<h2>Sensors</h2>
+
+<p>Two analog sensors are read via DB1 float registers:</p>
+
+<table>
+<tr><th>Sensor</th><th>Address</th><th>Description</th></tr>
+<tr><td>pm</td><td><code>DB1:100</code></td><td>Main chamber pressure</td></tr>
+<tr><td>tmp</td><td><code>DB1:124</code></td><td>Temperature</td></tr>
+</table>
+
+<p>All sensor readings include <strong>2% Gaussian noise</strong> to simulate
+real-world measurement variation.</p>
+
+<h2>Stage</h2>
+
+<table>
+<tr><th>Stage</th><th>Address</th><th>Description</th></tr>
+<tr><td>VS</td><td><code>DB1:152</code></td><td>Substrate lift position (mm); presets Load = 0, Process = 25</td></tr>
+</table>
+
+<h2>Rotation</h2>
+
+<p>Substrate rotation is controlled by a setpoint/feedback pair and an enable bit:</p>
+<ul>
+    <li><strong>Setpoint / feedback:</strong> <code>DB1:1974</code> / <code>DB1:1978</code></li>
+    <li><strong>Enable:</strong> <code>MB30.0</code></li>
+</ul>
+
+<h2>Input Valve &mdash; GVM</h2>
+
+<p>The main gate valve (GVM) uses <strong>inverted logic</strong> on its input bit:</p>
+<ul>
+    <li><strong>Address:</strong> <code>EB2.6</code></li>
+    <li><code>0</code> = gate valve is <strong>open</strong></li>
+    <li><code>1</code> = gate valve is <strong>closed</strong></li>
+</ul>
+<p>This matches the physical sensor wiring where the limit switch is normally
+closed and opens when the gate valve reaches the open position.</p>
+
+</body>
+</html>

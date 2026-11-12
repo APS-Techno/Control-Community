@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Protocols</title>
+</head>
+<body>
+
+<h1>Protocols</h1>
+
+<p>The emulator communicates with SystemControl using three protocol layers:
+S7 over TCP for PLC access, virtual serial ports for instrument emulation,
+and direct TCP for network instruments. Each layer is described below.</p>
+
+<h2>S7 Protocol Server</h2>
+
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>Transport</td><td>ISO-on-TCP (TPKT / COTP / S7)</td></tr>
+<tr><td>Port</td><td>102</td></tr>
+<tr><td>Bind Address</td><td>192.168.127.208</td></tr>
+<tr><td>Clients</td><td>Multi-client (concurrent connections supported)</td></tr>
+<tr><td>Compatibility</td><td>Sharp7 library compatible</td></tr>
+</table>
+
+<h3>Protocol Stack</h3>
+<pre>
+Application:   S7 Communication (read/write requests)
+                |
+Presentation:  S7 Protocol Data Units (PDU)
+                |
+Session:       COTP (Connection-Oriented Transport Protocol)
+                |
+Transport:     TPKT (ISO Transport over TCP)
+                |
+Network:       TCP/IP (port 102)
+</pre>
+
+<h3>Memory Areas</h3>
+<p>The S7 server exposes four memory areas that SystemControl reads and writes:</p>
+
+<table>
+<tr><th>Area</th><th>Code</th><th>Description</th></tr>
+<tr><td>DB (Data Block)</td><td>0x84</td><td>Analog values: pressures, flows, positions, turbo status</td></tr>
+<tr><td>MB (Marker Byte)</td><td>0x83</td><td>Digital outputs: valve states, pump enables</td></tr>
+<tr><td>EB (Input Byte)</td><td>0x81</td><td>Digital inputs: limit switches, feedback sensors</td></tr>
+<tr><td>PA (Peripheral Access)</td><td>0x80</td><td>Direct I/O access</td></tr>
+</table>
+
+<p>See <a href="ref-plc-memory-map.html">PLC Memory Map</a> for the complete
+address listing.</p>
+
+<h2>Virtual Serial Ports</h2>
+
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>API</td><td><code>System.IO.Ports.SerialPort</code></td></tr>
+<tr><td>Driver</td><td>com0com or FVSP null-modem pairs</td></tr>
+<tr><td>Read Mode</td><td>Asynchronous (event-driven)</td></tr>
+<tr><td>Peer Detection</td><td>DSR (Data Set Ready) signal</td></tr>
+</table>
+
+<p>Each emulated serial device opens the <em>device-side</em> port (e.g.,
+COM121) of a virtual null-modem pair. SystemControl opens the
+<em>host-side</em> port (e.g., COM21). Data written to one port appears on the
+other, creating a transparent serial link without physical hardware.</p>
+
+<h3>Framing Modes</h3>
+
+<p>The serial adapter supports five framing modes that determine how incoming
+bytes are assembled into complete messages:</p>
+
+<table>
+<tr><th>Mode</th><th>Detection Method</th><th>Devices</th></tr>
+<tr><td><code>CrLf</code></td><td>Wait for <code>\r\n</code> sequence</td><td>&mdash;</td></tr>
+<tr><td><code>Cr</code></td><td>Wait for <code>\r</code></td><td>&mdash;</td></tr>
+<tr><td><code>Lf</code></td><td>Wait for <code>\n</code></td><td>TCP instruments</td></tr>
+<tr><td><code>ModbusRTU</code></td><td>3.5-character silence gap + CRC16 validation</td><td>&mdash;</td></tr>
+<tr><td><code>AdditiveSum16</code></td><td>Fixed-length 22-byte frame (20-byte payload + 2-byte big-endian additive sum)</td><td>&mdash;</td></tr>
+</table>
+
+<h3>DSR Peer Detection</h3>
+<p>The emulator uses the DSR (Data Set Ready) serial handshake line to detect
+when SystemControl has opened its side of the port pair. This prevents the
+emulator from sending data before a client is connected and avoids buffer
+overflow on unconnected ports.</p>
+
+<h2>TCP Serial</h2>
+
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>Protocol</td><td>SCPI (Standard Commands for Programmable Instruments)</td></tr>
+<tr><td>Transport</td><td>TCP socket</td></tr>
+<tr><td>Bind Address</td><td>127.0.0.1 (configurable)</td></tr>
+<tr><td>Port</td><td>5025</td></tr>
+<tr><td>Framing</td><td>LF-terminated (<code>\n</code>)</td></tr>
+</table>
+
+<p>TCP serial devices use direct TCP rather than virtual serial
+ports. It accepts SCPI command strings terminated with a line feed character.
+The emulator binds a TCP listener on the configured address and port, accepting
+connections from SystemControl. Multiple commands can be sent per connection.</p>
+
+</body>
+</html>

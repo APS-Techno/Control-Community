@@ -1,0 +1,7 @@
+bin/
+obj/
+png/
+*.user
+.vs/
+preview.html
+*.log

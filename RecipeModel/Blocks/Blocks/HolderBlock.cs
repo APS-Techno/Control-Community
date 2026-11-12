@@ -1,0 +1,45 @@
+using APS.Controls.Theme;
+using APS.RecipeModel.Ast;
+
+#pragma warning disable WFO1000
+
+namespace APS.RecipeModel.Blocks;
+
+public sealed class HolderBlock : BlockBase
+{
+    private readonly DarkComboBox _position;
+
+    public HolderBlock() : base("holder", BlockTheme.HardwareCategory)
+    {
+        _position = new DarkComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDown,
+            Width = BlockTheme.Scale(90),
+            Margin = new Padding(2),
+        };
+        FieldRow.Controls.Add(_position);
+    }
+
+    public override void BindTo(AstNode node)
+    {
+        if (node is not HolderStatement h) throw new ArgumentException(nameof(node));
+        BoundNode = h;
+        _position.Text = h.Position;
+    }
+
+    public override AstNode ToAst() => new HolderStatement(_position.Text)
+    {
+        Id = BoundNode?.Id ?? NodeId.FromPosition("holder", "unbound", 0),
+        LeadingTrivia = BoundNode?.LeadingTrivia ?? Trivia.Empty,
+        TrailingTrivia = BoundNode?.TrailingTrivia ?? Trivia.Empty,
+    };
+
+    public override void ApplyContext(IBlockContext? context)
+    {
+        var sources = context?.SourceNames ?? Array.Empty<string>();
+        var prev = _position.Text;
+        _position.Items.Clear();
+        foreach (var s in sources) _position.Items.Add(s);
+        _position.Text = prev;
+    }
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sources>
+  <magnetrons>
+    <magnetron id="ION">Ion Source</magnetron>
+  </magnetrons>
+  <powersources>
+    <powersource>PSU-A</powersource>
+  </powersources>
+  <source flange="1">
+    <material />
+  </source>
+  <source flange="2">
+    <material>Si</material>
+  </source>
+  <source flange="3">
+    <material>BN</material>
+  </source>
+  <source flange="4">
+    <material>Ion</material>
+  </source>
+  <source flange="5">
+    <material>Si</material>
+  </source>
+</sources>

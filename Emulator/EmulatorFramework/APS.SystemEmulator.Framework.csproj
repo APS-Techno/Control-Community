@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <AssemblyName>APS.SystemEmulator.Framework</AssemblyName>
+    <RootNamespace>APS.SystemEmulator</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);WFO5001</NoWarn>
+    <Version>1.6.3</Version>
+    <Company>APS Technology</Company>
+    <OutputPath>$(ApsBinDir)</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../EmulatorCore/EmulatorCore.csproj" />
+    <ProjectReference Include="../Protocols/S7Server/S7Server.csproj" />
+    <ProjectReference Include="../Protocols/TcpSerialServer/TcpSerialServer.csproj" />
+    <ProjectReference Include="../Protocols/Shared/Shared.csproj" />
+    <ProjectReference Include="../Protocols/VirtualSerialAdapter/VirtualSerialAdapter.csproj" />
+    <ProjectReference Include="../Devices/S7_Devices/S7_Devices.csproj" />
+    <ProjectReference Include="../Devices/Demo_Devices/Demo_Devices.csproj" />
+    <ProjectReference Include="../../VacuumControls/VacuumControls.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../Help/**" CopyToOutputDirectory="PreserveNewest" LinkBase="Help" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>EmulatorTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

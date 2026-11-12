@@ -1,0 +1,3 @@
+mfc Ar1 $flow
+bias $voltage
+pwait pm $target 60

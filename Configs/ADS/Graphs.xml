@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Graphs panel="pnlGraphs">
+	<Graph>System Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-8</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#DC143C</Color>
+		<Sensor>pm</Sensor>
+	</Graph>
+	<Graph>
+		LL Pressure
+		<Units>Torr</Units>
+		<Format>log</Format>
+		<Min>1e-3</Min>
+		<Max>750</Max>
+		<YAxis>P</YAxis>
+		<Color>#006400</Color>
+		<Sensor>pl</Sensor>
+	</Graph>
+	<Graph>
+		Temperature
+		<Units>deg. C</Units>
+		<Format>log</Format>
+		<Min>0</Min>
+		<Max>150</Max>
+		<YAxis>T</YAxis>
+		<Color>#00008B</Color>
+		<Sensor>tmp</Sensor>
+	</Graph>
+</Graphs>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<controls xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <vacuum>
+    <valves type="APS.Controls.Vacuum.ValveControl">
+      <valve id="LL_A1" left="56" top="9.7" scale="1">LL vent</valve>
+      <valve id="C3_V" left="48" top="76" scale="1" dir="vert">Ar inlet</valve>
+      <valve id="C3_V_N2" left="52" top="76" scale="1" dir="vert">N2 inlet</valve>
+      <valve id="LL_FL" left="24" top="12" scale="1">LL FL</valve>
+      <valve id="C3_FL" left="28" top="86" scale="1.3">C3 FL</valve>
+      <valve id="C3_A1" left="58" top="76" scale="1" dir="vert"></valve>
+      <valve id="LL_RL" left="23.5" top="4.5" scale="1"></valve>
+      <valve id="TM_FL" left="24" top="24" scale="1"></valve>
+      <valve id="TM_RL" left="26" top="32" scale="1"></valve>
+      <valve id="C3_RL" left="28" top="74" scale="1"></valve>
+      <valve id="C4_V" left="23.3" top="56" scale="1" dir="vert">Ar inlet</valve>
+      <valve id="C4_FL" left="2.9" top="56" scale="1.3" dir="vert">C4 FL</valve>
+      <valve id="C4_A1" left="28.7" top="56" scale="1" dir="vert"></valve>
+      <valve id="C4_RL" left="10" top="58" scale="1" dir="vert"></valve>
+      <valve id="C2_V" left="70" top="58" scale="1" dir="vert">Ar inlet</valve>
+      <valve id="C2_FL" left="96.2" top="54" scale="1.3" dir="vert">C2 FL</valve>
+      <valve id="C2_A1" left="64" top="58" scale="1" dir="vert"></valve>
+      <valve id="C2_RL" left="88" top="60" scale="1"></valve>
+      <valve id="C1_V" left="84" top="35.2" scale="1">Ar inlet</valve>
+      <valve id="C1_FL" left="86" top="10" scale="1.3">C1 FL</valve>
+      <valve id="C1_A1" left="62" top="14" scale="1" dir="vert"></valve>
+      <valve id="C1_RL" left="86" top="28.8" scale="1"></valve>
+    </valves>
+    <MFCs type="APS.Controls.Vacuum.MFCControl">
+      <MFC id="C3_Ar" left="48" top="88" scale="0.9" gas="Ar">MFC Ar</MFC>
+      <MFC id="C3_N2" left="52" top="88" scale="0.9" gas="N2">MFC N2</MFC>
+      <MFC id="C4_Ar" left="18" top="68" scale="0.9" gas="Ar">MFC Ar</MFC>
+      <MFC id="C2_Ar" left="70" top="64" scale="0.9" gas="Ar">MFC Ar</MFC>
+      <MFC id="C1_Ar" left="92" top="35.2" scale="0.9" gas="Ar">MFC Ar</MFC>
+    </MFCs>
+    <sensors type="APS.Controls.General.LEDPanel">
+      <sensor id="LL_pm" left="45" top="13" scale="1" unit="Torr" format="0.##e-0" color="LimeGreen" direction="hor">LL</sensor>
+      <sensor id="TM_pm" left="32" top="29.5" scale="1" unit="Torr" format="0.##e-0" color="DodgerBlue" direction="hor">TM</sensor>
+      <sensor id="C3_pm" left="40.5" top="67.5" scale="1" unit="Torr" format="0.##e-0" color="Crimson" direction="hor">C3</sensor>
+      <sensor id="C3_tmp" left="48.5" top="67.5" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">C3 Temp</sensor>
+      <sensor id="C4_pm" left="26.5" top="49.5" scale="1" unit="Torr" format="0.##e-0" color="DarkOrange" direction="hor">C4</sensor>
+      <sensor id="C4_tmp" left="18.5" top="49.5" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">C4 Temp</sensor>
+      <sensor id="C2_pm" left="61" top="51.5" scale="1" unit="Torr" format="0.##e-0" color="Purple" direction="hor">C2</sensor>
+      <sensor id="C2_tmp" left="68.5" top="51.5" scale="1" unit="C" format="F2" color="Purple" direction="hor">C2 Temp</sensor>
+      <sensor id="C1_pm" left="61" top="35" scale="1" unit="Torr" format="0.##e-0" color="Teal" direction="hor">C1</sensor>
+      <sensor id="C1_tmp" left="68.5" top="35" scale="1" unit="C" format="F2" color="Teal" direction="hor">C1 Temp</sensor>
+    </sensors>
+    <leds type="APS.Controls.General.LedControl">
+      <led id="POWER" left="4" top="88" scale="1" align="right" color="Green" bgcolor="">Power</led>
+      <led id="ONLINE" left="4" top="91" scale="1" align="right" color="Green" bgcolor="">Online</led>
+    </leds>
+    <tpumps type="APS.Controls.Vacuum.TurboPumpControl">
+      <tpump id="LL_TP" left="30" top="12" scale="0.8" bgcolor="" dir="">LL TP</tpump>
+      <tpump id="TM_TP" left="30" top="24" scale="0.8" bgcolor="" dir="">TM TP</tpump>
+      <tpump id="C3_TP" left="34" top="86" scale="0.8" bgcolor="" dir="">C3 TP</tpump>
+      <tpump id="C4_TP" left="4" top="44" scale="0.8" bgcolor="" dir="">C4 TP</tpump>
+      <tpump id="C1_TP" left="80" top="10" scale="0.8" bgcolor="" dir="left">C1 TP</tpump>
+      <tpump id="C2_TP" left="90" top="50.5" scale="0.8" bgcolor="" dir="left">C2 TP</tpump>
+    </tpumps>
+    <stages type="APS.Controls.Vacuum.StageControl">
+      <stage id="C3_VS" left="35" top="66.5" scale="0.9" MB="16" index="5">Lift</stage>
+      <stage id="C4_VS" left="36.5" top="38.5" scale="0.9" MB="16" index="5">Lift</stage>
+      <stage id="C2_VS" left="57" top="22.5" scale="0.9" MB="16" index="5">Lift</stage>
+      <stage id="C1_VS" left="56" top="52.5" scale="0.9" MB="16" index="5">Lift</stage>
+    </stages>
+    <gasinlets type="APS.Controls.Vacuum.GasInletControl">
+      <gasinlet id="GI_C3_Ar" left="44" top="94" scale="1" gas="Ar" dir="right">Ar Supply</gasinlet>
+      <gasinlet id="GI_C3_N2" left="56" top="94" scale="1" gas="N2" dir="left">N2 Supply</gasinlet>
+      <gasinlet id="GI_C4_Ar" left="14" top="68" scale="1" gas="Ar" dir="right">Ar Supply</gasinlet>
+      <gasinlet id="GI_C2_Ar" left="66.5" top="70" scale="1" gas="Ar" dir="right">Ar Supply</gasinlet>
+      <gasinlet id="GI_C1_Ar" left="97.5" top="25.5" scale="1" gas="Ar" dir="down">Ar Supply</gasinlet>
+    </gasinlets>
+    <magnetrons type="APS.Controls.Vacuum.MagnetronControl">
+      <magnetron id="MAG4" left="44" top="61" scale="1" gas="Ar" target="Si" dir="down" gasinlet="false">C3 Si Magnetron</magnetron>
+      <magnetron id="MAG5" left="52" top="61" scale="1" gas="N2" target="B4C" dir="down" gasinlet="false">C3 B4C Magnetron</magnetron>
+      <magnetron id="MAG6" left="26.5" top="43" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C4 Magnetron</magnetron>
+      <magnetron id="MAG3" left="68.5" top="45" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C2 Magnetron</magnetron>
+      <magnetron id="MAG1" left="68" top="29" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C1 Magnetron</magnetron>
+    </magnetrons>
+    <gatevalves type="APS.Controls.Vacuum.GateValveControl">
+      <gatevalve id="LL_GV" left="40" top="12" scale="0.6"></gatevalve>
+      <gatevalve id="TM_GV" left="38" top="24" scale="0.6"></gatevalve>
+      <gatevalve id="C3_GV" left="44" top="82" scale="0.6" dir="vert"></gatevalve>
+      <gatevalve id="SV_LL" left="48" top="26" scale="0.8" dir="vert"></gatevalve>
+      <gatevalve id="SV_C3" left="48" top="52" scale="0.6" dir="vert"></gatevalve>
+      <gatevalve id="C4_GV" left="12" top="44" scale="0.6"></gatevalve>
+      <gatevalve id="SV_C4" left="38" top="46.2" scale="0.6"></gatevalve>
+      <gatevalve id="C2_GV" left="82" top="50.5" scale="0.6"></gatevalve>
+      <gatevalve id="SV_C2" left="56" top="44" scale="0.6"></gatevalve>
+      <gatevalve id="C1_GV" left="70" top="10" scale="0.6"></gatevalve>
+      <gatevalve id="SV_C1" left="56" top="32" scale="0.6"></gatevalve>
+    </gatevalves>
+    <spumps type="APS.Controls.Vacuum.ScrollPumpControl">
+      <spump id="LL_SP" left="18" top="12" scale="1" bgcolor="" dir="right">LL SP</spump>
+      <spump id="TM_SP" left="18" top="24" scale="1" bgcolor="" dir="right">TM SP</spump>
+      <spump id="C3_SP" left="23.8" top="90" scale="1" bgcolor="" dir="">C3 SP</spump>
+      <spump id="C2_SP" left="96.2" top="66" scale="1" bgcolor="" dir="">C2 SP</spump>
+      <spump id="C1_SP" left="96" top="10" scale="1" bgcolor="" dir="left">C1 SP</spump>
+      <spump id="C4_SP" left="2.9" top="66" scale="1" bgcolor="" dir="hor">C4 SP</spump>
+    </spumps>
+    <tconnectors type="APS.Controls.Vacuum.TConnectorControl">
+      <tconnector id="T1" left="20" top="11.6" scale="1" dir="up"></tconnector>
+      <tconnector id="T2" left="20" top="24.3" scale="1" dir="hor"></tconnector>
+      <tconnector id="T3" left="24" top="86" scale="1" dir="right"></tconnector>
+      <tconnector id="T4" left="3.1" top="62" scale="1" dir="right"></tconnector>
+      <tconnector id="T5" left="96" top="60" scale="1" dir="left"></tconnector>
+      <tconnector id="T6" left="92" top="10.3" scale="1" dir="hor"></tconnector>
+    </tconnectors>
+    <throttlevalves type="APS.Controls.Vacuum.ThrottleValveControl">
+      <throttlevalve id="C3_TV" left="44" top="76" scale="0.7" dir="vert"></throttlevalve>
+      <throttlevalve id="C4_TV" left="16" top="44" scale="0.7"></throttlevalve>
+      <throttlevalve id="C2_TV" left="78" top="50.5" scale="0.7"></throttlevalve>
+      <throttlevalve id="C1_TV" left="67.3" top="18" scale="0.7" dir="vert"></throttlevalve>
+    </throttlevalves>
+    <transferModules type="APS.Controls.Vacuum.TransferModuleControl">
+      <transferModule id="ROBOT" left="48" top="38" scale="1" chamber="TM" width="380" height="280">Transfer Module</transferModule>
+    </transferModules>
+  </vacuum>
+  <schematic>
+    <pipes>
+      <pipe id="p_LL_tp" from="LL_GV:left" to="LL_TP:inlet" />
+      <pipe id="p3" from="C3_TP:left" to="C3_FL:right" />
+      <pipe id="p10" from="LL:bottom_1" to="SV_LL:top" />
+      <pipe id="p13" from="LL_TP:left" to="T1:right" />
+      <pipe id="p20" from="TM_GV:left" to="TM_TP:inlet" />
+      <pipe id="p15" from="T1:left" to="LL_SP:right" />
+      <pipe id="p11" from="SV_LL:bottom" to="TM:top_7" />
+      <pipe id="p16" from="LL_GV:right" to="LL:left_2" />
+      <pipe id="p25" from="LL_FL:right" to="LL_TP:left" />
+      <pipe id="p27" from="T2:left" to="TM_SP:right" />
+      <pipe id="p4" from="C3_FL:left" to="T3:right" />
+      <pipe id="p29" from="T3:bottom" to="C3_SP:top" />
+      <pipe id="p5" from="SV_C3:top" to="TM:bottom_1" />
+      <pipe id="p6" from="SV_C3:bottom" to="C3:top_1" />
+      <pipe id="p7" from="GI_C3_Ar:outlet" to="C3_Ar:bottom" bends="48,94" gas="Ar" />
+      <pipe id="p1" from="TM_FL:right" to="TM_TP:left" />
+      <pipe id="p9" from="TM_FL:left" to="T2:right" />
+      <pipe id="p22" from="T2:bottom" to="TM_RL:left" bends="20,32" />
+      <pipe id="p23" from="TM_RL:right" to="TM:left_1" />
+      <pipe id="p24" from="C3_Ar:top" to="C3_V:bottom" gas="Ar" />
+      <pipe id="p26" from="LL_RL:left" to="T1:top" bends="20,4.5" />
+      <pipe id="p34" from="C3_RL:right" to="C3:bottom_1" bends="42,74" />
+      <pipe id="p12" from="T3:top" to="C3_RL:left" bends="23.8,74" />
+      <pipe id="p14" from="LL_A1:left" to="LL:right_1" />
+      <pipe id="p17" from="LL_RL:right" to="LL:left_1" bends="38,4.5 38,7.3" />
+      <pipe id="p8" from="C3_V:top" to="C3:bottom_4" />
+      <pipe id="p30" from="SV_LL:bottom" to="ROBOT:face1" />
+      <pipe id="p19" from="TM_GV:right" to="ROBOT:vertex6" bends="45.7,24" />
+      <pipe id="p35" from="TM_RL:right" to="ROBOT:face6" bends="44.6,32" />
+      <pipe id="p28" from="C4_TP:inlet" to="C4_GV:left" />
+      <pipe id="p36" from="C4_GV:right" to="C4_TV:left" />
+      <pipe id="p37" from="C4_TP:bottom" to="C4_FL:top" />
+      <pipe id="p39" from="SV_C4:right" to="ROBOT:face5" bends="44.6,46.2" />
+      <pipe id="p40" from="SV_C3:top" to="ROBOT:face4" />
+      <pipe id="p42" from="C4_FL:bottom" to="T4:top" />
+      <pipe id="p43" from="T4:bottom" to="C4_SP:top" />
+      <pipe id="p44" from="T4:right" to="C4_RL:bottom" bends="10,62" />
+      <pipe id="p46" from="C2_FL:bottom" to="T5:top" />
+      <pipe id="p47" from="T5:bottom" to="C2_SP:top" />
+      <pipe id="p48" from="T5:left" to="C2_RL:right" />
+      <pipe id="p49" from="C2_V:bottom" to="C2_Ar:top" />
+      <pipe id="p50" from="C2_Ar:bottom" to="GI_C2_Ar:outlet" bends="70,70" gas="Ar" />
+      <pipe id="p52" from="C2_GV:left" to="C2_TV:right" />
+      <pipe id="p54" from="C1_GV:left" to="C1_TV:top" bends="67.3,10" />
+      <pipe id="p56" from="C1_FL:right" to="T6:left" />
+      <pipe id="p57" from="T6:right" to="C1_SP:left" />
+      <pipe id="p60" from="GI_C1_Ar:outlet" to="C1_Ar:right" bends="97.5,35.2" gas="Ar" />
+      <pipe id="p61" from="C1_V:right" to="C1_Ar:left" />
+      <pipe id="p63" from="SV_C4:left" to="C4:right_1" />
+      <pipe id="p64" from="C4_TV:right" to="C4:left_1" />
+      <pipe id="p65" from="C4_RL:top" to="C4:left_2" bends="10,51 10,48.3" />
+      <pipe id="p67" from="SV_C2:right" to="C2:left_1" />
+      <pipe id="p68" from="C2_A1:top" to="C2:bottom_2" />
+      <pipe id="p70" from="C1_RL:left" to="C1:right_1" />
+      <pipe id="p71" from="C1_V:left" to="C1:right_3" />
+      <pipe id="p72" from="SV_C1:right" to="C1:left_2" />
+      <pipe id="p73" from="C1_A1:bottom" to="C1:top_1" />
+      <pipe id="p74" from="C2_TV:left" to="C2:right_3" />
+      <pipe id="p75" from="C2_RL:left" to="C2:bottom_7" bends="74,60" />
+      <pipe id="p62" from="C1_TV:bottom" to="C1:top_3" />
+      <pipe id="p76" from="C1_RL:right" to="T6:bottom" bends="92,28.8" />
+      <pipe id="p69" from="C2_V:top" to="C2:bottom_5" />
+      <pipe id="p77" from="C4_A1:top" to="C4:bottom_2" />
+      <pipe id="p78" from="GI_C3_N2:outlet" to="C3_N2:bottom" bends="52,94" gas="N2" />
+      <pipe id="p79" from="C3_N2:top" to="C3_V_N2:bottom" gas="N2" />
+      <pipe id="p53" from="C1_TP:inlet" to="C1_GV:right" />
+      <pipe id="p55" from="C1_FL:left" to="C1_TP:right" />
+      <pipe id="p45" from="C2_GV:right" to="C2_TP:inlet" />
+      <pipe id="p51" from="C2_TP:right" to="C2_FL:top" bends="96.2,50.5" />
+      <pipe id="p58" from="SV_C1:left" to="ROBOT:face2" bends="51.4,32" />
+      <pipe id="p59" from="SV_C2:left" to="ROBOT:face3" bends="51.4,44" />
+      <pipe id="p2" from="C3_GV:bottom" to="C3_TP:inlet" bends="44,86" />
+      <pipe id="p18" from="C3_GV:top" to="C3_TV:bottom" />
+      <pipe id="p31" from="C3_TV:top" to="C3:bottom_2" />
+      <pipe id="p38" from="C4_V:top" to="C4:bottom_1" />
+      <pipe id="p41" from="C4_V:bottom" to="C4_Ar:right" bends="23.3,68" />
+      <pipe id="p66" from="C4_Ar:left" to="GI_C4_Ar:outlet" gas="Ar" />
+      <pipe id="p80" from="C3:bottom_6" to="C3_V_N2:top" />
+      <pipe id="p32" from="C3:right_3" to="C3_A1:top" bends="58,67.2" />
+    </pipes>
+    <chambers>
+      <chamber id="LL" label="Loadlock" left="43" top="2.666667" width="10" height="14" wall="0.75" top_anchors="1" bottom_anchors="1" left_anchors="2" right_anchors="1" />
+      <chamber id="C3" label="Process Chamber 3" left="40" top="57.5" width="16" height="13" wall="0.75" top_anchors="1" bottom_anchors="7" left_anchors="3" right_anchors="3" />
+      <chamber id="C4" label="Process Chamber 4" left="18" top="39.666668" width="16" height="13" wall="0.75" top_anchors="1" bottom_anchors="2" left_anchors="2" right_anchors="1" />
+      <chamber id="C2" label="Process Chamber 2" left="60" top="40.75" width="16" height="13" wall="0.75" top_anchors="1" bottom_anchors="7" left_anchors="3" right_anchors="3" />
+      <chamber id="C1" label="Process Chamber 1" left="59.333332" top="25.5" width="16" height="13" wall="0.75" top_anchors="5" bottom_anchors="7" left_anchors="3" right_anchors="3" />
+    </chambers>
+  </schematic>
+</controls>

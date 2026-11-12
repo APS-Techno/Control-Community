@@ -1,0 +1,22 @@
+<!-- Agent MCP server. Disabled by default; edit the copy in bin\ on the target machine.
+     tier: Read | Recipe | Manual.  hash: SHA-256 hex of the API key, e.g. in pwsh:
+       [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes("your-key")))
+     allowManual/allowRecipe clamp every key's tier for this deployment.
+     NOTE: this source file copies to bin\ with CopyToOutputDirectory=PreserveNewest. A rebuild
+     whose source copy has a newer timestamp than an operator's edited bin\ copy will overwrite
+     it back to this disabled default (fails safe: feature off). Keep an enabled config's
+     changes in THIS source copy, or re-apply them to bin\AgentServer.xml after every update. -->
+<AgentServer enabled="false" port="8026" bind="127.0.0.1" allowRecipe="true" allowManual="false">
+  <!-- Telemetry bus (bus.subscribe). samplerMs = cache sampling period (100-10000, default 250);
+       queueDepth = frames buffered per slow subscriber before drop-oldest (10-100000, default 1000).
+       heartbeatMs = re-report every point this often even when nothing changed (0 = off, the
+       default: the bus is change-only, so a quiet machine produces no frames and a gap in a
+       consumer's data means "unchanged", not "no data"). Set it when a time-series store such as
+       Grafana/InfluxDB has to draw a line through quiet periods; 1000-3600000, clamped.
+       Subscribing additionally requires the 'remote-data-logging' licence feature. -->
+  <!-- <Bus samplerMs="250" queueDepth="1000" heartbeatMs="0"/> -->
+  <!-- Control mode: <ControlMode restoreRemote="false"/> — restore Online-Remote across restarts
+       (default: start in Local). Only a persisted Remote is restored; Offline never is. -->
+  <!-- <ControlMode restoreRemote="false"/> -->
+  <!-- <Key name="dev" hash="..." tier="Manual"/> -->
+</AgentServer>

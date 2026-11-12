@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Vacuum Tab</title>
+</head>
+<body>
+<h1>Vacuum Tab</h1>
+
+<p>The Vacuum tab is the primary dashboard view, showing the real-time state of the
+simulated vacuum system including chamber conditions, gas flow, and valve positions.</p>
+
+<h2>Main Chamber Panel</h2>
+<p>Displays the state of the main deposition chamber:</p>
+<table>
+    <tr><th>Reading</th><th>Description</th></tr>
+    <tr><td>Pressure</td><td>Chamber pressure in Torr, auto-scaled (e.g. 760, 1.2e-2, 5.0e-6)</td></tr>
+    <tr><td>Temperature</td><td>Substrate temperature in &deg;C</td></tr>
+    <tr><td>Turbo Pump</td><td>Turbo pump running status and speed</td></tr>
+</table>
+
+<h2>Gas System</h2>
+<p>Shows each mass flow controller with its setpoint and actual flow values:</p>
+<table>
+    <tr><th>MFC</th><th>Gas</th><th>Setpoint</th><th>Actual</th></tr>
+    <tr><td>Ar1</td><td>Argon</td><td>Commanded flow (sccm)</td><td>Measured flow (sccm)</td></tr>
+    <tr><td>N21</td><td>Nitrogen</td><td>Commanded flow (sccm)</td><td>Measured flow (sccm)</td></tr>
+</table>
+
+<h2>Valve Panel</h2>
+<p>Valves are displayed with color-coded indicators showing their current state.
+Click on a valve label to manually toggle it.</p>
+<table>
+    <tr><th>Color</th><th>State</th><th>Meaning</th></tr>
+    <tr><td style="color:#4EC9B0;"><strong>Green</strong></td><td>Open</td><td>Valve is energized and open, gas can flow</td></tr>
+    <tr><td style="color:#E06C75;"><strong>Red</strong></td><td>Closed (energized)</td><td>Valve is energized but in closed position</td></tr>
+    <tr><td style="color:#888;"><strong>Gray</strong></td><td>Closed (de-energized)</td><td>Valve is de-energized and closed (default state)</td></tr>
+    <tr><td style="color:#FFAA33;"><strong>Orange</strong></td><td>Transitioning</td><td>Valve is changing state (brief transition period)</td></tr>
+</table>
+
+<h2>Status Bar</h2>
+<p>The status bar at the bottom of the window displays:</p>
+<ul>
+    <li><strong>Mode</strong> &mdash; current operating mode (Simulation or Log Replay)</li>
+    <li><strong>Tick Count</strong> &mdash; number of simulation ticks since startup</li>
+    <li><strong>Simulation Time</strong> &mdash; elapsed simulation time</li>
+</ul>
+</body>
+</html>

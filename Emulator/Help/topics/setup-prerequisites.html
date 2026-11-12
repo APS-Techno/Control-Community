@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Prerequisites</title>
+</head>
+<body>
+
+<h1>Prerequisites</h1>
+
+<p>Before running the APS System Emulator, ensure the following software and system
+requirements are met.</p>
+
+<h2>.NET 9.0 Desktop Runtime</h2>
+
+<p>The emulator requires the <strong>.NET 9.0 Desktop Runtime</strong> (Windows).
+This is the same runtime used by SystemControl and System Builder.</p>
+
+<p>Verify your installed runtimes from a command prompt:</p>
+
+<pre><code>dotnet --list-runtimes</code></pre>
+
+<p>Look for a line containing <code>Microsoft.WindowsDesktop.App 9.0.x</code>.
+If it is missing, download the installer from
+<a href="https://dotnet.microsoft.com/download/dotnet/9.0">dotnet.microsoft.com</a>
+and install the <strong>Desktop Runtime</strong> (not just the base runtime).</p>
+
+<h2>Virtual Serial Port Software</h2>
+
+<p>The emulator communicates with SystemControl over virtual COM port pairs.
+One of the following drivers is required:</p>
+
+<ul>
+<li><strong>HHD Software FVSP</strong> (recommended) &mdash; commercial driver with a
+command-line tool (<code>rspcli</code>) for scripted pair creation. Stable on
+all Windows versions without special boot modes.</li>
+<li><strong>com0com</strong> (open-source) &mdash; free alternative. Requires Windows to be
+booted in <strong>test-signing mode</strong> because the driver is not
+WHQL-signed.</li>
+</ul>
+
+<div class="note">
+<strong>Tip:</strong> The <strong>Prepare System</strong> button on the emulator's Config tab
+automates all prerequisites — runtime checks, FVSP pair creation, loopback adapter aliases, and firewall rules. You only need the
+underlying driver installed; the emulator handles the rest.
+</div>
+
+<h2>Administrator Privileges</h2>
+
+<p>Elevated (admin) privileges are needed for:</p>
+
+<ul>
+<li>Creating virtual COM port pairs (first-time setup)</li>
+<li>Adding loopback network adapter aliases for PLC and instrument addresses</li>
+</ul>
+
+<p>Once ports and network aliases are configured, the emulator itself runs under
+a normal user account.</p>
+
+<h2>System Requirements</h2>
+
+<table>
+<tr>
+  <th>Requirement</th>
+  <th>Details</th>
+</tr>
+<tr>
+  <td>Operating System</td>
+  <td>Windows 10 or Windows 11 (64-bit)</td>
+</tr>
+<tr>
+  <td>Runtime</td>
+  <td>.NET 9.0 Desktop Runtime</td>
+</tr>
+<tr>
+  <td>Memory</td>
+  <td>&lt; 100 MB typical usage</td>
+</tr>
+<tr>
+  <td>Network Ports</td>
+  <td>TCP 102 (S7 protocol), TCP 5025 and 5026 (SCPI), virtual COM ports</td>
+</tr>
+<tr>
+  <td>Admin Rights</td>
+  <td>First-time setup only (port pairs and loopback aliases)</td>
+</tr>
+</table>
+
+</body>
+</html>

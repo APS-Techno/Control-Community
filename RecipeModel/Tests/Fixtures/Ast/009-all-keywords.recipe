@@ -1,0 +1,26 @@
+start
+valve M1 open
+mfc Ar1 5
+pump TP1 on
+stage VS -10
+shutter S1
+holder 2
+scan SC1 1.0
+message "hello"
+bias 0
+ramp PS1 500
+set PS1 mode dc
+delay 5
+wait 3
+pwait pm 5 60
+swait pl 50mT 300
+check pm < 10
+rotate 30
+transfer LL C1
+home
+abort
+label top
+goto top
+call other
+var x 42
+finish

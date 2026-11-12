@@ -1,0 +1,102 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <AssemblyName>APS.SystemControl.Framework</AssemblyName>
+    <RootNamespace>APS.SystemControl</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Version comes from Directory.Build.props so this repo has ONE place to
+         bump and the plugins cannot drift from the host. -->
+    <OutputPath>$(ApsBinDir)</OutputPath>
+    <Platforms>AnyCPU;x64</Platforms>
+    <NoWarn>$(NoWarn);WFO1000;WFO5001</NoWarn>
+    <AssemblyTitle>APS System Control</AssemblyTitle>
+    <Product>APS System Control</Product>
+    <Company>APS Technology</Company>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="GUI_Libraries\**" />
+    <Compile Remove="HW_Libraries\**" />
+    <Compile Remove="Workers\**" />
+    <Compile Remove="Tests\**" />
+    <Compile Remove="APS.ProcessPanel.Contracts\**" />
+    <Compile Remove="APS.SystemControl.Plugin\**" />
+    <EmbeddedResource Remove="GUI_Libraries\**" />
+    <EmbeddedResource Remove="HW_Libraries\**" />
+    <EmbeddedResource Remove="Workers\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <EmbeddedResource Remove="APS.ProcessPanel.Contracts\**" />
+    <EmbeddedResource Remove="APS.SystemControl.Plugin\**" />
+    <None Remove="GUI_Libraries\**" />
+    <None Remove="HW_Libraries\**" />
+    <None Remove="Workers\**" />
+    <None Remove="Tests\**" />
+    <None Remove="APS.ProcessPanel.Contracts\**" />
+    <None Remove="APS.SystemControl.Plugin\**" />
+    <Compile Remove="Hosts\**" />
+    <Compile Remove="Commercial\**" />
+    <EmbeddedResource Remove="Hosts\**" />
+    <EmbeddedResource Remove="Commercial\**" />
+    <None Remove="Hosts\**" />
+    <None Remove="Commercial\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ScottPlot.WinForms" Version="5.0.54" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.14" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="OverrideTests" />
+    <InternalsVisibleTo Include="CoreLogicTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Accounts\Core\APS.Accounts.Core.csproj" />
+    <ProjectReference Include="..\Production\Domain\APS.Production.Domain.csproj" />
+    <ProjectReference Include="..\Icons\APS.Icons.csproj" />
+    <ProjectReference Include="..\RecipeModel\RecipeModel.csproj" />
+    <ProjectReference Include="..\VacuumControls\VacuumControls.csproj" />
+    <ProjectReference Include="APS.ProcessPanel.Contracts\APS.ProcessPanel.Contracts.csproj" />
+    <ProjectReference Include="APS.SystemControl.Plugin\APS.SystemControl.Plugin.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <!-- SetGitBuildNumber moved to Directory.Build.targets so the plugin
+       assemblies get the same <Version>.<commit count> stamp as this one. -->
+
+</Project>

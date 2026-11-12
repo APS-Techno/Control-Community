@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <AssemblyName>APS.EmulatorCommunity</AssemblyName>
+    <RootNamespace>APS.EmulatorCommunity</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);WFO5001</NoWarn>
+    <Version>1.6.3</Version>
+    <ApplicationIcon>EmulatorIcon.ico</ApplicationIcon>
+    <AssemblyTitle>APS Emulator Community</AssemblyTitle>
+    <Product>APS Emulator Community</Product>
+    <Company>APS Technology</Company>
+    <OutputPath>$(ApsBinDir)</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="EmulatorIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\EmulatorFramework\APS.SystemEmulator.Framework.csproj" />
+    <ProjectReference Include="..\..\Devices\S7_Devices\S7_Devices.csproj" />
+  </ItemGroup>
+
+</Project>

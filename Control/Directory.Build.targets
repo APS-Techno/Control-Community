@@ -1,0 +1,43 @@
+<Project>
+
+  <!-- Build number = git commit count, stamped at build time, for EVERY
+       assembly in this repo — the host app and all six plugins.
+       FileVersion/InformationalVersion become <Version>.<count>;
+       AssemblyVersion stays <Version>.0 so binding is not broken by a rebuild.
+
+       This lived in APS.SystemControl.csproj alone, so the plugin DLLs shipped
+       as 1.0.0.0 with no build number at all. A stale plugin was therefore
+       invisible from its file properties and had to be caught by comparing
+       timestamps and hashes by hand. -->
+  <Target Name="SetGitBuildNumber" BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo">
+    <PropertyGroup>
+      <GitCountCommand>git rev-list --count HEAD</GitCountCommand>
+      <GitCountCommand Condition="'$(ApsGitRoot)' != ''">git -C "$(ApsGitRoot)" rev-list --count HEAD</GitCountCommand>
+    </PropertyGroup>
+    <Exec Command="$(GitCountCommand)"
+          ConsoleToMSBuild="true" EchoOff="true" IgnoreExitCode="true"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitCount" />
+    </Exec>
+    <PropertyGroup>
+      <GitCommitCount>$(GitCommitCount.Trim())</GitCommitCount>
+      <GitCommitCount Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(GitCommitCount)', '^[0-9]+$'))">0</GitCommitCount>
+      <FileVersion>$(Version).$(GitCommitCount)</FileVersion>
+      <InformationalVersion>$(Version).$(GitCommitCount)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="CopyRuntimeConfig" AfterTargets="Build" Condition="'$(OutputType)' == 'WinExe'">
+    <Copy
+      SourceFiles="$(IntermediateOutputPath)$(AssemblyName).runtimeconfig.json"
+      DestinationFolder="$(OutputPath)"
+      SkipUnchangedFiles="true"
+      Condition="Exists('$(IntermediateOutputPath)$(AssemblyName).runtimeconfig.json')" />
+    <Copy
+      SourceFiles="$(BaseIntermediateOutputPath)verify\$(AssemblyName).runtimeconfig.json"
+      DestinationFolder="$(OutputPath)"
+      SkipUnchangedFiles="true"
+      Condition="!Exists('$(OutputPath)$(AssemblyName).runtimeconfig.json') and Exists('$(BaseIntermediateOutputPath)verify\$(AssemblyName).runtimeconfig.json')" />
+  </Target>
+
+</Project>

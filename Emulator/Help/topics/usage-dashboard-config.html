@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Configuration Tab</title>
+</head>
+<body>
+<h1>Configuration Tab</h1>
+
+<p>The Configuration tab provides a read-only view of the loaded emulator configuration,
+protocol server status, and device inventory.</p>
+
+<h2>Configuration View</h2>
+<p>Displays the current configuration loaded from <code>EmulatorConfig.xml</code> and
+<code>HWConf.Emulator.xml</code>, including:</p>
+<ul>
+    <li>PLC addresses and port mappings</li>
+    <li>Serial device COM port assignments</li>
+    <li>TCP server endpoints</li>
+    <li>Physics simulation parameters (chamber volumes, pump speeds)</li>
+</ul>
+<p>This view is read-only. To change the configuration, edit the XML files directly and
+restart the Emulator.</p>
+
+<h2>Protocol Status</h2>
+<p>Shows the running state of each protocol layer:</p>
+<ul>
+    <li><strong>S7 TCP Server</strong> &mdash; listening status and connected client count</li>
+    <li><strong>Virtual Serial Ports</strong> &mdash; open/closed state for each COM port pair</li>
+    <li><strong>TCP Serial Servers</strong> &mdash; listening status for Ethernet-native devices</li>
+</ul>
+
+<h2>Device Count</h2>
+<p>Summarizes the total number of emulated devices by category (valves, MFCs, pumps,
+sensors, power supplies, motion axes).</p>
+
+<h2>Prepare System Button</h2>
+<p>The <strong>Prepare System</strong> button creates or verifies the virtual COM port pairs,
+loopback IP aliases, and firewall rules required by the Emulator. This operation is idempotent &mdash; it is safe to click
+multiple times. It will create any missing port pairs, IPs, and rules, and skip those that already exist.
+This button requires administrator privileges to modify virtual COM port driver
+configuration, network settings, and firewall rules.</p>
+
+<h2>Reconnect Ports Button</h2>
+<p>The <strong>Reconnect Ports</strong> button closes and re-opens all serial port
+connections. Use this after virtual COM port reconfiguration or if a port becomes
+unresponsive. Unlike Prepare System, this does not require administrator privileges and does
+not modify the port driver configuration.</p>
+</body>
+</html>

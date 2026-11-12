@@ -1,0 +1,5 @@
+# header
+valve HV open
+
+// second section
+delay 5 # wait

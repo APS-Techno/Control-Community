@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Log Viewer Tab</title>
+</head>
+<body>
+<h1>Log Viewer Tab</h1>
+
+<p>The Log Viewer tab displays real-time log messages from the simulation engine,
+protocol servers, and device emulators.</p>
+
+<h2>Log Grid Columns</h2>
+<table>
+    <tr><th>Column</th><th>Description</th></tr>
+    <tr><td>Time</td><td>Timestamp when the log entry was generated</td></tr>
+    <tr><td>Level</td><td>Severity level (Debug, Info, Warning, Error)</td></tr>
+    <tr><td>Source</td><td>Component that generated the message (e.g. S7Server, Engine, Physics)</td></tr>
+    <tr><td>Message</td><td>Log message text</td></tr>
+</table>
+
+<h2>Color Coding</h2>
+<p>Log rows are color-coded by severity level for quick visual scanning:</p>
+<table>
+    <tr><th>Level</th><th>Color</th></tr>
+    <tr><td>Debug</td><td style="color:#5B7DA8;">Dark blue</td></tr>
+    <tr><td>Info</td><td style="color:#C8D6E5;">Default (light gray)</td></tr>
+    <tr><td>Warning</td><td style="color:#FFDD57;">Yellow</td></tr>
+    <tr><td>Error</td><td style="color:#E06C75;">Red</td></tr>
+</table>
+
+<h2>Filtering</h2>
+<p>Two filter controls narrow down the displayed log entries:</p>
+<ul>
+    <li><strong>Source filter</strong> &mdash; dropdown listing all log sources. Select a
+        specific source to show only messages from that component, or select
+        <em>All</em> to show everything.</li>
+    <li><strong>Level filter</strong> &mdash; minimum severity threshold:
+        <ul>
+            <li><strong>Debug+</strong> &mdash; show all messages</li>
+            <li><strong>Info+</strong> &mdash; show Info, Warning, and Error</li>
+            <li><strong>Warning+</strong> &mdash; show Warning and Error only</li>
+            <li><strong>Error</strong> &mdash; show Error only</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Controls</h2>
+<ul>
+    <li><strong>Auto-scroll</strong> checkbox &mdash; when enabled, the grid automatically
+        scrolls to show the newest log entry. Disable to freeze the view while
+        investigating a specific message.</li>
+    <li><strong>Clear</strong> button &mdash; removes all current log entries from the grid.</li>
+</ul>
+
+<div class="note">
+    <strong>Note:</strong> The log viewer retains a maximum of 5,000 rows. When this limit
+    is reached, the oldest entries are removed as new ones arrive.
+</div>
+</body>
+</html>

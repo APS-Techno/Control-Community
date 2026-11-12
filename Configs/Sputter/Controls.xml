@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<controls xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <vacuum>
+    <valves type="APS.Controls.Vacuum.ValveControl">
+      <valve id="V1" left="60" top="24" scale="1">Ar inlet</valve>
+      <valve id="V2" left="24" top="24" scale="1">N2 inlet</valve>
+      <valve id="A1" left="48" top="60" scale="1" dir="vert">Air vent</valve>
+      <valve id="FL" left="30" top="72" scale="1.7">Fore line</valve>
+      <valve id="PP" left="40" top="64" scale="1.5" dir="vert"></valve>
+    </valves>
+    <MFCs type="APS.Controls.Vacuum.MFCControl">
+      <MFC id="Ar1" left="54" top="24" scale="1" gas="Ar">MFC Ar</MFC>
+      <MFC id="N21" left="32" top="24" scale="1" gas="N2">MFC N2</MFC>
+    </MFCs>
+    <sensors type="APS.Controls.General.LEDPanel">
+      <sensor id="pm" left="37" top="52" scale="1" unit="Torr" format="0.##e-0" color="Red" direction="hor">Main</sensor>
+      <sensor id="tmp" left="48" top="52" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">Temp</sensor>
+    </sensors>
+    <leds type="APS.Controls.General.LedControl">
+      <led id="POWER" left="4" top="88" scale="1" align="right" color="Green" bgcolor="">Power</led>
+      <led id="ONLINE" left="4" top="91" scale="1" align="right" color="Green" bgcolor="">Online</led>
+    </leds>
+    <tpumps type="APS.Controls.Vacuum.TurboPumpControl">
+      <tpump id="TP" left="20" top="44" scale="1" bgcolor="">TP</tpump>
+    </tpumps>
+    <spumps type="APS.Controls.Vacuum.ScrollPumpControl">
+      <spump id="SP1" left="40" top="84" scale="1" bgcolor="">SP1</spump>
+    </spumps>
+    <gasinlets type="APS.Controls.Vacuum.GasInletControl">
+      <gasinlet id="GI_Ar1" left="64" top="24" scale="1" gas="Ar">Ar Supply</gasinlet>
+      <gasinlet id="GI_N21" left="20" top="24" scale="1" gas="N2">N2 Supply</gasinlet>
+    </gasinlets>
+    <magnetrons type="APS.Controls.Vacuum.MagnetronControl">
+      <magnetron id="Mag1" left="40" top="37" scale="1" gas="Ar" target="" dir="down" gasinlet="false">Magnetron 1</magnetron>
+      <magnetron id="Mag2" left="48" top="37" scale="1" gas="Ar" target="" dir="down" gasinlet="false">Magnetron 2</magnetron>
+    </magnetrons>
+    <gatevalves type="APS.Controls.Vacuum.GateValveControl">
+      <gatevalve id="GVM" left="28" top="44" scale="1"></gatevalve>
+    </gatevalves>
+    <stages type="APS.Controls.Vacuum.StageControl">
+      <stage id="VS" left="44" top="44" scale="0.9" MB="7" index="1">Lift</stage>
+    </stages>
+    <tconnectors type="APS.Controls.Vacuum.TConnectorControl">
+      <tconnector id="T1" left="39.8" top="72" scale="1" dir="left"></tconnector>
+      <tconnector id="T2" left="44" top="24.3" scale="1" dir="hor"></tconnector>
+    </tconnectors>
+    <airinlets type="APS.Controls.Vacuum.AirInletControl">
+      <airinlet id="AI1" left="48" top="64" scale="1" dir="up"></airinlet>
+    </airinlets>
+  </vacuum>
+  <schematic>
+    <pipes>
+      <pipe id="p_N2_mfc" from="V2:right" to="N21:left" />
+      <pipe id="p_Ar_T" from="Ar1:right" to="T_Ar:left" />
+      <pipe id="p_N2_T" from="N21:right" to="T_N2:left" />
+      <pipe id="p_Ar_M1" from="T_Ar:right" to="M1:left" />
+      <pipe id="p_N2_M2" from="T_N2:right" to="M2:left" />
+      <pipe id="p_vent" from="A1:top" to="main:bottom_2" />
+      <pipe id="p_AI" from="A1:bottom" to="AI1:top" />
+      <pipe id="p_gvm" from="main:left_1" to="GVM:right" />
+      <pipe id="p_tp_in" from="GVM:left" to="TP:inlet" />
+      <pipe id="p_fl" from="TP:bottom" to="FL:left" bends="18.6,72" />
+      <pipe id="p3" from="main:bottom_1" to="PP:top" />
+      <pipe id="p5" from="M2:left" to="N21:right" />
+      <pipe id="p6" from="M1:left" to="Ar1:right" />
+      <pipe id="p4" from="PP:bottom" to="T1:top" />
+      <pipe id="p7" from="T1:left" to="FL:right" />
+      <pipe id="p8" from="T1:bottom" to="SP1:top" />
+      <pipe id="p9" from="V1:left" to="Ar1:right" />
+      <pipe id="p10" from="GI_Ar1:outlet" to="V1:right" gas="Ar" />
+      <pipe id="p11" from="V2:left" to="GI_N21:outlet" />
+      <pipe id="p1" from="Ar1:left" to="T2:right" gas="Ar" />
+      <pipe id="p2" from="T2:left" to="N21:right" />
+      <pipe id="p12" from="T2:bottom" to="main:top_1" />
+    </pipes>
+    <chambers>
+      <chamber id="main" label="Main Chamber" left="32" top="32" width="24" height="24" wall="0.75" top_anchors="1" bottom_anchors="2" left_anchors="1" right_anchors="0" />
+    </chambers>
+  </schematic>
+</controls>

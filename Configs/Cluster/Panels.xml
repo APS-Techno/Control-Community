@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panels xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <panel>
+    <id>SysControl</id>
+    <caption>System</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.OperationsPanel</type>
+    <event>ButtonClickEvent</event>
+    <msghandler>EmbedRecipeButtonClick</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>0</left>
+    <top>0</top>
+  </panel>
+  <panel>
+    <id>C1_PSU1</id>
+    <caption>PSU1 (C1)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>86.5</left>
+    <top>1.75</top>
+  </panel>
+  <panel>
+    <id>C1_PSU2</id>
+    <caption>PSU2 (C1)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>86.5</left>
+    <top>12</top>
+  </panel>
+  <panel>
+    <id>C2_PSU</id>
+    <caption>PSU (C2)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>86.5</left>
+    <top>22.5</top>
+  </panel>
+  <panel>
+    <id>C3_PSU1</id>
+    <caption>PSU1 (C3)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>86.5</left>
+    <top>32.75</top>
+  </panel>
+  <panel>
+    <id>C3_PSU2</id>
+    <caption>PSU2 (C3)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>86.5</left>
+    <top>43.25</top>
+  </panel>
+  <panel>
+    <id>C4_PSU</id>
+    <caption>PSU (C4)</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.LanPsuPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabSystem</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>86.5</left>
+    <top>53.5</top>
+  </panel>
+</panels>

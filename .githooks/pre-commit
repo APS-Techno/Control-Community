@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+dotnet build APS.Community.slnx --nologo -v q
+
+for proj in $(git ls-files '*Tests.csproj' '*.Tests.csproj'); do
+    case "$proj" in
+        *EmulatorTests*)
+            dotnet test "$proj" --no-build --nologo --blame-hang-timeout 90s \
+                --filter "FullyQualifiedName!~Concurrent_SerialCommands_DuringTicks_NeverCorruptQueue&FullyQualifiedName!~TcpSerialFramingTests"
+            ;;
+        *)
+            dotnet test "$proj" --no-build --nologo
+            ;;
+    esac
+done
+
+if [ -n "$APS_COMMUNITY_DENYLIST" ]; then
+    pwsh -NoProfile -File tools/Test-Denylist.ps1
+else
+    echo "pre-commit: APS_COMMUNITY_DENYLIST not set; denylist scan skipped"
+fi

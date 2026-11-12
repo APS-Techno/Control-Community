@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>PLC Memory Map</title>
+</head>
+<body>
+
+<h1>PLC Memory Map</h1>
+
+<p>The Sputter S7-200 PLC uses four memory areas: <strong>MB</strong> (marker bytes) for
+digital outputs, <strong>EB</strong> (input bytes) for digital inputs,
+<strong>DB1</strong> (data block) for analog values, and <strong>PA</strong>
+(peripheral access). The emulator mirrors these areas. Addresses below come from
+the Sputter <code>HWConf.Emulator.xml</code>.</p>
+
+<h2>MB0 &mdash; Pumps</h2>
+
+<table>
+<tr><th>Address</th><th>Device</th><th>Notes</th></tr>
+<tr><td><code>MB0.4</code></td><td>TP (Turbo Pump)</td><td>Command bit</td></tr>
+<tr><td><code>MB0.5</code></td><td>SP1 (Scroll Pump)</td><td>Backing pump</td></tr>
+</table>
+
+<h2>MB2 &mdash; Valves</h2>
+
+<table>
+<tr><th>Address</th><th>Device</th><th>Notes</th></tr>
+<tr><td><code>MB2.1</code></td><td>A1</td><td>Air vent</td></tr>
+<tr><td><code>MB2.3</code></td><td>M1</td><td>Magnetron 1</td></tr>
+<tr><td><code>MB2.4</code></td><td>PP</td><td>Pre-pump</td></tr>
+<tr><td><code>MB2.6</code></td><td>FL</td><td>Fore line</td></tr>
+</table>
+
+<h2>MB3 &mdash; Shutters</h2>
+
+<table>
+<tr><th>Address</th><th>Device</th><th>Notes</th></tr>
+<tr><td><code>MB3.3</code></td><td>Sh1</td><td>Magnetron 1 shutter</td></tr>
+<tr><td><code>MB3.4</code></td><td>Sh2</td><td>Magnetron 2 shutter</td></tr>
+</table>
+
+<h2>MB12 &mdash; Gas Valves</h2>
+
+<table>
+<tr><th>Address</th><th>Device</th><th>Notes</th></tr>
+<tr><td><code>MB12.1</code></td><td>V1</td><td>Ar inlet</td></tr>
+<tr><td><code>MB12.2</code></td><td>V2</td><td>N2 inlet</td></tr>
+<tr><td><code>MB12.7</code></td><td>M2</td><td>Magnetron 2</td></tr>
+</table>
+
+<h2>MB30 &mdash; Rotation</h2>
+
+<table>
+<tr><th>Address</th><th>Device</th><th>Notes</th></tr>
+<tr><td><code>MB30.0</code></td><td>rotation</td><td>Enable bit</td></tr>
+</table>
+
+<h2>EB &mdash; Input Bits</h2>
+
+<table>
+<tr><th>Address</th><th>Device</th><th>Notes</th></tr>
+<tr><td><code>EB2.6</code></td><td>GVM</td><td>Gate valve main &mdash; <strong>inverted logic</strong> (0 = open, 1 = closed)</td></tr>
+</table>
+
+<h2>DB1 &mdash; Sensors</h2>
+
+<table>
+<tr><th>Address</th><th>Type</th><th>Device</th><th>Description</th></tr>
+<tr><td><code>DB1:100</code></td><td>REAL (float32)</td><td>pm</td><td>Main chamber pressure (Torr)</td></tr>
+<tr><td><code>DB1:124</code></td><td>REAL (float32)</td><td>tmp</td><td>Temperature sensor</td></tr>
+</table>
+
+<h2>DB1 &mdash; Mass Flow Controllers</h2>
+
+<table>
+<tr><th>Setpoint Address</th><th>Readback Address</th><th>MFC</th></tr>
+<tr><td><code>DB1:160</code></td><td><code>DB1:164</code></td><td>Ar1</td></tr>
+<tr><td><code>DB1:168</code></td><td><code>DB1:172</code></td><td>N21</td></tr>
+</table>
+
+<p>Setpoint and readback are both <code>REAL</code> (float32, 4 bytes). The emulator
+applies a first-order lag filter so that the readback ramps toward the setpoint
+over a few ticks.</p>
+
+<h2>DB1 &mdash; Stage and Rotation</h2>
+
+<table>
+<tr><th>Address</th><th>Type</th><th>Device</th><th>Description</th></tr>
+<tr><td><code>DB1:152</code></td><td>REAL (float32) setpoint + feedback</td><td>VS</td><td>Substrate lift position (mm)</td></tr>
+<tr><td><code>DB1:1974</code></td><td>REAL (float32)</td><td>rotation</td><td>Rotation setpoint</td></tr>
+<tr><td><code>DB1:1978</code></td><td>REAL (float32)</td><td>rotation</td><td>Rotation feedback</td></tr>
+</table>
+
+<h2>DB1:17 &mdash; Turbo Pump Status Byte</h2>
+
+<p>One byte at <code>DB1:17</code> encodes turbo pump state:</p>
+
+<table>
+<tr><th>Bit</th><th>Meaning</th></tr>
+<tr><td>1</td><td>Running</td></tr>
+<tr><td>2</td><td>Accelerating</td></tr>
+<tr><td>3</td><td>At normal speed</td></tr>
+<tr><td>4</td><td>Rotation detected</td></tr>
+<tr><td>5</td><td>Alarm (not set during normal operation)</td></tr>
+</table>
+
+</body>
+</html>

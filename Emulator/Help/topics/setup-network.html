@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Network Configuration</title>
+</head>
+<body>
+
+<h1>Network Configuration</h1>
+
+<p>The emulator hosts a TCP server that mimics the S7-200 PLC. SystemControl
+connects to it using the same IP address it would use for real hardware, so a
+loopback alias must be configured on the development machine. The demo power
+supplies listen on <code>127.0.0.1</code> and need no alias.</p>
+
+<h2>Required Addresses</h2>
+
+<table>
+<tr>
+  <th>Device</th>
+  <th>IP Address</th>
+  <th>TCP Port</th>
+  <th>Protocol</th>
+</tr>
+<tr>
+  <td>S7-200 PLC</td>
+  <td>192.168.127.208</td>
+  <td>102</td>
+  <td>S7comm (ISO-on-TCP)</td>
+</tr>
+<tr>
+  <td>PSU1, PSU2 (demo power supplies)</td>
+  <td>127.0.0.1</td>
+  <td>5025, 5026</td>
+  <td>SCPI over TCP</td>
+</tr>
+</table>
+
+<h2>Creating Loopback Aliases</h2>
+
+<p>Open the emulator, click the <strong>Prepare System</strong> button on the
+Config tab, and choose <strong>Fix All</strong>. The panel reads the required
+IP addresses from <code>EmulatorConfig.xml</code> and creates aliases on
+<em>Loopback Pseudo-Interface 1</em> in a single elevated operation.</p>
+
+<p>If you prefer to add aliases manually, run the following from an
+<strong>elevated</strong> command prompt:</p>
+
+<pre><code>netsh interface ip add address "Loopback" 192.168.127.208 255.255.255.0</code></pre>
+
+<div class="note">
+<strong>Note:</strong> The interface name (<code>"Loopback"</code>) may vary depending on
+how the adapter was installed. Use <code>netsh interface ip show config</code>
+to list interface names and substitute the correct one.
+</div>
+
+<h2>Installing a Loopback Adapter</h2>
+
+<p>If no loopback adapter exists on the system, create one through Device Manager:</p>
+
+<ol>
+<li>Open <strong>Device Manager</strong>.</li>
+<li>Select <strong>Action &rarr; Add legacy hardware</strong>.</li>
+<li>Choose <em>Install the hardware that I manually select from a list</em>.</li>
+<li>Select <strong>Network adapters</strong>.</li>
+<li>Pick <strong>Microsoft</strong> as the manufacturer and
+<strong>Microsoft KM-TEST Loopback Adapter</strong> as the model.</li>
+<li>Complete the wizard. The adapter appears under <em>Network adapters</em>.</li>
+<li>Rename the adapter to <strong>Loopback</strong> (optional but recommended for the
+<code>netsh</code> commands above):
+<pre><code>netsh interface set interface name="Ethernet 2" newname="Loopback"</code></pre></li>
+</ol>
+
+<h2>Firewall Rules</h2>
+
+<p>If Windows Firewall is active, allow inbound connections on the required
+ports. Run from an elevated prompt:</p>
+
+<pre><code>netsh advfirewall firewall add rule name="APS Emulator - TCP 102" dir=in action=allow protocol=tcp localport=102</code></pre>
+
+<h2>Verifying the Configuration</h2>
+
+<p>After adding the alias and firewall rule, confirm reachability by pinging
+the address:</p>
+
+<pre><code>ping 192.168.127.208</code></pre>
+
+<p>A successful reply from 127.0.0.1 (or the loopback adapter) confirms the
+alias is active. If the ping fails, re-check the interface name used in the
+<code>netsh</code> commands.</p>
+
+</body>
+</html>

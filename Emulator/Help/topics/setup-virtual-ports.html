@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Virtual COM Ports</title>
+</head>
+<body>
+
+<h1>Virtual COM Ports</h1>
+
+<p>The emulator uses virtual COM port pairs to simulate serial devices.
+Each pair acts as a null-modem cable: SystemControl opens one end and the
+emulator opens the other.</p>
+
+<h2>Pairing Scheme</h2>
+
+<p>A simple <strong>+100 offset</strong> convention keeps the mapping consistent:</p>
+
+<ul>
+<li><strong>Control side:</strong> COM<em>nn</em> (the same port number the real hardware uses)</li>
+<li><strong>Emulator side:</strong> COM1<em>nn</em> (Control port + 100)</li>
+</ul>
+
+<p>For example, a device on COM21 pairs with COM121 on the emulator side.</p>
+
+<h2>Required Port Pairs</h2>
+
+<p>Each serial device listed in the emulator configuration needs one pair. For
+example:</p>
+
+<table>
+<tr>
+  <th>Device</th>
+  <th>Control Port</th>
+  <th>Emulator Port</th>
+  <th>Baud Rate</th>
+</tr>
+<tr>
+  <td>Serial device A</td>
+  <td>COM21</td>
+  <td>COM121</td>
+  <td>38400</td>
+</tr>
+<tr>
+  <td>Serial device B</td>
+  <td>COM9</td>
+  <td>COM109</td>
+  <td>9600</td>
+</tr>
+</table>
+
+<h2>Automated Setup</h2>
+
+<p>The easiest way to create all pairs at once:</p>
+
+<ol>
+<li>Open the emulator and switch to the <strong>Config</strong> tab.</li>
+<li>Click the <strong>Prepare System</strong> button. In addition to creating virtual COM port pairs, this panel also handles loopback IP aliases and firewall rules.</li>
+<li>The emulator calls the installed driver's CLI to create each pair listed above.</li>
+<li>Verify the results in the Config tab &mdash; each device row shows a green link
+indicator when its pair is present.</li>
+</ol>
+
+<h2>Manual Setup &mdash; FVSP</h2>
+
+<p>If you prefer to create pairs individually, use the FVSP command-line tool
+<code>rspcli</code>:</p>
+
+<pre><code>rspcli -create bridge --bridge-ports 21,121
+rspcli -create bridge --bridge-ports 9,109</code></pre>
+
+<h2>Manual Setup &mdash; com0com</h2>
+
+<p>Use the com0com <code>setupc</code> utility (run as Administrator):</p>
+
+<pre><code>setupc install PortName=COM21 PortName=COM121
+setupc install PortName=COM9 PortName=COM109</code></pre>
+
+<div class="warning">
+<strong>Warning:</strong> com0com requires Windows to be started in
+<strong>test-signing mode</strong> (<code>bcdedit /set testsigning on</code>) because its
+driver is not WHQL-signed. A watermark appears on the desktop while
+test-signing is active.
+</div>
+
+<h2>Verifying Port Pairs</h2>
+
+<p>After creating the pairs, verify them using any of these methods:</p>
+
+<ul>
+<li><strong>Device Manager</strong> &mdash; expand <em>Ports (COM &amp; LPT)</em> and confirm both
+sides of each pair are listed.</li>
+<li><strong>Emulator Config tab</strong> &mdash; each serial device row shows its port status.
+A green indicator means the port exists and can be opened.</li>
+<li><strong>Power Sources link status</strong> &mdash; on the Power Sources tab, connected
+devices show a solid link icon when the emulator successfully opens
+its side of the pair.</li>
+</ul>
+
+</body>
+</html>

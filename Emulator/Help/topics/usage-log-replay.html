@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Log Replay</title>
+</head>
+<body>
+<h1>Log Replay</h1>
+
+<p>Log Replay allows you to play back recorded deposition cycle data through the
+simulation engine, reproducing the exact sequence of pressures, flows, temperatures,
+and valve states from a previous run.</p>
+
+<h2>Log File Format</h2>
+<p>Log files are tab-separated text files with the following structure:</p>
+<table>
+    <tr><th>Row</th><th>Content</th></tr>
+    <tr><td>Row 1</td><td>Column names (tab-separated)</td></tr>
+    <tr><td>Row 2</td><td>Units for each column (tab-separated)</td></tr>
+    <tr><td>Row 3+</td><td>Data rows (tab-separated values, one row per time step)</td></tr>
+</table>
+<p>Each data row contains timestamped readings for all logged parameters. The Emulator
+parses these values and feeds them into the simulation engine at the correct time
+intervals.</p>
+
+<h2>Controls</h2>
+<table>
+    <tr><th>Control</th><th>Description</th></tr>
+    <tr><td>Browse</td><td>Open a file dialog to select a log file for replay</td></tr>
+    <tr><td>Play</td><td>Start or resume playback from the current position</td></tr>
+    <tr><td>Pause</td><td>Pause playback at the current position (resume with Play)</td></tr>
+    <tr><td>Stop</td><td>Stop playback and reset to the beginning of the file</td></tr>
+    <tr><td>Speed</td><td>Playback speed multiplier: 1x (real-time), 2x, 5x, or 10x</td></tr>
+    <tr><td>Sound</td><td>Checkbox to enable or disable sound effects during replay</td></tr>
+</table>
+
+<h2>How Replay Works</h2>
+<p>During replay, the log data is injected directly into the simulation engine, replacing
+the normal physics calculations. At each simulation tick, the replay system:</p>
+<ol>
+    <li>Reads the next data row from the log file based on the elapsed replay time</li>
+    <li>Writes the recorded values into the corresponding device registers (PLC memory,
+        serial device buffers)</li>
+    <li>Updates the dashboard displays with the replayed values</li>
+    <li>Fires any sound effects triggered by state changes (if sound is enabled)</li>
+</ol>
+<p>The Control software, if connected, receives replayed data through the normal protocol
+channels and responds as if real hardware were producing those readings. This makes log
+replay useful for testing Control behavior against recorded scenarios.</p>
+</body>
+</html>

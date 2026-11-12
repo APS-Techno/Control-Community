@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <AssemblyName>APS.Hardware.S7</AssemblyName>
+    <RootNamespace>APS.Hardware.S7</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <OutputPath>$(ApsBinDir)HW_LIB\</OutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Sharp7" Version="1.1.84" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\APS.SystemControl.Framework.csproj" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CoreLogicTests" />
+  </ItemGroup>
+
+  <Target Name="PreventSharedDepCopying"
+          BeforeTargets="_CopyFilesMarkedCopyLocal"
+          DependsOnTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Sharp7Dll Include="@(ReferencePath)" Condition="'%(Filename)' == 'Sharp7' And '%(Extension)' == '.dll'" />
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopySharp7" AfterTargets="CopyFilesToOutputDirectory">
+    <Copy SourceFiles="@(Sharp7Dll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

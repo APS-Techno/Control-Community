@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppConfig   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <ConfigDir>..\Configs</ConfigDir>
+	<Prefix>Sputter</Prefix>
+	<HWDir>HW_LIB</HWDir>
+	<GUIDir>GUI_LIB</GUIDir>
+	<WorkerDir>Workers</WorkerDir>
+	<!-- <UIScale>1.0</UIScale> --> <!-- Optional: override auto-detected UI scale. Omit or 0 = auto (clamped 0.5-1.0 by screen width). -->
+</AppConfig>

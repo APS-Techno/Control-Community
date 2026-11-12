@@ -1,0 +1,6 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)..\Directory.Build.Commercial.props" Condition="Exists('$(MSBuildThisFileDirectory)..\Directory.Build.Commercial.props')" />
+  <PropertyGroup>
+    <ApsBinDir Condition="'$(ApsBinDir)' == ''">$(MSBuildThisFileDirectory)bin\</ApsBinDir>
+  </PropertyGroup>
+</Project>

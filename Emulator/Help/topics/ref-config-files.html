@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Configuration Reference</title>
+</head>
+<body>
+
+<h1>Configuration Reference</h1>
+
+<p>The emulator is configured by two XML files: <code>EmulatorConfig.xml</code>
+controls the emulator engine, protocols, physics, and device library paths,
+while <code>HWConf.Emulator.xml</code> defines individual device attributes
+inherited from the system hardware configuration.</p>
+
+<h2>EmulatorConfig.xml</h2>
+
+<h3>Root Element</h3>
+<p>The root <code>&lt;EmulatorConfig&gt;</code> element contains the following
+child elements:</p>
+
+<table>
+<tr><th>Element</th><th>Description</th></tr>
+<tr><td><code>Engine</code></td><td>Simulation engine settings</td></tr>
+<tr><td><code>Protocols</code></td><td>Container for S7Server, Serial, and TcpSerial entries</td></tr>
+<tr><td><code>Physics</code></td><td>Global physics parameters and chamber definitions</td></tr>
+<tr><td><code>DeviceLibraries</code></td><td>Paths to device emulator DLL assemblies</td></tr>
+</table>
+
+<h3>Engine</h3>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>TickIntervalMs</code></td><td>int</td><td>100</td><td>Simulation tick interval in milliseconds</td></tr>
+</table>
+
+<h3>Protocols &mdash; S7Server</h3>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>plcId</code></td><td>string</td><td>Logical PLC identifier (e.g., <code>PLC1</code>)</td></tr>
+<tr><td><code>bindAddress</code></td><td>string</td><td>IP address to bind (e.g., <code>192.168.127.208</code>)</td></tr>
+<tr><td><code>port</code></td><td>int</td><td>TCP port (default 102)</td></tr>
+</table>
+
+<h3>Protocols &mdash; Serial</h3>
+
+<p>One <code>&lt;Serial&gt;</code> entry per virtual serial device:</p>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>deviceId</code></td><td>string</td><td>Logical device identifier matching the device emulator</td></tr>
+<tr><td><code>portName</code></td><td>string</td><td>Device-side COM port (e.g., <code>COM121</code>)</td></tr>
+<tr><td><code>baudRate</code></td><td>int</td><td>Serial baud rate (e.g., 38400)</td></tr>
+<tr><td><code>framing</code></td><td>enum</td><td>Framing mode: <code>CrLf</code>, <code>Cr</code>, <code>Lf</code>, <code>ModbusRTU</code>, <code>AdditiveSum16</code></td></tr>
+</table>
+
+<h3>Protocols &mdash; TcpSerial</h3>
+
+<p>One <code>&lt;TcpSerial&gt;</code> entry per TCP-based device:</p>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>deviceId</code></td><td>string</td><td>Logical device identifier (e.g., <code>PSU1</code>)</td></tr>
+<tr><td><code>bindAddress</code></td><td>string</td><td>IP address to bind (e.g., <code>127.0.0.1</code>)</td></tr>
+<tr><td><code>port</code></td><td>int</td><td>TCP port (e.g., 5025)</td></tr>
+<tr><td><code>framing</code></td><td>enum</td><td>Framing mode (typically <code>Lf</code>)</td></tr>
+</table>
+
+<h3>Physics</h3>
+
+<p>Global physics parameters:</p>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>noiseStddev</code></td><td>double</td><td>0.02</td><td>Sensor noise standard deviation (fraction of reading)</td></tr>
+<tr><td><code>ScrollPumpSpeed</code></td><td>double</td><td>10</td><td>Scroll pump speed factor (L/s)</td></tr>
+<tr><td><code>TurboPumpSpeed</code></td><td>double</td><td>300</td><td>Turbo pump speed factor (L/s)</td></tr>
+</table>
+
+<h3>Physics &mdash; Chamber</h3>
+
+<p>One <code>&lt;Chamber&gt;</code> entry per simulated vacuum volume:</p>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>id</code></td><td>string</td><td>Chamber identifier (for example <code>Main</code>)</td></tr>
+<tr><td><code>InitialPressure</code></td><td>double</td><td>Starting pressure in Torr</td></tr>
+<tr><td><code>Volume</code></td><td>double</td><td>Chamber volume in liters</td></tr>
+<tr><td><code>BasePressure</code></td><td>double</td><td>Ultimate achievable pressure in Torr</td></tr>
+<tr><td><code>LeakRate</code></td><td>double</td><td>Virtual leak rate in Torr&middot;L/s</td></tr>
+<tr><td><code>PumpdownTau</code></td><td>double</td><td>Characteristic pumpdown time constant in seconds</td></tr>
+</table>
+
+<h3>Physics &mdash; Deposition</h3>
+
+<p>Optional. One <code>&lt;Deposition&gt;</code> element inside <code>&lt;Physics&gt;</code>
+turns on the film-thickness and reactive-poisoning model. Without it the
+emulator does not grow a film, does not poison the target, and the discharge
+voltage is unchanged. See <a href="ref-physics.html">Physics Model</a> for the equations.</p>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>reactiveMfc</code></td><td>string</td><td>(empty)</td><td>ID of the MFC that supplies the reactive gas (for example <code>N21</code>). Its actual flow drives poisoning. An empty or unknown ID means zero reactive flow.</td></tr>
+<tr><td><code>ratePerAmp</code></td><td>float</td><td>1.0</td><td>Metal-mode deposition rate per discharge current, nm/(s&middot;A)</td></tr>
+<tr><td><code>poisonRate</code></td><td>float</td><td>0.00673</td><td>Target nitridation rate, 1/(sccm&middot;s)</td></tr>
+<tr><td><code>cleanRate</code></td><td>float</td><td>0.1</td><td>Sputter cleaning rate, 1/(A&middot;s)</td></tr>
+<tr><td><code>poisonedRateFraction</code></td><td>float</td><td>0.2</td><td>Rate of a fully poisoned target relative to metal mode</td></tr>
+<tr><td><code>poisonedVoltageShift</code></td><td>float</td><td>100</td><td>Discharge voltage increase at full poisoning, V</td></tr>
+</table>
+<pre>&lt;Physics&gt;
+  &lt;Deposition reactiveMfc="N21" ratePerAmp="1.0" poisonRate="0.00673" cleanRate="0.1"
+              poisonedRateFraction="0.2" poisonedVoltageShift="100" /&gt;
+&lt;/Physics&gt;</pre>
+
+<h3>DeviceLibraries &mdash; Library</h3>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>path</code></td><td>string</td><td>Relative or absolute path to a device emulator DLL assembly</td></tr>
+</table>
+
+<h2>HWConf.Emulator.xml</h2>
+
+<p>This file mirrors the structure of the system <code>HWConf.xml</code> used by
+SystemControl, with emulator-specific overrides. Key attributes on device
+elements include:</p>
+
+<table>
+<tr><th>Attribute</th><th>Type</th><th>Description</th></tr>
+<tr><td>Element text</td><td>string</td><td>Device ID, such as <code>V1</code>, <code>SP1</code> or <code>pm</code></td></tr>
+<tr><td><code>hwtype</code> on the section</td><td>string</td><td>Driver type, such as <code>Vendor.S7200Sensor</code></td></tr>
+<tr><td><code>speed</code></td><td>double</td><td>Pump speed in L/s</td></tr>
+<tr><td><code>port</code></td><td>string</td><td>COM port or TCP address for serial devices</td></tr>
+<tr><td><code>baudrate</code></td><td>int</td><td>Serial baud rate</td></tr>
+<tr><td><code>conductance</code></td><td>double</td><td>Vent conductance in L/s</td></tr>
+<tr><td><code>vent</code></td><td>bool</td><td>Marks an atmosphere vent valve</td></tr>
+</table>
+
+<h3>Pressure Measurements and Simulation Time</h3>
+<table>
+<tr><th>Sensor attribute</th><th>Meaning</th></tr>
+<tr><td><code>property</code></td><td><code>Pressure</code>, <code>Temperature</code>, <code>SimTime</code>, <code>ForelinePressure</code> or <code>Thickness</code></td></tr>
+<tr><td><code>minPressure</code>, <code>maxPressure</code></td><td>Valid pressure range in Torr. Bounds must be finite, nonnegative and increasing.</td></tr>
+<tr><td><code>source</code></td><td>For <code>ForelinePressure</code>, the ID of a turbo that has a configured backing model.</td></tr>
+</table>
+<pre>&lt;sensor address="104" chamber="Main" minPressure="1e-4" maxPressure="1e-2"&gt;cm&lt;/sensor&gt;
+&lt;sensor address="108" chamber="Main" property="ForelinePressure" source="TP"&gt;pf&lt;/sensor&gt;
+&lt;sensor address="400" chamber="Main" property="SimTime"&gt;simtime&lt;/sensor&gt;
+&lt;sensor address="404" chamber="Main" property="Thickness"&gt;thk&lt;/sensor&gt;</pre>
+<p>Put these sensor entries in a <code>S7200Sensor</code> section. Control
+needs matching device IDs and register addresses in its own hardware map.
+Keep the measurement-model attributes in <code>HWConf.Emulator.xml</code>.</p>
+
+<h3>Optional Turbo Backing Model</h3>
+<table>
+<tr><th>Turbo attribute</th><th>Meaning</th></tr>
+<tr><td><code>backingPump</code></td><td>ID of the scroll pump. A missing pump is a load error.</td></tr>
+<tr><td><code>forelineVolume</code></td><td>Modeled foreline volume in liters; default 2.</td></tr>
+<tr><td><code>forelineLimit</code></td><td>Pressure in Torr above which the model stops turbo pumping; default 5.</td></tr>
+</table>
+<p>The model uses the backing pump's configured speed and ultimate pressure.
+The gate and foreline valve IDs must match the declared valves.
+These are virtual-model parameters, not equipment protection limits.
+Control interlocks must set the required start and gate-opening limits.</p>
+
+<div class="note">
+<strong>Note:</strong> Open the project folder in the Emulator. It reads
+<code>HWConf.Emulator.xml</code> and <code>EmulatorConfig.xml</code> from that
+folder. Reopen the project after edits. Do not copy emulator wiring over
+a production hardware profile.
+</div>
+
+</body>
+</html>

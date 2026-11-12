@@ -1,0 +1,44 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..\'))" />
+  <PropertyGroup>
+    <!-- Suite version for EVERY assembly in this repo, plugins included.
+         Keep in lockstep with Installer/VERSION.txt and the other apps'
+         csproj <Version> elements.
+
+         The plugins used to ship as 1.0.0.0 because none of them declared a version. That
+         made a stale plugin invisible: the recurring "lost fix" diagnosis is
+         comparing DLL timestamps and hashes by hand, because the version told
+         you nothing. They now carry the same <Version>.<commit count> stamp as
+         the host, so a mismatched plugin is legible from its properties. -->
+    <Version>1.6.3</Version>
+
+    <!-- Suppress NU1701: OpenTK 3.1.0 (transitive via ScottPlot) targets .NET Framework only -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- Reproducible-build settings: same source inputs produce byte-identical
+         assemblies. Makes it possible to verify that a shipped binary matches
+         a given commit, and enables deterministic DLL-hash pinning (see
+         DllHashVerifier). -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' or '$(TF_BUILD)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Use the current C# language version explicitly; avoids surprise behaviour
+         changes if the default ever shifts. -->
+    <LangVersion>latest</LangVersion>
+
+    <!-- Treat a small set of high-signal warnings as errors. Nullable and
+         threading issues are the kinds of bugs an analyzer can reliably flag
+         but that slip through review. Expand this list once existing warnings
+         are paid down. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CS4014;CS1998</WarningsAsErrors>
+
+    <!-- SDK code analyzers at the default level. Locale and code-style rules
+         are noisy for an internal English-only lab tool; keep signal focused
+         on correctness. Turn AnalysisMode up later after paying down the
+         existing warning backlog. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>

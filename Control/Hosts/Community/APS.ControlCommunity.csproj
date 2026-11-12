@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <AssemblyName>APS.ControlCommunity</AssemblyName>
+    <RootNamespace>APS.ControlCommunity</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputPath>$(ApsBinDir)</OutputPath>
+    <Platforms>AnyCPU;x64</Platforms>
+    <NoWarn>$(NoWarn);WFO1000;WFO5001</NoWarn>
+    <ApplicationIcon>..\..\DepositionControl2_Icon.ico</ApplicationIcon>
+    <AssemblyTitle>APS Control Community</AssemblyTitle>
+    <Product>APS Control Community</Product>
+    <Company>APS Technology</Company>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\DepositionControl2_Icon.ico" Link="DepositionControl2_Icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="..\..\RootConfig.xml" Link="RootConfig.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\AgentServer.xml" Link="AgentServer.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\APS.SystemControl.Framework.csproj" />
+  </ItemGroup>
+
+
+</Project>

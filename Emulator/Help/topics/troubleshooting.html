@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Troubleshooting</title>
+</head>
+<body>
+<h1>Troubleshooting</h1>
+
+<h2>Port &amp; Connection Issues</h2>
+
+<h3>"Port not found" or "Port Down" in Power Sources tab</h3>
+<p>The virtual COM port pair does not exist.</p>
+<ul>
+    <li>Go to <strong>Configuration</strong> tab &rarr; click <strong>Prepare System</strong></li>
+    <li>Verify pairs in Device Manager &rarr; Ports (COM &amp; LPT)</li>
+    <li>Check that FVSP or com0com is installed</li>
+</ul>
+
+<h3>"No Peer" in Power Sources tab</h3>
+<p>The COM port pair exists but Control software is not connected to the other end.</p>
+<ul>
+    <li>This is normal when Control is not running</li>
+    <li>Start Control software &mdash; status should change to "OK"</li>
+    <li>If Control is running but still "No Peer", verify Control's HWConf.xml uses
+        the matching COM port numbers</li>
+</ul>
+
+<h3>"S7 connection refused" from Control software</h3>
+<p>The S7 server cannot bind to its configured IP address.</p>
+<ul>
+    <li>Verify loopback alias exists: <code>ping 192.168.127.208</code></li>
+    <li>If no reply, create the alias (see <em>Setup &rarr; Network Configuration</em>)</li>
+    <li>Check Windows Firewall allows TCP port 102</li>
+    <li>Ensure only one instance of the Emulator is running</li>
+</ul>
+
+<h3>Demo power supply not responding</h3>
+<ul>
+    <li>Check the configured TCP port (for example 5025) is not blocked by firewall</li>
+    <li>Check the Log Viewer for TCP serial server errors</li>
+</ul>
+
+<h2>Simulation Issues</h2>
+
+<h3>Pressure is not changing</h3>
+<ul>
+    <li>Check the <strong>Vacuum</strong> tab &mdash; are any pumps ON?</li>
+    <li>Verify valve states &mdash; PP (pre-pump) or GVM (gate main) must be open for
+        pump to evacuate the chamber</li>
+    <li>Check the Log Viewer for physics errors</li>
+    <li>If all valves and pumps are off, pressure will only change due to leak rate
+        (very slowly)</li>
+</ul>
+
+<h3>Pressure stuck at base pressure</h3>
+<p>This is normal behavior &mdash; the chamber has reached its ultimate vacuum.
+To increase pressure:</p>
+<ul>
+    <li>Open a gas valve (V1 or V2) and set an MFC setpoint</li>
+    <li>Open the air release valve (A1) to vent to atmosphere</li>
+</ul>
+
+<h3>MFC showing flow but pressure not responding</h3>
+<ul>
+    <li>Check that the gas inlet valve for that MFC is open</li>
+    <li>The gas load effect is proportional to flow &mdash; small flows (&lt;1 sccm)
+        may produce imperceptible pressure changes</li>
+</ul>
+
+<h3>Turbo pump not starting</h3>
+<ul>
+    <li>The turbo pump is enabled through its command bit (MB0.4)</li>
+    <li>If chamber pressure is above 0.5 Torr, the turbo is running but not
+        effective &mdash; wait for roughing pump to bring pressure down</li>
+    <li>Spin-up takes the configured <code>TurboSpinUpTime</code> from start to full speed</li>
+</ul>
+
+<h2>Configuration Issues</h2>
+
+<h3>"Config not loading" or blank dashboard</h3>
+<ul>
+    <li>Check that <code>Configs/EmulatorConfig.xml</code> exists next to the EXE</li>
+    <li>Verify the <code>&lt;HWConfigPath&gt;</code> inside EmulatorConfig.xml points
+        to a valid file</li>
+    <li>Check the Log Viewer for XML parsing errors</li>
+</ul>
+
+<h3>Changes to EmulatorConfig.xml not taking effect</h3>
+<ul>
+    <li>If running from the build output, the config is copied from
+        <code>Emulator/Configs/</code> to <code>bin/Configs/</code> on build</li>
+    <li>Either edit the bin/ copy directly, or edit the source and rebuild</li>
+    <li>Restart the Emulator after config changes</li>
+</ul>
+
+<h2>General</h2>
+
+<h3>"APS System Emulator is already running"</h3>
+<p>Only one instance can run at a time. Check Task Manager for an existing
+<code>APS.SystemEmulator.exe</code> process and close it.</p>
+
+<h3>"Access denied" on Prepare System</h3>
+<p>Prepare System requires administrator privileges. Right-click the Emulator and
+select "Run as administrator", or approve the UAC prompt when clicking Prepare System.</p>
+
+<h3>No sound effects</h3>
+<ul>
+    <li>Check that the <strong>Sound</strong> checkbox on the Log Replay tab is checked</li>
+    <li>Verify Windows audio output is not muted</li>
+    <li>Sound only plays on valve/pump state changes &mdash; try clicking a valve
+        label on the Vacuum tab</li>
+</ul>
+</body>
+</html>

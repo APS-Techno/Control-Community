@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EmulatorConfig>
+  <Engine TickIntervalMs="100" />
+  <Protocols>
+    <S7Server plcId="tm" bindAddress="127.0.0.1" port="102" />
+    <S7Server plcId="c1" bindAddress="127.0.0.2" port="102" />
+    <S7Server plcId="c2" bindAddress="127.0.0.3" port="102" />
+    <S7Server plcId="c3" bindAddress="127.0.0.4" port="102" />
+    <S7Server plcId="c4" bindAddress="127.0.0.5" port="102" />
+    <TcpSerial deviceId="C1_PSU1" bindAddress="127.0.0.1" port="5025" framing="LfTerminated" />
+    <TcpSerial deviceId="C1_PSU2" bindAddress="127.0.0.1" port="5026" framing="LfTerminated" />
+    <TcpSerial deviceId="C2_PSU" bindAddress="127.0.0.1" port="5027" framing="LfTerminated" />
+    <TcpSerial deviceId="C3_PSU1" bindAddress="127.0.0.1" port="5028" framing="LfTerminated" />
+    <TcpSerial deviceId="C3_PSU2" bindAddress="127.0.0.1" port="5029" framing="LfTerminated" />
+    <TcpSerial deviceId="C4_PSU" bindAddress="127.0.0.1" port="5030" framing="LfTerminated" />
+    <TcpSerial deviceId="ROBOT" bindAddress="127.0.0.1" port="5031" framing="LfTerminated" />
+  </Protocols>
+  <Physics noiseStddev="0.02">
+    <!-- Backing/roughing pump speed (L/s). Raised from the 10 L/s default so the
+         from-atmosphere SYSTEM_START roughing phase pumps the large 100 L TM down
+         to 30 mTorr in ~24 s (was ~120 s at 10 L/s, which overran the recipe's
+         roughing swait). Applies to every backing pump (none set speed= in HWConf). -->
+    <ScrollPumpSpeed>60</ScrollPumpSpeed>
+    <TurboSpinUpTime>30</TurboSpinUpTime>
+    <TurboCrossoverPressure>0.5</TurboCrossoverPressure>
+    <MfcResponseTau>0.5</MfcResponseTau>
+    <SubstrateHeatingCoeff>0.002</SubstrateHeatingCoeff>
+    <SubstrateCoolingCoeff>0.005</SubstrateCoolingCoeff>
+    <DischargePressureThreshold>0.001</DischargePressureThreshold>
+    <Magnetrons>
+      <Magnetron id="MAG1" voltage="400" chamber="C1" />
+      <Magnetron id="MAG2" voltage="400" chamber="C1" />
+      <Magnetron id="MAG3" voltage="400" chamber="C2" />
+      <Magnetron id="MAG4" voltage="400" chamber="C3" />
+      <Magnetron id="MAG5" voltage="400" chamber="C3" />
+      <Magnetron id="MAG6" voltage="400" chamber="C4" />
+    </Magnetrons>
+
+    <!-- TM: large volume, low leak, kept under vacuum continuously. -->
+    <Chamber id="TM" type="Transfer">
+      <InitialPressure>1E-2</InitialPressure>
+      <Volume>100</Volume>
+      <BasePressure>1E-7</BasePressure>
+      <LeakRate>5E-7</LeakRate>
+      <PumpdownTau>8.0</PumpdownTau>
+    </Chamber>
+
+    <!-- LL: small volume, higher leak (cycles to atmosphere). -->
+    <Chamber id="LL" type="Loadlock">
+      <InitialPressure>760</InitialPressure>
+      <Volume>10</Volume>
+      <BasePressure>1E-5</BasePressure>
+      <LeakRate>1E-4</LeakRate>
+      <PumpdownTau>3.0</PumpdownTau>
+    </Chamber>
+
+    <!-- C1: process chamber. -->
+    <Chamber id="C1" type="Process">
+      <InitialPressure>1E-2</InitialPressure>
+      <Volume>30</Volume>
+      <BasePressure>1E-7</BasePressure>
+      <LeakRate>1E-6</LeakRate>
+      <PumpdownTau>5.0</PumpdownTau>
+    </Chamber>
+
+    <!-- C2: process chamber (clone of C1). -->
+    <Chamber id="C2" type="Process">
+      <InitialPressure>1E-2</InitialPressure>
+      <Volume>30</Volume>
+      <BasePressure>1E-7</BasePressure>
+      <LeakRate>1E-6</LeakRate>
+      <PumpdownTau>5.0</PumpdownTau>
+    </Chamber>
+
+    <!-- C3: process chamber (clone of C1). -->
+    <Chamber id="C3" type="Process">
+      <InitialPressure>1E-2</InitialPressure>
+      <Volume>30</Volume>
+      <BasePressure>1E-7</BasePressure>
+      <LeakRate>1E-6</LeakRate>
+      <PumpdownTau>5.0</PumpdownTau>
+    </Chamber>
+
+    <!-- C4: process chamber (clone of C1). -->
+    <Chamber id="C4" type="Process">
+      <InitialPressure>1E-2</InitialPressure>
+      <Volume>30</Volume>
+      <BasePressure>1E-7</BasePressure>
+      <LeakRate>1E-6</LeakRate>
+      <PumpdownTau>5.0</PumpdownTau>
+    </Chamber>
+  </Physics>
+</EmulatorConfig>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Optional color overrides for VacuumTheme. Delete this file to use defaults.
+     Colors can be specified as "#RRGGBB" or "R,G,B". -->
+<Palette>
+  <!-- Uncomment and modify to override defaults:
+  <MetalHighlight>#6a6a7e</MetalHighlight>
+  <GlowGreen>#00ff88</GlowGreen>
+  <GlowRed>#ff4466</GlowRed>
+  <GlowBlue>#4488ff</GlowBlue>
+  <BackgroundDark>#0a0a1a</BackgroundDark>
+  -->
+</Palette>

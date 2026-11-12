@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet" href="../style.css">
+<title>Starting &amp; Stopping</title>
+</head>
+<body>
+<h1>Starting &amp; Stopping</h1>
+
+<h2>Launching</h2>
+<p>Run <code>APSSystemEmulator.exe</code> from the build output directory. The Emulator
+enforces a single-instance mutex &mdash; if an instance is already running, the new process
+will display a message and exit. This prevents port conflicts and duplicate device
+emulation.</p>
+
+<h2>Startup Sequence</h2>
+<p>When the Emulator launches, it performs the following steps in order:</p>
+<ol>
+    <li><strong>Load configuration</strong> &mdash; reads <code>EmulatorConfig.xml</code> and
+        <code>HWConf.Emulator.xml</code> to discover all devices, COM port mappings, and
+        physics parameters</li>
+    <li><strong>Instantiate devices</strong> &mdash; creates emulator instances for every PLC,
+        serial device, and TCP instrument defined in the configuration</li>
+    <li><strong>Start protocol servers</strong> &mdash; opens the S7 TCP listener (port 102),
+        binds virtual COM ports, and starts TCP serial servers</li>
+    <li><strong>Begin simulation tick</strong> &mdash; starts the 100ms tick loop that updates
+        physics, device states, and PLC registers</li>
+    <li><strong>Show dashboard</strong> &mdash; displays the main window with the Vacuum,
+        Power Sources, Configuration, and Log tabs</li>
+</ol>
+
+<h2>Reconnect Ports</h2>
+<p>If virtual COM ports become disconnected (for example, after a USB adapter reset or
+com0com/FVSP reconfiguration), use the <strong>Reconnect Ports</strong> button on the
+Configuration tab. This closes and re-opens all serial port connections without restarting
+the entire application.</p>
+
+<h2>Connecting Control Software</h2>
+<p>To connect the APS System Control software to the Emulator:</p>
+<ol>
+    <li>Start the Emulator first and wait for the dashboard to appear</li>
+    <li>Verify the Configuration tab shows all protocol servers running and ports open</li>
+    <li>Launch APS System Control &mdash; it will connect to the same TCP ports and virtual
+        COM ports that the Emulator is serving</li>
+    <li>Control should detect all devices within one or two PLC poll cycles (200&ndash;400ms)</li>
+</ol>
+
+<h2>Stopping</h2>
+<p>Close the Emulator window or use the standard window close button. The shutdown sequence:</p>
+<ul>
+    <li>Stops the simulation tick loop</li>
+    <li>Closes all virtual COM port connections</li>
+    <li>Shuts down the S7 TCP listener and TCP serial servers</li>
+    <li>Releases the single-instance mutex</li>
+</ul>
+<p>Control software will detect the disconnection on its next poll cycle and report
+communication errors. It is safe to restart the Emulator and reconnect without restarting
+Control.</p>
+</body>
+</html>

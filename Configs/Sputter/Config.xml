@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Configurations name="Sputter">
+	<Hardware>HWConf</Hardware>
+	<Interlocks></Interlocks>
+	<Alarms>Alarms</Alarms>
+	<Worker>Worker</Worker>
+	<Embeded>EmbedRecipes</Embeded>
+	<GUI>Controls</GUI>
+	<Panels>Panels</Panels>
+	<Graphs>Graphs</Graphs>
+</Configurations>

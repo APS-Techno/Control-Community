@@ -1,0 +1,5 @@
+if pm < 5
+  valve HV open
+else
+  valve HV close
+endif

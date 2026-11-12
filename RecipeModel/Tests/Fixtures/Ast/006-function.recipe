@@ -1,0 +1,5 @@
+function pumpdown(sec)
+  delay $sec
+endfunction
+
+call pumpdown
