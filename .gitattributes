@@ -63,3 +63,5 @@
 #*.RTF   diff=astextplain
 
 .githooks/* text eol=lf
+
+Installer/Enable-AgentAccess.ps1 text eol=crlf
