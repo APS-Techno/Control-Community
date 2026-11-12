@@ -175,7 +175,7 @@ For each app (Control, Builder, Emulator, LicenseAdmin):
   `Pen(Color.Black)` — both render jet-black and break the consistency.
 - Don't rely on `Application.SetColorMode(SystemColorMode.Dark)` alone for
   scrollbars — it gives you Win11's gray native scrollbar, which doesn't match.
-- **Never test "are we dark?" with the .NET 9 color-mode APIs directly.**
+- **Never test "are we dark?" with the WinForms color-mode APIs directly.**
   `Application.SystemColorMode` returns the **OS** theme (Classic on a
   light-themed Windows box), and `Application.ColorMode` was observed NOT to
   report `Dark` even after `SetColorMode(Dark)` on a light-OS machine — both

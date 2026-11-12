@@ -6,6 +6,7 @@ namespace APS.RecipeModel.Tests.Blocks;
 /// <summary>Move up/down (and every other mutation) rebuilds the flow via
 /// Controls.Clear(), which can drop keyboard focus — the block stays selected but
 /// Ctrl+Up/Down stops working until the mouse re-focuses it.</summary>
+[Collection(nameof(WindowFocusCollection))]
 public class BlockStackControlFocusTests
 {
     [StaFact]
@@ -33,3 +34,6 @@ public class BlockStackControlFocusTests
         Assert.True(a.ContainsFocus, "focus lost after move up");
     }
 }
+
+[CollectionDefinition(nameof(WindowFocusCollection), DisableParallelization = true)]
+public sealed class WindowFocusCollection;

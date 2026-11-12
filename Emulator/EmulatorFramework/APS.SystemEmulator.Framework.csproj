@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <AssemblyName>APS.SystemEmulator.Framework</AssemblyName>
     <RootNamespace>APS.SystemEmulator</RootNamespace>
     <Nullable>enable</Nullable>

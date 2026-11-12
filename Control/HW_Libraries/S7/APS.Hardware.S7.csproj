@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <AssemblyName>APS.Hardware.S7</AssemblyName>
     <RootNamespace>APS.Hardware.S7</RootNamespace>
     <Nullable>enable</Nullable>

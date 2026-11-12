@@ -21,11 +21,11 @@ APS-owned material in this source distribution is licensed under Apache-2.0; see
 | HarfBuzzSharp.NativeAssets.macOS | 7.3.0.3 | MIT |
 | OpenTK | 3.1.0 | The Open Toolkit license (MIT/X11 style); `licenseUrl` http://github.com/opentk/opentk/blob/master/License.txt; Copyright (c) 2006 - 2019 Stefanos Apostolopoulos for the Open Toolkit library |
 | OpenTK.GLControl | 3.1.0 | The Open Toolkit license (as OpenTK) |
-| System.IO.Ports | 9.0.14 | MIT |
-| runtime.\*.runtime.native.System.IO.Ports (all runtime identifiers) | 9.0.14 | MIT |
+| System.IO.Ports | 10.0.15 | MIT |
+| runtime.\*.runtime.native.System.IO.Ports (all runtime identifiers) | 10.0.15 | MIT |
 | Sharp7 | 1.1.84 | MIT (`licenseUrl` https://raw.githubusercontent.com/fbarresi/Sharp7/master/LICENSE; Copyright (c) 2018 Federico Barresi) |
 
-System.Drawing.Common 4.7.3, Microsoft.Win32.SystemEvents 4.7.0, Microsoft.NETCore.Platforms 3.1.9 and System.Security.Cryptography.ProtectedData 9.0.0 resolve at restore but the .NET runtime supplies them. They are not copied into `bin` and are not distributed here.
+System.Drawing.Common, Microsoft.Win32.SystemEvents and System.Security.Cryptography.ProtectedData are part of the .NET 10 Desktop Runtime. Restore prunes them; they are not copied into `bin` and are not distributed here.
 
 ## Test-only packages (not shipped in an application)
 

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <AssemblyName>APS.SystemControl.Framework</AssemblyName>
     <RootNamespace>APS.SystemControl</RootNamespace>
     <Nullable>enable</Nullable>
@@ -50,8 +50,7 @@
 
   <ItemGroup>
     <PackageReference Include="ScottPlot.WinForms" Version="5.0.54" />
-    <PackageReference Include="System.IO.Ports" Version="9.0.14" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.15" />
   </ItemGroup>
 
   <ItemGroup>

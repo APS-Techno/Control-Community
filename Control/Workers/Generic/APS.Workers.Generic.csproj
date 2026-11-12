@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <AssemblyName>APS.Workers.Generic</AssemblyName>
     <RootNamespace>APS.Workers.Generic</RootNamespace>
     <Nullable>enable</Nullable>

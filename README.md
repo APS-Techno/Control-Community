@@ -12,13 +12,13 @@ Demo devices (`Control/HW_Libraries/Demo`, emulated in `Emulator/Devices/Demo_De
 
 ## Build
 
-Requirements: Windows, .NET SDK 9.0.200 or later (the `.slnx` solution format needs it).
+Requirements: Windows, .NET SDK 10.0.100 or later.
 
 ```
 dotnet build APS.Community.slnx
 ```
 
-The applications, the Emulator and the plugins write to `bin/`. Plugin assemblies go to the by-kind subfolders `bin/HW_LIB` (hardware drivers), `bin/GUI_LIB` (controls) and `bin/Workers` (process workers). Test projects write to `bin/tests`. Some projects use their own output folder: `Mcp`, `Wire` and `Production/Domain` (`bin/Debug/net9.0` in the project folder), the Icons generator, the Icons tests and the VacuumControls tests (a `bin` folder next to the project).
+The applications, the Emulator and the plugins write to `bin/`. Plugin assemblies go to the by-kind subfolders `bin/HW_LIB` (hardware drivers), `bin/GUI_LIB` (controls) and `bin/Workers` (process workers). Test projects write to `bin/tests`. Some projects use their own output folder: `Mcp`, `Wire` and `Production/Domain` (`bin/Debug/net10.0` in the project folder), the Icons generator, the Icons tests and the VacuumControls tests (a `bin` folder next to the project).
 
 ## Run
 
