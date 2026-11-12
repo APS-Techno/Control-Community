@@ -364,6 +364,7 @@ FodyWeavers.xsd
 # Worktrees and superpowers
 .worktrees/
 .superpowers/
+_OUT/
 
 # Claude Code nested worktrees (see memory: sibling junctions live beside them)
 .claude/worktrees/
