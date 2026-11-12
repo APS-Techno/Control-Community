@@ -1,3 +1,5 @@
+using APS.Controls.Theme;
+
 namespace APS.SystemEmulator.Help;
 
 public class HelpForm : Form
@@ -12,10 +14,10 @@ public class HelpForm : Form
     {
         _extraFolders = extraFolders;
         Text = "APS System Emulator \u2014 Help";
-        ClientSize = new Size(1200, 700);
+        ClientSize = new Size(DpiScale.Px(1200), DpiScale.Px(700));
         StartPosition = FormStartPosition.CenterParent;
         ShowInTaskbar = false;
-        MinimumSize = new Size(600, 400);
+        MinimumSize = new Size(DpiScale.Px(600), DpiScale.Px(400));
 
         var iconPath = Path.Combine(AppContext.BaseDirectory, "EmulatorIcon.ico");
         if (File.Exists(iconPath)) Icon = new Icon(iconPath);
@@ -26,10 +28,10 @@ public class HelpForm : Form
         {
             Dock = DockStyle.Fill,
             Orientation = Orientation.Vertical,
-            Panel1MinSize = 250,
+            Panel1MinSize = DpiScale.Px(250),
         };
         Controls.Add(split);
-        Load += (_, _) => split.SplitterDistance = 240;
+        Load += (_, _) => split.SplitterDistance = DpiScale.Px(240);
 
         _tree = new TreeView
         {

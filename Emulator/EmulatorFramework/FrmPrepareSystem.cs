@@ -19,8 +19,8 @@ public sealed class FrmPrepareSystem : Form
     {
         _config = config;
         Text = "Prepare System";
-        Size = new(820, 620);
-        MinimumSize = new(700, 500);
+        Size = new(DpiScale.Px(820), DpiScale.Px(620));
+        MinimumSize = new(DpiScale.Px(700), DpiScale.Px(500));
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.Sizable;
 
@@ -29,15 +29,15 @@ public sealed class FrmPrepareSystem : Form
             Text = "System Prerequisites",
             Font = new("Segoe UI", 12, System.Drawing.FontStyle.Bold),
             Dock = DockStyle.Top,
-            Height = 28,
-            Padding = new(8, 4, 0, 0),
+            Height = DpiScale.Px(28),
+            Padding = new(DpiScale.Px(8), DpiScale.Px(4), 0, 0),
         };
         var subtitle = new Label
         {
             Text = "Green = OK. Red = needs action. Click Fix to repair one row, or Fix All to apply everything in a single elevation prompt.",
             Dock = DockStyle.Top,
-            Height = 22,
-            Padding = new(8, 0, 0, 0),
+            Height = DpiScale.Px(22),
+            Padding = new(DpiScale.Px(8), 0, 0, 0),
         };
 
         _grid = new DataGridView
@@ -55,11 +55,11 @@ public sealed class FrmPrepareSystem : Form
         };
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "Status", HeaderText = "", Width = 32, ReadOnly = true,
+            Name = "Status", HeaderText = "", Width = DpiScale.Px(32), ReadOnly = true,
         });
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "CheckName", HeaderText = "Check", Width = 220, ReadOnly = true,
+            Name = "CheckName", HeaderText = "Check", Width = DpiScale.Px(220), ReadOnly = true,
         });
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
@@ -68,14 +68,14 @@ public sealed class FrmPrepareSystem : Form
         });
         _grid.Columns.Add(new DataGridViewButtonColumn
         {
-            Name = "Fix", HeaderText = "", Text = "Fix", UseColumnTextForButtonValue = true, Width = 70,
+            Name = "Fix", HeaderText = "", Text = "Fix", UseColumnTextForButtonValue = true, Width = DpiScale.Px(70),
         });
         _grid.CellContentClick += Grid_CellContentClick;
 
         _log = new TextBox
         {
             Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
-            Dock = DockStyle.Bottom, Height = 160,
+            Dock = DockStyle.Bottom, Height = DpiScale.Px(160),
             Font = new("Consolas", 9),
         };
 
@@ -83,8 +83,8 @@ public sealed class FrmPrepareSystem : Form
         {
             Dock = DockStyle.Bottom,
             FlowDirection = FlowDirection.LeftToRight,
-            Height = 40,
-            Padding = new(8, 6, 8, 6),
+            Height = DpiScale.Px(40),
+            Padding = new(DpiScale.Px(8), DpiScale.Px(6), DpiScale.Px(8), DpiScale.Px(6)),
         };
         _btnRefresh = new Button { Text = "Refresh All", AutoSize = true };
         _btnFixAll = new Button { Text = "Fix All", AutoSize = true };
@@ -96,7 +96,7 @@ public sealed class FrmPrepareSystem : Form
 
         Controls.Add(new DarkScrollHost(_grid) { Dock = DockStyle.Fill });
         Controls.Add(buttonPanel);
-        Controls.Add(new DarkScrollHost(_log) { Dock = DockStyle.Bottom, Height = 160 });
+        Controls.Add(new DarkScrollHost(_log) { Dock = DockStyle.Bottom, Height = DpiScale.Px(160) });
         Controls.Add(subtitle);
         Controls.Add(title);
 

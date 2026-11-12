@@ -24,15 +24,15 @@ internal sealed class MfcsPanel : UserControl
             ColumnCount = 1,
             RowCount = 3,
         };
-        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
-        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
-        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
+        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(22)));
+        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(22)));
+        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(22)));
 
         _group = new GroupBox
         {
             Text = "MFCs (Gas)",
             Dock = DockStyle.Fill,
-            Padding = new Padding(4),
+            Padding = new Padding(DpiScale.Px(4)),
             Font = new Font("Segoe UI", 9f, FontStyle.Bold),
         };
         _group.Controls.Add(_grid);
@@ -75,7 +75,7 @@ internal sealed class MfcsPanel : UserControl
         var mfcs = _engine.Devices.OfType<MFCEmulator>().ToList();
         if (mfcs.Count == 0) return;
 
-        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80));
+        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(80)));
         _grid.Controls.Add(MakeLabel("",          header: true), 0, 0);
         _grid.Controls.Add(MakeLabel("Setpoint:", header: true), 0, 1);
         _grid.Controls.Add(MakeLabel("Actual:",   header: true), 0, 2);

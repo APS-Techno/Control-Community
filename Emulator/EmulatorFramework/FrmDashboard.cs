@@ -78,7 +78,7 @@ public class FrmDashboard : Form
         _cli = cli;
         _edition = edition;
         Text = edition.ProductName;
-        ClientSize = new Size(1024, 700);
+        ClientSize = new Size(DpiScale.Px(1024), DpiScale.Px(700));
         StartPosition = FormStartPosition.CenterScreen;
 
         var iconPath = Path.Combine(AppContext.BaseDirectory, "EmulatorIcon.ico");
@@ -184,14 +184,14 @@ public class FrmDashboard : Form
 
         var layout = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(6),
+            Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(DpiScale.Px(6)),
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 35));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 35));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(30)));
 
         _chambersPanel.Dock = DockStyle.Fill;
         _pumpsPanel.Dock    = DockStyle.Fill;
@@ -250,13 +250,13 @@ public class FrmDashboard : Form
             Dock = DockStyle.Fill,
             ColumnCount = 4,
             RowCount = 5,
-            Padding = new Padding(10),
+            Padding = new Padding(DpiScale.Px(10)),
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(100)));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(100)));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
-        for (int i = 0; i < 5; i++) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+        for (int i = 0; i < 5; i++) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(40)));
 
         layout.Controls.Add(MakeHeaderLabel("Log File:"), 0, 0);
         _lblReplayFile.Text = "(none)";
@@ -272,17 +272,17 @@ public class FrmDashboard : Form
 
         var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill };
         _btnPlay.Text = "Play";
-        _btnPlay.Width = 70;
+        _btnPlay.Size = new Size(DpiScale.Px(70), DpiScale.Px(23));
         _btnPlay.Click += BtnPlay_Click;
         btnPanel.Controls.Add(_btnPlay);
 
         _btnPause.Text = "Pause";
-        _btnPause.Width = 70;
+        _btnPause.Size = new Size(DpiScale.Px(70), DpiScale.Px(23));
         _btnPause.Click += BtnPause_Click;
         btnPanel.Controls.Add(_btnPause);
 
         _btnStop.Text = "Stop";
-        _btnStop.Width = 70;
+        _btnStop.Size = new Size(DpiScale.Px(70), DpiScale.Px(23));
         _btnStop.Click += BtnStop_Click;
         btnPanel.Controls.Add(_btnStop);
 
@@ -322,14 +322,14 @@ public class FrmDashboard : Form
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 4,
-            Padding = new Padding(10),
+            Padding = new Padding(DpiScale.Px(10)),
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 80));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(30)));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(30)));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(36)));
 
         _txtConfig.Multiline = true;
         _txtConfig.ReadOnly = true;
@@ -357,7 +357,7 @@ public class FrmDashboard : Form
         {
             Text = "Prepare System",
             AutoSize = true,
-            Margin = new Padding(5),
+            Margin = new Padding(DpiScale.Px(5)),
         };
         btnSetup.Click += BtnPrepareSystem_Click;
         layout.Controls.Add(btnSetup, 0, 3);
@@ -366,7 +366,7 @@ public class FrmDashboard : Form
         {
             Text = "Reconnect Ports",
             AutoSize = true,
-            Margin = new Padding(5),
+            Margin = new Padding(DpiScale.Px(5)),
         };
         btnReconnect.Click += BtnReconnectPorts_Click;
         layout.Controls.Add(btnReconnect, 1, 3);
@@ -382,19 +382,19 @@ public class FrmDashboard : Form
         var filterPanel = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = 35,
-            Padding = new Padding(4),
+            Height = DpiScale.Px(35),
+            Padding = new Padding(DpiScale.Px(4)),
         };
 
-        filterPanel.Controls.Add(new Label { Text = "Source:", AutoSize = true, Margin = new Padding(0, 6, 4, 0) });
-        _cboLogSource.Width = 140;
+        filterPanel.Controls.Add(new Label { Text = "Source:", AutoSize = true, Margin = new Padding(0, DpiScale.Px(6), DpiScale.Px(4), 0) });
+        _cboLogSource.Width = DpiScale.Px(140);
         _cboLogSource.DropDownStyle = ComboBoxStyle.DropDownList;
         _cboLogSource.Items.Add(LogSourceFilter.All);
         _cboLogSource.SelectedIndex = 0;
         filterPanel.Controls.Add(_cboLogSource);
 
-        filterPanel.Controls.Add(new Label { Text = "Level:", AutoSize = true, Margin = new Padding(8, 6, 4, 0) });
-        _cboLogLevel.Width = 100;
+        filterPanel.Controls.Add(new Label { Text = "Level:", AutoSize = true, Margin = new Padding(DpiScale.Px(8), DpiScale.Px(6), DpiScale.Px(4), 0) });
+        _cboLogLevel.Width = DpiScale.Px(100);
         _cboLogLevel.DropDownStyle = ComboBoxStyle.DropDownList;
         _cboLogLevel.Items.AddRange(["All", "Debug+", "Info+", "Warning+", "Error"]);
         _cboLogLevel.SelectedIndex = 2; // Info+
@@ -406,7 +406,7 @@ public class FrmDashboard : Form
 
         _chkAutoScroll.Text = "Auto-scroll";
         _chkAutoScroll.Checked = true;
-        _chkAutoScroll.Margin = new Padding(8, 4, 0, 0);
+        _chkAutoScroll.Margin = new Padding(DpiScale.Px(8), DpiScale.Px(4), 0, 0);
         filterPanel.Controls.Add(_chkAutoScroll);
 
         page.Controls.Add(filterPanel);
@@ -418,7 +418,7 @@ public class FrmDashboard : Form
         _logGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         _logGrid.RowHeadersVisible = false;
         _logGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
-        _logGrid.RowTemplate.Height = 20;
+        _logGrid.RowTemplate.Height = DpiScale.Px(20);
         _logGrid.Font = new Font("Consolas", 8.5f);
         if (!VacuumTheme.IsDark)
             _logGrid.BackgroundColor = Color.White;
@@ -427,9 +427,9 @@ public class FrmDashboard : Form
         _logGrid.Columns.Add("Level", "Level");
         _logGrid.Columns.Add("Source", "Source");
         _logGrid.Columns.Add("Message", "Message");
-        _logGrid.Columns["Time"]!.Width = 90;
-        _logGrid.Columns["Level"]!.Width = 60;
-        _logGrid.Columns["Source"]!.Width = 110;
+        _logGrid.Columns["Time"]!.Width = DpiScale.Px(90);
+        _logGrid.Columns["Level"]!.Width = DpiScale.Px(60);
+        _logGrid.Columns["Source"]!.Width = DpiScale.Px(110);
         _logGrid.Columns["Message"]!.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
 
         var logHost = new DarkScrollHost(_logGrid) { Dock = DockStyle.Fill };
@@ -509,7 +509,7 @@ public class FrmDashboard : Form
         _powerGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         _powerGrid.RowHeadersVisible = false;
         _powerGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
-        _powerGrid.RowTemplate.Height = 24;
+        _powerGrid.RowTemplate.Height = DpiScale.Px(24);
         _powerGrid.Font = new Font("Consolas", 9f);
         if (!VacuumTheme.IsDark)
             _powerGrid.BackgroundColor = Color.White;
@@ -523,14 +523,14 @@ public class FrmDashboard : Form
         _powerGrid.Columns.Add("Power", "Power");
         _powerGrid.Columns.Add("Output", "Output");
 
-        _powerGrid.Columns["Name"]!.Width = 90;
-        _powerGrid.Columns["Port"]!.Width = 70;
-        _powerGrid.Columns["Link"]!.Width = 70;
-        _powerGrid.Columns["Type"]!.Width = 100;
-        _powerGrid.Columns["Voltage"]!.Width = 90;
-        _powerGrid.Columns["Current"]!.Width = 90;
-        _powerGrid.Columns["Power"]!.Width = 90;
-        _powerGrid.Columns["Output"]!.Width = 70;
+        _powerGrid.Columns["Name"]!.Width = DpiScale.Px(90);
+        _powerGrid.Columns["Port"]!.Width = DpiScale.Px(70);
+        _powerGrid.Columns["Link"]!.Width = DpiScale.Px(70);
+        _powerGrid.Columns["Type"]!.Width = DpiScale.Px(100);
+        _powerGrid.Columns["Voltage"]!.Width = DpiScale.Px(90);
+        _powerGrid.Columns["Current"]!.Width = DpiScale.Px(90);
+        _powerGrid.Columns["Power"]!.Width = DpiScale.Px(90);
+        _powerGrid.Columns["Output"]!.Width = DpiScale.Px(70);
 
         _powerGrid.CellClick += PowerGrid_CellClick;
 

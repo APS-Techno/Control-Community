@@ -35,7 +35,7 @@ internal sealed class ValvesPanel : UserControl
         {
             Text = "Valves",
             Dock = DockStyle.Fill,
-            Padding = new Padding(4),
+            Padding = new Padding(DpiScale.Px(4)),
             Font = new Font("Segoe UI", 9f, FontStyle.Bold),
         };
         _group.Controls.Add(new DarkScrollHost(_flow) { Dock = DockStyle.Fill });
@@ -89,11 +89,11 @@ internal sealed class ValvesPanel : UserControl
         {
             Text = id,
             AutoSize = false,
-            Size = new Size(60, 28),
+            Size = new Size(DpiScale.Px(60), DpiScale.Px(28)),
             TextAlign = ContentAlignment.MiddleCenter,
             BackColor = StatusGray,
             ForeColor = Color.White,
-            Margin = new Padding(2),
+            Margin = new Padding(DpiScale.Px(2)),
             Font = new Font(Font.FontFamily, 8f, FontStyle.Bold),
             Cursor = Cursors.Hand,
         };

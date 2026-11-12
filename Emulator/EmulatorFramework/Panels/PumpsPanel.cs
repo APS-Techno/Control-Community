@@ -29,8 +29,8 @@ internal sealed class PumpsPanel : UserControl
             ColumnCount = 4,
             AutoScroll = true,
         };
-        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));   // name
-        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70));   // kind
+        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(60)));   // name
+        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(70)));   // kind
         _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));    // state
         _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));    // detail
 
@@ -38,7 +38,7 @@ internal sealed class PumpsPanel : UserControl
         {
             Text = "Pumps",
             Dock = DockStyle.Fill,
-            Padding = new Padding(4),
+            Padding = new Padding(DpiScale.Px(4)),
             Font = new Font("Segoe UI", 9f, FontStyle.Bold),
         };
         _group.Controls.Add(new DarkScrollHost(_grid) { Dock = DockStyle.Fill });
@@ -121,7 +121,7 @@ internal sealed class PumpsPanel : UserControl
     {
         int rowIdx = _grid.RowCount;
         _grid.RowCount = rowIdx + 1;
-        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(24)));
 
         var name   = MakeLabel(id,   bold: true);
         var kindLb = MakeLabel(kind, bold: false);

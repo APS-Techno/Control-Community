@@ -30,7 +30,7 @@ internal sealed class ChambersPanel : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 4,
         };
-        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+        _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(90)));
         _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
         _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
         _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
@@ -39,7 +39,7 @@ internal sealed class ChambersPanel : UserControl
         {
             Text = "Chambers",
             Dock = DockStyle.Fill,
-            Padding = new Padding(4),
+            Padding = new Padding(DpiScale.Px(4)),
             Font = new Font("Segoe UI", 9f, FontStyle.Bold),
         };
         _group.Controls.Add(_grid);
@@ -104,7 +104,7 @@ internal sealed class ChambersPanel : UserControl
 
             int rowIdx = _grid.RowCount;
             _grid.RowCount = rowIdx + 1;
-            _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            _grid.RowStyles.Add(new RowStyle(SizeType.Absolute, DpiScale.Px(24)));
 
             var nameLbl     = MakeLabel(id, bold: true);
             var pressureLbl = MakeLabel("---", bold: false);
