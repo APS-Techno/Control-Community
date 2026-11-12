@@ -40,6 +40,32 @@ internal static class RecipeProgressTracker
     private static DateTime? _updatedAt;
     private static RecipeOutcome? _lastOutcome;
     private static bool _failureProtocolActive;
+    private static List<string> _basePressureLogQuotes = [];
+    private static int _executedDepositsCount;
+
+    internal static void BeginRun()
+    {
+        lock (_sync)
+        {
+            _basePressureLogQuotes = [];
+            _executedDepositsCount = 0;
+        }
+    }
+
+    internal static void RecordBasePressureLog(string line)
+    {
+        lock (_sync) _basePressureLogQuotes.Add(line);
+    }
+
+    internal static void RecordDepositCompleted()
+    {
+        lock (_sync) _executedDepositsCount++;
+    }
+
+    internal static (string[] BasePressureLogQuotes, int ExecutedDepositsCount) Receipt()
+    {
+        lock (_sync) return ([.. _basePressureLogQuotes], _executedDepositsCount);
+    }
 
     /// <summary>Time source; tests substitute a fixed clock. Local time, matching CoreThread's
     /// <c>DateTime.Now</c> anchoring of recipe start times.</summary>
@@ -71,6 +97,8 @@ internal static class RecipeProgressTracker
             _updatedAt = null;
             _lastOutcome = null;
             _failureProtocolActive = false;
+            _basePressureLogQuotes = [];
+            _executedDepositsCount = 0;
         }
     }
 

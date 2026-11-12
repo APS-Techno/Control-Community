@@ -42,6 +42,14 @@ public sealed record CommandSignature(string Name, IReadOnlyList<ArgSpec> Args, 
 }
 
 /// <summary>
+/// Over-pressure ceilings a chamber's alarm rules enforce. Null ceiling = no such rule.
+/// </summary>
+/// <param name="IdleDelaySeconds">Settling delay of the idle rule; 0 trips on the first sample.</param>
+/// <param name="IdleUnless">The idle rule's guard text (e.g. "LL_A1 open"), or null.</param>
+public sealed record ChamberAlarmLimits(
+    float? IdleCeilingTorr, double IdleDelaySeconds, string? IdleUnless, float? ProcessingCeilingTorr);
+
+/// <summary>
 /// Everything the validator needs to decide whether a recipe line is
 /// executable: the signature of every command, and the device names available
 /// under each DeviceType.
@@ -129,22 +137,30 @@ public sealed class RecipeSemantics
 
     private readonly Dictionary<string, CommandSignature> _signatures;
     private readonly Dictionary<string, HashSet<string>> _devicesByKind;
-    private readonly HashSet<string> _boundOps;
+    private readonly Dictionary<string, string> _boundOps;
+    private readonly Dictionary<string, ChamberAlarmLimits> _chamberLimits;
+    private readonly Dictionary<string, string> _deviceChamber;
     private readonly Dictionary<string, IReadOnlyCollection<string>> _setpointNames;
 
     private RecipeSemantics(
         Dictionary<string, CommandSignature> signatures,
         Dictionary<string, HashSet<string>> devicesByKind,
-        HashSet<string>? boundOps = null,
+        Dictionary<string, string>? boundOps = null,
         Dictionary<string, IReadOnlyCollection<string>>? setpointNames = null,
         IReadOnlyDictionary<string, string>? sourceToPsu = null,
         IReadOnlyDictionary<string, IReadOnlyCollection<string>>? mfcGateValves = null,
         bool rotationOperational = true,
-        float gaugeFloorTorr = DefaultGaugeFloorTorr)
+        float gaugeFloorTorr = DefaultGaugeFloorTorr,
+        IReadOnlyDictionary<string, ChamberAlarmLimits>? chamberLimits = null,
+        IReadOnlyDictionary<string, string>? deviceChamber = null)
     {
         _signatures = signatures;
         _devicesByKind = devicesByKind;
-        _boundOps = boundOps ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _boundOps = boundOps ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        _chamberLimits = new Dictionary<string, ChamberAlarmLimits>(
+            chamberLimits ?? new Dictionary<string, ChamberAlarmLimits>(), StringComparer.OrdinalIgnoreCase);
+        _deviceChamber = new Dictionary<string, string>(
+            deviceChamber ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
         _setpointNames = setpointNames ?? new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.OrdinalIgnoreCase);
         SourceToPsu = new Dictionary<string, string>(
             sourceToPsu ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
@@ -194,7 +210,14 @@ public sealed class RecipeSemantics
     /// sensor argument is inert; an unbound pwait uses the sensor id to pick
     /// which chamber's throttle to drive.
     /// </summary>
-    public bool HasBoundDevice(string command) => _boundOps.Contains(command);
+    public bool HasBoundDevice(string command) => _boundOps.ContainsKey(command);
+
+    /// <summary>The device Worker.xml binds to this command, or null when the command is unbound or unknown.</summary>
+    public string? BoundDeviceOf(string op) => _boundOps.TryGetValue(op, out var device) ? device : null;
+
+    public string? ChamberOf(string deviceId) => _deviceChamber.TryGetValue(deviceId, out var chamber) ? chamber : null;
+
+    public ChamberAlarmLimits? LimitsOf(string chamber) => _chamberLimits.TryGetValue(chamber, out var limits) ? limits : null;
 
     /// <summary>
     /// The setpoint parameter names a power supply's driver accepts in
@@ -236,6 +259,8 @@ public sealed class RecipeSemantics
     /// <param name="mfcGateValves">MFC id to its inlet valves (any one open passes gas).</param>
     /// <param name="rotationOperational">False when the machine cannot turn the substrate.</param>
     /// <param name="gaugeFloorTorr">Lowest pressure the throttle gauge can read.</param>
+    /// <param name="chamberLimits">Chamber id to the over-pressure ceilings its alarm rules enforce.</param>
+    /// <param name="deviceChamber">Sensor, MFC and controller id to the chamber it belongs to.</param>
     public static RecipeSemantics Build(
         IEnumerable<(string Name, string? BoundDevice, IReadOnlyList<string> Vars)> operations,
         IReadOnlyDictionary<string, IReadOnlyCollection<string>> devicesByKind,
@@ -243,14 +268,16 @@ public sealed class RecipeSemantics
         IReadOnlyDictionary<string, string>? sourceToPsu = null,
         IReadOnlyDictionary<string, IReadOnlyCollection<string>>? mfcGateValves = null,
         bool rotationOperational = true,
-        float gaugeFloorTorr = DefaultGaugeFloorTorr)
+        float gaugeFloorTorr = DefaultGaugeFloorTorr,
+        IReadOnlyDictionary<string, ChamberAlarmLimits>? chamberLimits = null,
+        IReadOnlyDictionary<string, string>? deviceChamber = null)
     {
         var signatures = new Dictionary<string, CommandSignature>(StringComparer.OrdinalIgnoreCase);
-        var boundOps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var boundOps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (name, boundDevice, vars) in operations)
         {
-            if (boundDevice != null) boundOps.Add(name);
+            if (boundDevice != null) boundOps[name] = boundDevice;
 
             // A bound device is injected by the executor and never written in
             // the recipe, so its declaration is dropped from the visible args.
@@ -296,7 +323,7 @@ public sealed class RecipeSemantics
         }
 
         return new RecipeSemantics(signatures, byKind, boundOps, setpointNames,
-            sourceToPsu, mfcGateValves, rotationOperational, gaugeFloorTorr);
+            sourceToPsu, mfcGateValves, rotationOperational, gaugeFloorTorr, chamberLimits, deviceChamber);
     }
 
     /// <summary>
@@ -310,7 +337,7 @@ public sealed class RecipeSemantics
         var devices = ReadDevicesByKind(hwConfPath);
         if (ops.Count == 0 && devices.Count == 0)
             return Empty;
-        return Build(ops, devices);
+        return Build(ops, devices, rotationOperational: !HWConfDeviceReader.ReadNonOperationalStages(hwConfPath).Contains("rotation"));
     }
 
     /// <summary>

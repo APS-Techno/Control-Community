@@ -75,6 +75,30 @@ public static class HWConfDeviceReader
         return names;
     }
 
+    /// <summary>Ids of <c>&lt;stage operational="false"&gt;</c> entries; empty when the file is missing or unreadable.</summary>
+    public static HashSet<string> ReadNonOperationalStages(string hwConfPath)
+    {
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(hwConfPath))
+            return ids;
+
+        try
+        {
+            var doc = XDocument.Load(hwConfPath);
+            foreach (var stage in doc.Descendants("stage"))
+            {
+                if (bool.TryParse(stage.Attribute("operational")?.Value, out bool operational) && !operational)
+                    ids.Add(stage.Value.Trim());
+            }
+        }
+        catch
+        {
+            return ids;
+        }
+
+        return ids;
+    }
+
     /// <summary>Excludes the park/Home synonyms.</summary>
     public static HashSet<string> ReadRobotFaces(string hwConfPath)
     {

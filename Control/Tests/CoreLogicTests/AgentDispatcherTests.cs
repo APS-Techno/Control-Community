@@ -7,7 +7,7 @@ namespace CoreLogicTests;
 
 public class AgentDispatcherTests
 {
-    private abstract class FakeSysBase : IAgentSystemAccess
+    internal abstract class FakeSysBase : IAgentSystemAccess
     {
         public List<string> Calls = [];
         public (string Type, string Id, object[] Args)? LastDevice;
@@ -28,8 +28,11 @@ public class AgentDispatcherTests
         public virtual object ListRuns(int count) { Calls.Add($"runs:{count}"); return new { runs = Array.Empty<object>() }; }
         public virtual object ReadRunFile(string runId, string kind, long offset, int maxBytes)
         { Calls.Add("runfile"); LastRead = (runId, kind, offset, maxBytes); return new { }; }
-        public virtual IReadOnlyList<RecipeError> ValidateRecipe(string content, bool isRcpx)
-        { Calls.Add("validate"); return [new RecipeError(2, 1, "bad thing")]; }
+        public virtual ValidationReport ValidateWithSummary(string content, bool isRcpx)
+        {
+            Calls.Add("validate");
+            return new ValidationReport([new RecipeError(2, 1, "bad thing")], RecipeScriptSummary.Compute(""), null);
+        }
         public virtual object SaveRecipe(string name, string content, bool overwrite, string? folder)
         {
             Calls.Add(folder is null ? $"save:{name}:{overwrite}" : $"save:{name}:{overwrite}:{folder}");
@@ -554,5 +557,28 @@ public class AgentDispatcherTests
         var d = Plan(PlanBase + ",\"adhesion_thickness_A\":0").GetProperty("data");
 
         Assert.Equal(0.0, d.GetProperty("adhesion_dwell_s").GetDouble());
+    }
+
+    [Fact]
+    public void Validate_is_allowed_at_Read_tier_and_reports_findings()
+    {
+        var sys = new FakeSys();
+        var root = Root(new AgentDispatcher(sys).Handle(
+            """{"v":1,"id":1,"cmd":"recipe.validate","args":{"content":"x"}}""", AgentTier.Read, "k"));
+
+        Assert.True(root.GetProperty("ok").GetBoolean());
+        Assert.False(root.GetProperty("data").GetProperty("valid").GetBoolean());
+        Assert.Contains("validate", sys.Calls);
+    }
+
+    [Fact]
+    public void Upload_is_still_denied_at_Read_tier()
+    {
+        var sys = new FakeSys();
+        var root = Root(new AgentDispatcher(sys).Handle(
+            """{"v":1,"id":1,"cmd":"recipe.upload","args":{"name":"x","content":"y"}}""", AgentTier.Read, "k"));
+
+        Assert.Equal("tier_denied", root.GetProperty("error").GetProperty("code").GetString());
+        Assert.Empty(sys.Calls);
     }
 }

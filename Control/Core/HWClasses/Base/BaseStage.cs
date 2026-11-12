@@ -95,6 +95,9 @@ public class BaseStage : IBaseComponent
     /// <summary>Bit index of the stop bit within <see cref="StopByte"/>; &lt; 0 disables Stop.</summary>
     public int StopBit { get; set; } = -1;
 
+    /// <summary>False when the profile declares the stage electrically present but mechanically unable to move (<c>operational="false"</c>).</summary>
+    public bool IsOperational { get; set; } = true;
+
     /// <summary>
     /// Fires when presets / limits / jog / speed / home change at runtime so the
     /// host can persist them (mirrors <c>BaseStepperDrive.CalibrationChanged</c>).
@@ -128,6 +131,10 @@ public class BaseStage : IBaseComponent
         // XMLHardware.NonPositionalAttributes filter.
         StopByte     = ReadIntAttr(el, "haltByte", StopByte);
         StopBit      = ReadIntAttr(el, "haltBit", StopBit);
+        string? operationalAttr = el.Attribute("operational")?.Value;
+        if (!string.IsNullOrWhiteSpace(operationalAttr)
+            && bool.TryParse(operationalAttr, out bool operational))
+            IsOperational = operational;
 
         string? presetsAttr = el.Attribute("presets")?.Value;
         if (!string.IsNullOrWhiteSpace(presetsAttr))

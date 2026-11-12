@@ -573,6 +573,7 @@ public partial class Core
             case BaseMFC mfc:       mfc.Chamber    = chamber; break;
             case BasePump pump:     pump.Chamber   = chamber; break;
             case BaseRobot robot:   robot.Chamber  = chamber; break;
+            case BaseController controller: controller.Chamber = chamber; break;
         }
     }
 

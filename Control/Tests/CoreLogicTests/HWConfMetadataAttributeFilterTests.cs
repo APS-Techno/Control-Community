@@ -84,6 +84,17 @@ public class HWConfMetadataAttributeFilterTests
     }
 
     [Fact]
+    public void Attributes_strips_operational_attribute_from_array()
+    {
+        var el = MakeSensorElement("rotation", ("operational", "false"));
+
+        var arr = XMLHardware.Attributes(el);
+
+        Assert.Equal(3, arr.Length);
+        Assert.Equal("rotation", arr[0]);
+    }
+
+    [Fact]
     public void Attributes_strips_delay_attribute_from_array()
     {
         // "delay" is ValveEmulator metadata (ConfigLoader), not a constructor argument.

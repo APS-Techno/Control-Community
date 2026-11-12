@@ -54,7 +54,7 @@
 		<stage address="308" MB="16" index="5" presets="Retract:15;Transfer:-283" homePos="15" descr="Arm">HS</stage>
 	</stages>
 	<stages lib="S7" hwtype="APS.Hardware.S7.S7200RotationStage" host="main">
-		<stage address="1974" feedbackAddr="1978" enableByte="30" enableBit="0" descr="Substrate Rotation">rotation</stage>
+		<stage address="1974" feedbackAddr="1978" enableByte="30" enableBit="0" descr="Substrate Rotation" operational="false">rotation</stage>
 	</stages>
 	<powersupplies lib="Demo" hwtype="APS.Hardware.Demo.LanPowerSupply">
 		<powersupply host="127.0.0.1" port="5025" mode="DC" descr="DC supply A">PSU_A</powersupply>

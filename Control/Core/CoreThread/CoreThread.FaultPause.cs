@@ -122,7 +122,7 @@ partial class CoreThread
             {
                 ok = _stepExecutor is not null
                     ? await _stepExecutor(parts, stepCts.Token).ConfigureAwait(false)
-                    : await ExecuteResolvedParts(parts, stepCts.Token).ConfigureAwait(false);
+                    : await ExecuteCountedParts(parts, stepCts.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

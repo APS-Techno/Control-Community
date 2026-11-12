@@ -124,7 +124,7 @@ internal sealed class EchoSys : IAgentSystemAccess
     public object RecipeStatus() => new { };
     public object ListRuns(int count) => new { runs = Array.Empty<object>() };
     public object ReadRunFile(string runId, string kind, long offset, int maxBytes) => new { };
-    public IReadOnlyList<RecipeError> ValidateRecipe(string c, bool r) => [];
+    public ValidationReport ValidateWithSummary(string c, bool r) => new([], RecipeScriptSummary.Compute(""), null);
     public object SaveRecipe(string n, string c, bool o, string? f) { SavedFolder = f; return new { }; }
     public void StartRecipe(string n, IReadOnlyDictionary<string, string>? p) { }
     public void AbortRecipe() { }

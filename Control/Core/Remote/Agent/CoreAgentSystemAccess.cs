@@ -18,20 +18,27 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
 {
     private Core Core => systemThread.Core;
 
-    public object DescribeMachine() => new
+    public object DescribeMachine()
     {
-        profile = Path.GetFileName(Core.ConfigDir ?? ""),
-        appVersion = AppVersion.Full,
-        machineName = Environment.MachineName,
-        chambers = Core.ChamberIds,
-        protocol = AgentProtocol.Version,
-        // Visible on the FIRST call an agent makes, not only when an upload fails
-        // (agent campaign 2026-09-15, item 8).
-        controlMode = Core.ControlMode.Mode.ToString(),
-        hostCommands = "mutating commands (recipe.upload/start/abort/resolve_pause, device.command) need " +
-                       "controlMode == \"Remote\" (Online-Remote); only an operator can switch it, under " +
-                       "Service → Control mode… — do not poll for it",
-    };
+        var identity = MachineIdentity.Resolve(Core.ConfigDir,
+            Core.ConfigDir is null ? null : Path.Combine(Core.ConfigDir, "HWConf.xml"));
+        return new
+        {
+            profile = Path.GetFileName(Core.ConfigDir ?? ""),
+            appVersion = AppVersion.Full,
+            machineName = Environment.MachineName,
+            chambers = Core.ChamberIds,
+            protocol = AgentProtocol.Version,
+            // Visible on the FIRST call an agent makes, not only when an upload fails
+            // (agent campaign 2026-09-15, item 8).
+            controlMode = Core.ControlMode.Mode.ToString(),
+            hostCommands = "mutating commands (recipe.upload/start/abort/resolve_pause, device.command) need " +
+                           "controlMode == \"Remote\" (Online-Remote); only an operator can switch it, under " +
+                           "Service → Control mode… — do not poll for it",
+            isEmulator = identity.IsEmulator,
+            executionTarget = identity.ExecutionTarget,
+        };
+    }
 
     public object DescribeHardware()
     {
@@ -68,14 +75,14 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
             gateValves = m.GateValves,
             gatingLogic = m.GateValves.Count > 0 ? "OR" : "none",
         },
-        BaseStage => new
+        BaseStage stage => new
         {
             id = name,
             plcId = dev.Params.ID,
             description = dev.Params.Description,
             connected = dev.Connected,
             chamber = ChamberOf(dev),
-            isOperational = dev.Connected,
+            isOperational = dev.Connected && stage.IsOperational,
         },
         _ => new
         {
@@ -90,7 +97,7 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
     private static string? ChamberOf(object dev) => dev switch
     {
         BaseSensor s => s.Chamber, BaseValve v => v.Chamber, BaseMFC m => m.Chamber,
-        BasePump p => p.Chamber, _ => null,
+        BasePump p => p.Chamber, BaseController c => c.Chamber, _ => null,
     };
 
     public object DescribeRecipes(string? folder)
@@ -290,6 +297,7 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
         // Live view: elapsed carried forward to now, per-step age, and the last terminal
         // outcome kept beside the failure protocol's own progress (see RecipeProgressTracker).
         var s = RecipeProgressTracker.Snapshot(Core.IsRecipeRunning);
+        var receipt = RecipeProgressTracker.Receipt();
         return new
         {
             isRecipeRunning = Core.IsRecipeRunning,
@@ -299,6 +307,8 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
             progress = s.Progress,
             stepElapsedSeconds = s.StepElapsed?.TotalSeconds,
             progressUpdatedAt = s.UpdatedAt,
+            basePressureLogQuotes = receipt.BasePressureLogQuotes,
+            executedDepositsCount = receipt.ExecutedDepositsCount,
             lastOutcome = s.LastOutcome is null ? null : new
             {
                 name = s.LastOutcome.Name,
@@ -311,41 +321,32 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
 
     public IReadOnlyList<RecipeError> ValidateRecipe(string content, bool isRcpx)
     {
-        string script;
-        if (isRcpx)
-        {
-            try { script = RecipeSerializer.LoadFromString(content).FullScript; }
-            catch (XmlException ex)
-            { throw new AgentOpException(AgentErrors.RecipeParseError, $".rcpx XML error: {ex.Message}"); }
-        }
-        else script = content;
-        return BuildValidator().Validate(script);
+        string script = ScriptOf(content, isRcpx, out _);
+        return Core.BuildRecipeValidator().Validate(script);
     }
 
-    // Same construction as the worker's pre-run validation (CoreThread.Execute.cs:479-499).
-    private RecipeValidator BuildValidator()
+    public ValidationReport ValidateWithSummary(string content, bool isRcpx)
     {
-        var semantics = RecipeSemantics.Build(
-            Core.GetOperationDeclarations(), Core.GetDeviceNamesByKind(), Core.GetSetpointParameterNames(),
-            sourceToPsu: SourceToPsuMap(Core.ConfigDir is null
-                ? []
-                : SourcesMapLoader.LoadFlangeSourceMap(Core.ConfigDir).Values),
-            mfcGateValves: MfcGateValvesMap(MfcDevices()),
-            rotationOperational: Core.FindElement(DeviceType.Stage, "rotation") is IBaseComponent { Connected: true }
-                || Core.FindElement(DeviceType.Stage, "Rotation") is IBaseComponent { Connected: true });
-        return new RecipeValidator(
-            RecipeValidator.AllKnownCommands,
-            Core.GetKnownDeviceNames(),
-            Core.GetInstalledSourceNames(),
-            Core.embRecipes?.GetKnownNames(),
-            throttleValveSensor: "pm",
-            semantics: semantics);
+        string script = ScriptOf(content, isRcpx, out var recipe);
+        var findings = Core.BuildRecipeValidator().Validate(script);
+        Func<int, int?>? xmlLineOf = recipe is null
+            ? null
+            : ScriptLineMap.ForRcpx(content, ScriptLineMap.CountLineBreaks(recipe.GenerateVarBlock()));
+        return new ValidationReport(findings, RecipeScriptSummary.Compute(script), xmlLineOf);
     }
 
-    private IEnumerable<(string Id, IBaseComponent Dev)> MfcDevices() =>
-        Core.hwElements.Item.TryGetValue(DeviceType.MFC, out var mfcs)
-            ? mfcs.Select(kv => (kv.Key, (IBaseComponent)kv.Value)).ToList()
-            : [];
+    private static string ScriptOf(string content, bool isRcpx, out RecipeFile? recipe)
+    {
+        recipe = null;
+        if (!isRcpx) return content;
+        try
+        {
+            recipe = RecipeSerializer.LoadFromString(content);
+            return recipe.FullScript;
+        }
+        catch (XmlException ex)
+        { throw new AgentOpException(AgentErrors.RecipeParseError, $".rcpx XML error: {ex.Message}"); }
+    }
 
     internal static IReadOnlyDictionary<string, string> SourceToPsuMap(IEnumerable<FlangeSourceInfo> sources)
     {

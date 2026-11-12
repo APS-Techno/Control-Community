@@ -87,6 +87,27 @@ public class SensorChamberLoadingTests
     }
 
     [Fact]
+    public void ApplySensorChamber_sets_chamber_on_a_controller()
+    {
+        var controller = new BaseController(new BaseDeviceParams("C1_TC", 0, "test"));
+        var element    = MakeSensorElement("C1_TC", "C1");
+
+        Core.ApplySensorChamber(controller, element);
+
+        Assert.Equal("C1", controller.Chamber);
+    }
+
+    [Fact]
+    public void Controller_chamber_defaults_to_Main_when_attribute_absent()
+    {
+        var controller = new BaseController(new BaseDeviceParams("TC1", 0, "test"));
+
+        Core.ApplySensorChamber(controller, MakeSensorElement("TC1", null));
+
+        Assert.Equal(CoreConstants.DefaultChamberId, controller.Chamber);
+    }
+
+    [Fact]
     public void Valve_and_mfc_chamber_default_to_Main_when_attribute_absent()
     {
         var valve = new BaseValve(new BaseDeviceParams("V", 0, "test"));

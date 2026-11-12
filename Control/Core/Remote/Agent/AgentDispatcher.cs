@@ -48,11 +48,11 @@ internal sealed class AgentDispatcher(IAgentSystemAccess sys, Action<string>? au
         "describe.machine" or "describe.hardware" or "describe.recipes" or "describe.dsl"
             or "describe.interlocks" or "describe.alarms"
             or "status.system" or "status.devices" or "logs.tail" or "recipe.status"
-            or "runs.list" or "runs.file" or "recipe.compute_plan" => AgentTier.Read,
+            or "runs.list" or "runs.file" or "recipe.compute_plan" or "recipe.validate" => AgentTier.Read,
         // recipe.resolve_pause sits with start/abort, NOT at Manual: answering a fault pause
         // resumes or ends a run the same key was allowed to start in the first place, so it is
         // the same class of authority. It commands no device directly.
-        "recipe.validate" or "recipe.upload" or "recipe.start" or "recipe.abort"
+        "recipe.upload" or "recipe.start" or "recipe.abort"
             or "recipe.resolve_pause" => AgentTier.Recipe,
         "device.command" => AgentTier.Manual,
         _ => AgentTier.None,
@@ -139,7 +139,7 @@ internal sealed class AgentDispatcher(IAgentSystemAccess sys, Action<string>? au
         "runs.list" => sys.ListRuns(OptInt(req, "count", 5)),
         "runs.file" => sys.ReadRunFile(ReqString(req, "runId"), ReqString(req, "kind"),
             OptLong(req, "offset", 0), OptInt(req, "maxBytes", RunArtifacts.DefaultMaxBytes)),
-        "recipe.validate" => ValidationResult(sys.ValidateRecipe(ReqString(req, "content"), OptBool(req, "isRcpx", true))),
+        "recipe.validate" => sys.ValidateWithSummary(ReqString(req, "content"), OptBool(req, "isRcpx", true)).ToWire(),
         "recipe.upload" => sys.SaveRecipe(ReqString(req, "name"), ReqString(req, "content"), OptBool(req, "overwrite", false),
             recipeFolder),
         "recipe.start" => Do(() => sys.StartRecipe(ReqString(req, "name"), OptDict(req, "parameters"))),
@@ -169,13 +169,6 @@ internal sealed class AgentDispatcher(IAgentSystemAccess sys, Action<string>? au
                 $"unknown decision '{s}'; accepted values are retry, skip, abort, hold"),
         };
     }
-
-    private static object ValidationResult(IReadOnlyList<APS.RecipeModel.Validation.RecipeError> findings) => new
-    {
-        valid = findings.All(f => f.Severity != APS.RecipeModel.Validation.RecipeErrorSeverity.Error),
-        findings = findings.Select(f => new
-        { line = f.Line, column = f.Column, severity = f.Severity.ToString().ToLowerInvariant(), message = f.Message }),
-    };
 
     private static string ReqString(AgentRequest req, string name) =>
         req.Args?.TryGetProperty(name, out var v) == true && v.ValueKind == JsonValueKind.String

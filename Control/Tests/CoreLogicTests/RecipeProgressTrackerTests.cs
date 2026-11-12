@@ -202,4 +202,52 @@ public class RecipeProgressTrackerTests : IDisposable
         Assert.Null(s.StepElapsed);
         Assert.False(s.FailureProtocolActive);
     }
+
+    [Fact]
+    public void Receipt_is_empty_before_any_run()
+    {
+        var (quotes, deposits) = RecipeProgressTracker.Receipt();
+        Assert.Empty(quotes);
+        Assert.Equal(0, deposits);
+    }
+
+    [Fact]
+    public void Receipt_keeps_quotes_in_order_and_counts_deposits()
+    {
+        RecipeProgressTracker.RecordBasePressureLog("Base pressure (C1, C1_pm): 1.00E-006 Torr");
+        RecipeProgressTracker.RecordBasePressureLog("Base pressure (C2, C2_pm): 2.00E-006 Torr");
+        RecipeProgressTracker.RecordDepositCompleted();
+        RecipeProgressTracker.RecordDepositCompleted();
+
+        var (quotes, deposits) = RecipeProgressTracker.Receipt();
+        Assert.Equal(
+            ["Base pressure (C1, C1_pm): 1.00E-006 Torr", "Base pressure (C2, C2_pm): 2.00E-006 Torr"], quotes);
+        Assert.Equal(2, deposits);
+    }
+
+    [Fact]
+    public void BeginRun_and_Reset_clear_the_receipt()
+    {
+        RecipeProgressTracker.RecordBasePressureLog("x");
+        RecipeProgressTracker.RecordDepositCompleted();
+        RecipeProgressTracker.BeginRun();
+        Assert.Equal((0, 0), (RecipeProgressTracker.Receipt().BasePressureLogQuotes.Length,
+            RecipeProgressTracker.Receipt().ExecutedDepositsCount));
+
+        RecipeProgressTracker.RecordBasePressureLog("y");
+        RecipeProgressTracker.RecordDepositCompleted();
+        RecipeProgressTracker.Reset();
+        Assert.Equal((0, 0), (RecipeProgressTracker.Receipt().BasePressureLogQuotes.Length,
+            RecipeProgressTracker.Receipt().ExecutedDepositsCount));
+    }
+
+    [Fact]
+    public void Receipt_array_is_a_copy()
+    {
+        RecipeProgressTracker.RecordBasePressureLog("a");
+        var first = RecipeProgressTracker.Receipt().BasePressureLogQuotes;
+        RecipeProgressTracker.RecordBasePressureLog("b");
+        Assert.Single(first);
+        Assert.Equal(2, RecipeProgressTracker.Receipt().BasePressureLogQuotes.Length);
+    }
 }

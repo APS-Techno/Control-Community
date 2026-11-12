@@ -440,7 +440,7 @@ partial class CoreThread : BaseThread
         string step = string.Join(' ', parts);
         try
         {
-            if (!await ExecuteResolvedParts(parts, cancellationToken).ConfigureAwait(false))
+            if (!await ExecuteCountedParts(parts, cancellationToken).ConfigureAwait(false))
                 RecordContinuedFailure(step, _lastCommandError ?? "step reported failure");
         }
         catch (OperationCanceledException)
@@ -529,24 +529,7 @@ partial class CoreThread : BaseThread
 
             SendRecipeLog($"Recipe loaded, {script.Length} chars");
 
-            // throttleValveSensor = "pm" matches the throttle-controller binding in Worker.xml
-            // (the only sensor whose pressure is regulated via a throttle valve);
-            // pwait on any other sensor is a recipe-author mistake — use swait.
-            // Signatures come from the LIVE operation table, so every argument
-            // is checked against the type this executor will demand for that
-            // slot, not against hand-maintained lists that drift from the runtime.
-            var semantics = RecipeSemantics.Build(
-                core.GetOperationDeclarations(),
-                core.GetDeviceNamesByKind(),
-                core.GetSetpointParameterNames());
-
-            var validator = new RecipeValidator(
-                RecipeValidator.AllKnownCommands,
-                core.GetKnownDeviceNames(),
-                core.GetInstalledSourceNames(),
-                core.embRecipes?.GetKnownNames(),
-                throttleValveSensor: "pm",
-                semantics: semantics);
+            var validator = core.BuildRecipeValidator();
             var validationFindings = validator.Validate(script);
             foreach (var f in validationFindings)
                 SendRecipeLog($"  {f.Severity.ToString().ToUpperInvariant()}: line {f.Line}: {f.Message}");
@@ -1170,6 +1153,14 @@ partial class CoreThread : BaseThread
             i++;
         }
         return true;
+    }
+
+    private async Task<bool> ExecuteCountedParts(string[] parts, CancellationToken cancellationToken)
+    {
+        bool ok = await ExecuteResolvedParts(parts, cancellationToken).ConfigureAwait(false);
+        if (ok && parts.Length > 0 && parts[0].Equals("deposit", StringComparison.OrdinalIgnoreCase))
+            APS.SystemControl.Core.Remote.Agent.RecipeProgressTracker.RecordDepositCompleted();
+        return ok;
     }
 
     private async Task<bool> ExecuteResolvedParts(string[] parts, CancellationToken cancellationToken = default)
@@ -2217,13 +2208,18 @@ partial class CoreThread : BaseThread
     /// </summary>
     private void LogBasePressure()
     {
+        APS.SystemControl.Core.Remote.Agent.RecipeProgressTracker.BeginRun();
         try
         {
             // Sensor id "pm" is the System chamber pressure sensor (HWConf.xml).
             // Other configurations should add
             // their system sensor under the same id or update this lookup.
             var sensor = core?.FindElement(DeviceType.Sensor, "pm") as BaseSensor;
-            if (sensor is null) return;
+            if (sensor is null)
+            {
+                LogChamberBasePressures();
+                return;
+            }
 
             // Say so rather than reporting the 0.00E+000 a failed read leaves
             // behind — an operator reading a base pressure has to be able to
@@ -2231,7 +2227,7 @@ partial class CoreThread : BaseThread
             // sensor would log its zero as a measurement.
             if (!sensor.Connected)
             {
-                core!.SendLogMesssage("recipe", "Base pressure: unavailable (pm not connected)");
+                EmitBasePressureLine("Base pressure: unavailable (pm not connected)");
                 return;
             }
 
@@ -2249,12 +2245,38 @@ partial class CoreThread : BaseThread
             // "mTorr" formatting referred to the serial *controller* Sensor[1]
             // array, a different source. Use scientific notation so a ~1e-4
             // Torr base pressure is legible.
-            core!.SendLogMesssage("recipe", $"Base pressure: {p:E2} Torr");
+            EmitBasePressureLine($"Base pressure: {p.ToString("E2", System.Globalization.CultureInfo.InvariantCulture)} Torr");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Trace.TraceWarning(
                 $"LogBasePressure failed: {ex.Message}");
+        }
+    }
+
+    private void EmitBasePressureLine(string line)
+    {
+        APS.SystemControl.Core.Remote.Agent.RecipeProgressTracker.RecordBasePressureLog(line);
+        core!.SendLogMesssage("recipe", line);
+    }
+
+    private void LogChamberBasePressures()
+    {
+        if (core is null || !core.hwElements.Item.TryGetValue(DeviceType.Sensor, out var sensors) || sensors is null)
+            return;
+        var candidates = new List<BasePressureSensors.Candidate>();
+        foreach (var kvp in sensors)
+            if (kvp.Value is BaseSensor { Connected: true } s)
+                candidates.Add(new BasePressureSensors.Candidate(kvp.Key, s.Chamber, s.Params.Description));
+
+        var primaries = BasePressureSensors.PickPrimaries(candidates, chamber =>
+            core.chamberAlarms.TryGetValue(chamber, out var alarms)
+                ? alarms.Rules.Select(r => r.Sensor).ToList()
+                : []);
+        foreach (var (chamber, sensorId) in primaries)
+        {
+            var sensor = (BaseSensor)sensors[sensorId]!;
+            EmitBasePressureLine(BasePressureSensors.FormatLine(chamber, sensorId, sensor.LastValue));
         }
     }
 

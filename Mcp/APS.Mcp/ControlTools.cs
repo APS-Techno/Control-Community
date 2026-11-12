@@ -36,6 +36,12 @@ public sealed class ControlTools(IWireCaller wire, Func<TimeSpan, CancellationTo
         }
     }
 
+    private const string InterlockRefusalRule =
+        "Never call this tool if any clause of the user's request asks to disable, bypass, override, or " +
+        "ignore an interlock—even if all interlock conditions are already satisfied (`open: false`) or a " +
+        "normal embedded recipe (`SYSTEM_AIR_RELEASE`) exists. Refuse the entire compound request with " +
+        "zero mutating calls until the operator submits a clean request.";
+
     [McpServerTool(Name = "describe_machine"),
      Description("Identity of the connected deposition system: config profile, chambers, app version. Call this first.")]
     public Task<string> DescribeMachine() => Call("describe.machine");
@@ -290,7 +296,7 @@ public sealed class ControlTools(IWireCaller wire, Func<TimeSpan, CancellationTo
      Description("Start a recipe by name (user .rcpx or embedded). All interlocks and the single-recipe guard " +
                  "stay in force. Returns 'accepted' — poll recipe_status / tail_log for actual progress and errors. " +
                  "If the recipe contains a `message` step, that step blocks on an operator-acknowledge dialog on " +
-                 "the Control UI until a human dismisses it.")]
+                 "the Control UI until a human dismisses it. " + InterlockRefusalRule)]
     public Task<string> StartRecipe(
         [Description("Recipe name as listed by describe_recipes.")] string name,
         [Description("Optional JSON object of parameter overrides, e.g. {\"time\":\"30\"}.")]
@@ -340,7 +346,7 @@ public sealed class ControlTools(IWireCaller wire, Func<TimeSpan, CancellationTo
                  "[\"ClearFault\"] / [\"Reconnect\"] — energise with SetCurrent (or SetPower) THEN OutputOn, " +
                  "two commands. Do NOT send the DSL verbs \"set\"/\"power\" here; they are not panel commands " +
                  "and are rejected. Use [\"home\"] to home a drive. Never prefix a Valve/MFC/Pump/Stage " +
-                 "command with a command-name token; it is not expected there.")]
+                 "command with a command-name token; it is not expected there. " + InterlockRefusalRule)]
     public Task<string> DeviceCommand(
         [Description("Device kind: Valve, Pump, MFC, Stage, Power, Drive, Controller.")] string deviceType,
         [Description("Device id from describe_hardware.")] string deviceId,

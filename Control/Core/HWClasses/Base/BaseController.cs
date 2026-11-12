@@ -1,4 +1,5 @@
-﻿using APS.SystemControl.Core.HWClasses.Base;
+﻿using APS.SystemControl.Core;
+using APS.SystemControl.Core.HWClasses.Base;
 
 namespace APS.SystemControl.BaseHWClasses;
 
@@ -36,6 +37,14 @@ public class BaseController : IBaseComponent, ISelfTestable
     public bool Connected { get => _connected; set { _connected = value; } }
     public string ErrorMessage { get => _errorMessage; }
     public IBaseDeviceParams Params { get; private set; }
+
+    /// <summary>
+    /// Chamber this controller regulates, from the <c>chamber="..."</c> attribute
+    /// (see <c>Core.ApplySensorChamber</c>); defaults to
+    /// <see cref="CoreConstants.DefaultChamberId"/> ("Main") when absent.
+    /// </summary>
+    public string Chamber { get; set; } = CoreConstants.DefaultChamberId;
+
     public virtual object[] Measure() { return []; }
 
     /// <summary>

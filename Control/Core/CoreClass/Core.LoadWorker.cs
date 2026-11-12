@@ -502,17 +502,10 @@ public partial class Core
     {
         if (embRecipes == null) return;
 
-        var semantics = APS.RecipeModel.Validation.RecipeSemantics.Build(
-            GetOperationDeclarations(), GetDeviceNamesByKind(), GetSetpointParameterNames());
+        var semantics = BuildRecipeSemantics();
         if (semantics.IsEmpty) return;
 
-        var validator = new APS.RecipeModel.Validation.RecipeValidator(
-            APS.RecipeModel.Validation.RecipeValidator.AllKnownCommands,
-            GetKnownDeviceNames(),
-            GetInstalledSourceNames(),
-            embRecipes.GetKnownNames(),
-            throttleValveSensor: "pm",
-            semantics: semantics);
+        var validator = BuildRecipeValidator(semantics);
 
         int totalBad = 0;
 

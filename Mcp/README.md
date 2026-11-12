@@ -152,8 +152,8 @@ saying which tier is required and which tier the key grants); it does not touch 
 
 | Tier     | Tools allowed | Typical use |
 |----------|----------------|-------------|
-| `Read`   | `describe_machine`, `describe_hardware`, `describe_recipes`, `describe_dsl`, `describe_interlocks`, `describe_alarms`, `system_status`, `device_snapshot`, `tail_log`, `recipe_status`, `list_runs`, `fetch_run_files`, `compute_deposition_plan` | Read-only monitoring/inspection agent |
-| `Recipe` | everything in `Read`, plus `validate_recipe`, `upload_recipe`, `start_recipe`, `abort_recipe` | Recipe authoring/automation, no manual device control |
+| `Read`   | `describe_machine`, `describe_hardware`, `describe_recipes`, `describe_dsl`, `describe_interlocks`, `describe_alarms`, `system_status`, `device_snapshot`, `tail_log`, `recipe_status`, `list_runs`, `fetch_run_files`, `compute_deposition_plan`, `validate_recipe` | Read-only monitoring/inspection agent |
+| `Recipe` | everything in `Read`, plus `upload_recipe`, `start_recipe`, `abort_recipe` | Recipe authoring/automation, no manual device control |
 | `Manual` | everything in `Recipe`, plus `device_command` | Full manual control, same as an operator panel |
 
 `Recipe` and `Manual` are each a superset of the tier below — a `Manual` key can also
@@ -270,10 +270,50 @@ start is queued); call `list_runs(1)` a moment after starting, or after the run 
 `Manual`), `allowedMutatingTools`, and `canExecuteMutatingNow` (true only when the tier is `Recipe`
 or higher and `controlMode` is `Remote`).
 
+`describe_machine` also reports `isEmulator` (boolean) and `executionTarget` (`"emulator"` or
+`"physical"`). `isEmulator` is true only when every PLC address and every LAN device host in the
+loaded `HWConf.xml` is a loopback address (`localhost`, `127.x.x.x`, `::1`) and no device uses a
+serial port; otherwise it is false. A profile can state the answer itself with
+`<ExecutionTarget>emulator</ExecutionTarget>` or `<ExecutionTarget>physical</ExecutionTarget>` under
+the root of its `Config.xml`; that value overrides the derived one.
+
+`recipe_status` carries a run receipt for the current or last run: `basePressureLogQuotes` is an array
+of the exact base-pressure lines Control logged at run start (`Base pressure: 1.50E-006 Torr` from
+sensor `pm`; without a `pm` sensor, one `Base pressure (<chamber>, <sensor>): <value> Torr` line per
+chamber with a connected pressure sensor), and `executedDepositsCount` is the number of `deposit`
+steps that have completed. Quote the strings verbatim. Both reset when the next run starts.
+
 `compute_deposition_plan` (Read tier) is pure arithmetic on the machine: dwells, rounded and
 whole-second dwells, and the period they give. Its `measurementStatus` is
 `planned_from_rate_and_dwell_not_measured`; it touches no hardware and a bad input fails with
 `bad_request`.
+
+## 10. `validate_recipe` response (`findings`, `xmlLine`, `scriptSummary`)
+
+`validate_recipe` returns `valid` (false when any finding has severity `error`), `findings`, and
+`scriptSummary`. Each finding has `line`, `column`, `severity`, `message`. `line` is the line in the
+**validated script**: for an `.rcpx` this is the generated `var` block (one line per `<Param>`)
+followed by the `<Script>` text, so it is *not* the line in the XML file. When `isRcpx` is true and
+the finding sits in the `<Script>` text, the finding also carries `xmlLine`, the line of the same
+text in the submitted `.rcpx`. Findings in the generated `var` block, or with line 0, have no
+`xmlLine`. With `isRcpx` false there is no `xmlLine` anywhere.
+
+`scriptSummary` is computed from the script text alone, without running anything:
+
+- `depositSecondsBySource.<source>`: `outsideLoopSeconds`, `inLoopSeconds`, `totalSeconds` (2 decimals).
+  Both `deposit <source> <seconds>` and `deposit <source> <seconds> <retract>` are counted. `var`
+  values are substituted (`$name` or the bare name), `loop N` / `endloop` multiply, nested loops
+  multiply together. "In loop" means inside at least one `loop`. `if` branches are all counted.
+- `totalDepositSeconds`: sum over all sources.
+- `hasUnresolvedVariables`: true when a deposit time, deposit source or loop count could not be
+  resolved to a literal. Those deposits are left out (an unresolved loop count counts as 1), so the
+  totals are then incomplete.
+- `pwaitTimeoutsNote`: fixed text. `pwait`/`swait` timeouts are ceilings and are never added to the
+  deposit totals.
+- `inertCommentLinesWithSemicolon`: array of `{scriptLine, xmlLine}` (`xmlLine` only for `.rcpx`)
+  for lines whose `#` or `//` comment contains `;`. Such text is inert: it is stripped before the
+  line is split into statements, so it is never executed and never a finding.
+- `commentsNote`: fixed text stating the same rule.
 
 ## Build & test
 

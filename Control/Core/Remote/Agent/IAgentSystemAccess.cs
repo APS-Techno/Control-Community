@@ -1,5 +1,3 @@
-using APS.RecipeModel.Validation;
-
 namespace APS.SystemControl.Core.Remote.Agent;
 
 internal interface IAgentSystemAccess
@@ -26,7 +24,7 @@ internal interface IAgentSystemAccess
     object ReadRunFile(string runId, string kind, long offset, int maxBytes);
 
     // recipe (Recipe tier)
-    IReadOnlyList<RecipeError> ValidateRecipe(string content, bool isRcpx);
+    ValidationReport ValidateWithSummary(string content, bool isRcpx);
     /// <summary>Save a recipe to the library, optionally overwriting. A key scoped to a recipe
     /// folder (<paramref name="folder"/> non-null) saves into that folder only.</summary>
     object SaveRecipe(string name, string content, bool overwrite, string? folder);

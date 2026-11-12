@@ -689,6 +689,8 @@ public class RecipeValidator
         var gateWarned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         bool supplyTrackingLost = false;
         List<Token>? lastPwait = null;
+        var heldPwait = new Dictionary<string, (float Torr, string Literal, string? Sensor)>(
+            StringComparer.OrdinalIgnoreCase);
 
         string? Literal(RecipeArg a) => a.IsBareDollar ? null : ResolveLiteral(a, literalVars);
 
@@ -703,6 +705,51 @@ public class RecipeValidator
                     $"mfc '{mfc}' has non-zero flow but none of its inlet gate valves " +
                     $"({string.Join(", ", gates)}) are open", RecipeErrorSeverity.Warning));
             }
+        }
+
+        void TrackPwaitTarget(List<RecipeArg> args)
+        {
+            if (_semantics is null || args.Count is not (2 or 3)) return;
+            string? chamber = PwaitChamber(args, literalVars);
+            if (chamber is null) return;
+
+            var target = args[args.Count - 2];
+            string? text = target.IsBareDollar ? null : ResolveLiteral(target, literalVars);
+            if (text is null || !Parsing.PressureParser.TryParseTorr(text, out float torr) || torr <= 0)
+            {
+                heldPwait.Remove(chamber);
+                return;
+            }
+
+            string? sensor = _semantics.BoundDeviceOf("pwait") is null && !args[0].IsBareDollar
+                ? ResolveLiteral(args[0], literalVars)
+                : null;
+            heldPwait[chamber] = (torr, text, sensor);
+        }
+
+        void WarnGasOffBeforeThrottleRelease(Token at, string mfc)
+        {
+            if (_semantics?.ChamberOf(mfc) is not { } chamber
+                || !heldPwait.TryGetValue(chamber, out var held)
+                || _semantics.LimitsOf(chamber) is not { IdleCeilingTorr: { } ceiling } limits
+                || held.Torr <= ceiling
+                || flowing.Any(m => string.Equals(_semantics!.ChamberOf(m), chamber, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            string ceilingText = ceiling.ToString("g6", inv);
+            string consequence = limits.IdleDelaySeconds > 0
+                ? $"the Idle over-pressure alarm trips if the pressure stays above {ceilingText} Torr for " +
+                  $"{limits.IdleDelaySeconds.ToString("g6", inv)} s"
+                : "the Idle over-pressure alarm can trip immediately (delay 0 s" +
+                  (limits.IdleUnless is null ? "" : $", suppressed only while '{limits.IdleUnless}'") + ")";
+            string release = held.Sensor is null ? "pwait 0 1" : $"pwait {held.Sensor} 0 1";
+
+            errors.Add(new RecipeError(at.Line, at.Column,
+                $"mfc '{mfc}' 0 stops the last gas flow in chamber '{chamber}', which then enters Idle while " +
+                $"the throttle still holds the pwait target '{held.Literal}' (above the {ceilingText} Torr " +
+                $"Idle ceiling): {consequence}. Release the throttle while gas still flows, before zeroing " +
+                $"the MFCs: '{release}'.", RecipeErrorSeverity.Warning));
         }
 
         foreach (var line in tokenLines)
@@ -754,6 +801,7 @@ public class RecipeValidator
                 case "isolate":
                     currentlyOpen.Clear();
                     flowing.Clear();
+                    heldPwait.Clear();
                     break;
 
                 case "mfc" when args.Count >= 2:
@@ -763,7 +811,8 @@ public class RecipeValidator
                             || !double.TryParse(Literal(args[1]), System.Globalization.NumberStyles.Float,
                                 System.Globalization.CultureInfo.InvariantCulture, out double flow))
                             break;
-                        if (flow > 0) flowing.Add(id); else flowing.Remove(id);
+                        if (flow > 0) flowing.Add(id);
+                        else if (flowing.Remove(id)) WarnGasOffBeforeThrottleRelease(head, id);
                         break;
                     }
 
@@ -792,6 +841,7 @@ public class RecipeValidator
 
                 case "pwait":
                     lastPwait = line;
+                    TrackPwaitTarget(args);
                     CheckGateValves(head);
                     break;
             }
@@ -1211,7 +1261,7 @@ public class RecipeValidator
 
             CheckArgument("pwait", 0, new ArgSpec(ArgKind.Pressure), args[0], literalVars, errors);
             CheckArgument("pwait", 1, new ArgSpec(ArgKind.Time), args[1], literalVars, errors);
-            WarnOnBarePressure("pwait", args[0], literalVars, errors);
+            WarnOnBarePressure("pwait", args[0], PwaitChamber(args, literalVars), literalVars, errors);
             return;
         }
 
@@ -1239,7 +1289,7 @@ public class RecipeValidator
 
             CheckArgument("pwait", 1, new ArgSpec(ArgKind.Pressure), args[1], literalVars, errors);
             CheckArgument("pwait", 2, new ArgSpec(ArgKind.Time), args[2], literalVars, errors);
-            WarnOnBarePressure("pwait", args[1], literalVars, errors);
+            WarnOnBarePressure("pwait", args[1], PwaitChamber(args, literalVars), literalVars, errors);
             return;
         }
 
@@ -1249,9 +1299,12 @@ public class RecipeValidator
 
     /// <summary>
     /// A pressure target with no unit suffix is read as Torr, which is easy to
-    /// miss when the operator is thinking in mTorr.
+    /// miss when the operator is thinking in mTorr. When the chamber's
+    /// Processing over-pressure ceiling is known and the value exceeds it, the
+    /// note states that the outcome (alarm trip versus a pwait timeout) depends
+    /// on what the chamber physically does, which validation cannot know.
     /// </summary>
-    private static void WarnOnBarePressure(string cmd, RecipeArg arg,
+    private void WarnOnBarePressure(string cmd, RecipeArg arg, string? chamber,
         Dictionary<string, Token> literalVars, List<RecipeError> errors)
     {
         string text = arg.Text;
@@ -1271,10 +1324,30 @@ public class RecipeValidator
                 System.Globalization.CultureInfo.InvariantCulture, out double v)) return;
         if (v == 0.0) return;   // the "open the throttle valve" idiom is unit-agnostic
 
-        errors.Add(new RecipeError(arg.Token.Line, arg.Column,
-            $"bare pressure value '{text}' is interpreted as Torr (= {v * 1000:g3} mTorr). " +
-            $"Add a unit suffix to disambiguate: '{text}mT', '{text}Torr', '{text}uT', etc.",
-            RecipeErrorSeverity.Warning));
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        string message =
+            $"bare pressure value '{text}' is interpreted as Torr (= {(v * 1000).ToString("g6", inv)} mTorr). " +
+            $"Add a unit suffix to disambiguate: '{text}mT', '{text}Torr', '{text}uT', etc.";
+
+        if (chamber is not null
+            && _semantics?.LimitsOf(chamber)?.ProcessingCeilingTorr is { } ceiling
+            && v > ceiling)
+            message +=
+                $" This value is above the {ceiling.ToString("g6", inv)} Torr Processing alarm threshold of " +
+                $"chamber '{chamber}'; write '{text}mT' for {text} mTorr. Note: whether the chamber " +
+                $"physically exceeds {ceiling.ToString("g6", inv)} Torr and trips the over-pressure alarm, or stays " +
+                "below the target until pwait times out, cannot be determined without running the recipe.";
+
+        errors.Add(new RecipeError(arg.Token.Line, arg.Column, message, RecipeErrorSeverity.Warning));
+    }
+
+    private string? PwaitChamber(List<RecipeArg> args, Dictionary<string, Token> literalVars)
+    {
+        if (_semantics is null) return null;
+        if (_semantics.BoundDeviceOf("pwait") is { } device)
+            return _semantics.ChamberOf(device);
+        if (args.Count != 3 || args[0].IsBareDollar) return null;
+        return ResolveLiteral(args[0], literalVars) is { } sensor ? _semantics.ChamberOf(sensor) : null;
     }
 
     private void CheckArgument(string cmd, int index, ArgSpec spec, RecipeArg arg,

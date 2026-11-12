@@ -42,7 +42,7 @@
     <pump address="0" index="5" speed="6" chamber="Main" gate="PP" descr="Backing pump">SP1</pump>
   </pumps>
   <stages lib="S7" hwtype="APS.Hardware.S7.S7200RotationStage" host="main">
-    <stage address="1974" feedbackAddr="1978" enableByte="30" enableBit="0" descr="Substrate Rotation">rotation</stage>
+    <stage address="1974" feedbackAddr="1978" enableByte="30" enableBit="0" descr="Substrate Rotation" operational="false">rotation</stage>
   </stages>
   <stages lib="S7" hwtype="APS.Hardware.S7.S7200Stage" host="main">
     <stage address="152" MB="7" index="1" presets="Load:0;Process:25" homePos="0" descr="Substrate lift">VS</stage>

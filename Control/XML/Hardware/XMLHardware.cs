@@ -150,6 +150,7 @@ public class XMLHardware
         "haltBit",      // stage stop-bit index — BaseStage.ApplyConfig
                         // (named "halt*" not "stop*" so it can't collide, case-
                         //  insensitively, with the turbo pump's positional "stopbit")
+        "operational",  // stage can physically move — BaseStage.ApplyConfig
     };
 
     /// <summary>
