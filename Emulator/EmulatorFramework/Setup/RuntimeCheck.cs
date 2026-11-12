@@ -5,7 +5,7 @@ namespace APS.SystemEmulator.Setup;
 
 public static partial class RuntimeCheck
 {
-    private const string Name = ".NET 9 Desktop Runtime";
+    private const string Name = ".NET 10 Desktop Runtime";
 
     public static CheckRow Run()
     {
@@ -34,13 +34,13 @@ public static partial class RuntimeCheck
     {
         foreach (Match m in DesktopRegex().Matches(listRuntimesOutput))
         {
-            if (int.TryParse(m.Groups[1].Value, out int major) && major >= 9)
+            if (int.TryParse(m.Groups[1].Value, out int major) && major >= 10)
                 return new CheckRow(Name, CheckStatus.Ok,
                     $"Found Microsoft.WindowsDesktop.App {m.Groups[0].Value.Split(' ')[1]}",
                     [], Fixable: false);
         }
         return new CheckRow(Name, CheckStatus.Missing,
-            "Microsoft.WindowsDesktop.App 9.x not found. Install the .NET 9 Desktop Runtime from dotnet.microsoft.com/download/dotnet/9.0.",
+            "Microsoft.WindowsDesktop.App 10.x not found. Install the .NET 10 Desktop Runtime from dotnet.microsoft.com/download/dotnet/10.0.",
             [], Fixable: false);
     }
 

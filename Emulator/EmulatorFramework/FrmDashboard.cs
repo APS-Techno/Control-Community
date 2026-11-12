@@ -872,7 +872,7 @@ public class FrmDashboard : Form
             $"{_edition.ProductName} v{versionStr}\n\n" +
             "Physics-based hardware simulator for\n" +
             "APS vacuum systems.\n\n" +
-            ".NET 9.0 / WinForms",
+            ".NET 10 / WinForms",
             $"About {_edition.ProductName}",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
