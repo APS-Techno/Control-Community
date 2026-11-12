@@ -88,9 +88,10 @@ $outDir = Join-Path $outRoot $(if ($dirty) { 'Installer-dirty' } else { 'Install
 Get-ChildItem -LiteralPath $outDir -File | Where-Object { $_.Name -like 'ControlCommunitySetup-*.exe' -or $_.Name -eq 'SHA256SUMS.txt' } |
     Remove-Item -Force
 
-Invoke-Checked $isccPath @("/DBuildStage=$stage", "/DMyAppVersion=$version", "/O$outDir", (Join-Path $PSScriptRoot 'ControlCommunitySetup.iss'))
+$baseName = "ControlCommunitySetup-$version" + $(if ($dirty) { '-dirty' } else { '' })
+Invoke-Checked $isccPath @("/DBuildStage=$stage", "/DMyAppVersion=$version", "/O$outDir", "/F$baseName", (Join-Path $PSScriptRoot 'ControlCommunitySetup.iss'))
 
-$setup = Join-Path $outDir "ControlCommunitySetup-$version.exe"
+$setup = Join-Path $outDir "$baseName.exe"
 if (-not (Test-Path -LiteralPath $setup -PathType Leaf)) { throw "Installer not produced: $setup" }
 $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText((Join-Path $outDir 'SHA256SUMS.txt'), "$hash  $(Split-Path $setup -Leaf)`n", [Text.UTF8Encoding]::new($false))

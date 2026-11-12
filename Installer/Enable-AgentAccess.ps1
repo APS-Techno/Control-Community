@@ -67,7 +67,8 @@ $settings.OmitXmlDeclaration = -not ($doc.FirstChild -is [System.Xml.XmlDeclarat
 $writer = [System.Xml.XmlWriter]::Create($serverPath, $settings)
 try { $doc.Save($writer) } finally { $writer.Dispose() }
 
-$config = Get-Content -LiteralPath $samplePath -Raw | ConvertFrom-Json
+$configSource = if (Test-Path -LiteralPath $configPath -PathType Leaf) { $configPath } else { $samplePath }
+$config = Get-Content -LiteralPath $configSource -Raw | ConvertFrom-Json
 $config.apiKey = $key
 $config.host = $bind
 $config.port = [int]$server.GetAttribute('port')

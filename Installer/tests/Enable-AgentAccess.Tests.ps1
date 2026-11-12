@@ -79,6 +79,20 @@ Describe 'Enable-AgentAccess' {
         ($keys[0].hash -ieq $expected) | Should -BeTrue
     }
 
+    It 'keeps the certificate pin and download folder when it rotates the key' {
+        (Invoke-Enable $script:Root).ExitCode | Should -Be 0
+        $path = Join-Path $script:Root 'mcp\apsmcp.json'
+        $config = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+        $config.certSha256 = 'ABCDEF'
+        $config.downloadDir = 'C:\Runs'
+        [IO.File]::WriteAllText($path, ($config | ConvertTo-Json))
+        (Invoke-Enable $script:Root).ExitCode | Should -Be 0
+        $after = Get-McpConfig $script:Root
+        $after.certSha256 | Should -Be 'ABCDEF'
+        $after.downloadDir | Should -Be 'C:\Runs'
+        $after.apiKey | Should -Not -Be $config.apiKey
+    }
+
     It '-Manual grants Manual tier' {
         (Invoke-Enable $script:Root @('-Manual')).ExitCode | Should -Be 0
         $server = (Get-ServerXml $script:Root).AgentServer
