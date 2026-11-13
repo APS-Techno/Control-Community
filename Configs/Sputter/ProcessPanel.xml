@@ -8,7 +8,7 @@
     <reading id="tmp" label="tmp" group="Pressure" format="F0" unit="°C" accent="Temperature"/>
 
     <reading id="PSU1_V" label="PSU1 V" group="Power" format="F0" unit="V" accent="DcPower" device="PSU1"/>
-    <reading id="PSU1_I" label="PSU1 I" group="Power" format="F2" unit="A" accent="Current" device="PSU1"/>
+    <reading id="PSU1_I" label="PSU1 I" group="Power" format="F2" unit="mA" accent="Current" device="PSU1"/>
     <reading id="PSU2_W" label="PSU2" group="Power" format="F0" unit="W" accent="RfPower" device="PSU2"/>
   </readings>
   <valveGroups>

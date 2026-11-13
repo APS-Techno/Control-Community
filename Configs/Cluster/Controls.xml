@@ -33,16 +33,16 @@
       <MFC id="C1_Ar" left="92" top="35.2" scale="0.9" gas="Ar">MFC Ar</MFC>
     </MFCs>
     <sensors type="APS.Controls.General.LEDPanel">
-      <sensor id="LL_pm" left="45" top="13" scale="1" unit="Torr" format="0.##e-0" color="LimeGreen" direction="hor">LL</sensor>
+      <sensor id="LL_pm" left="44.6" top="13" scale="1" unit="Torr" format="0.##e-0" color="LimeGreen" direction="hor">LL</sensor>
       <sensor id="TM_pm" left="32" top="29.5" scale="1" unit="Torr" format="0.##e-0" color="DodgerBlue" direction="hor">TM</sensor>
-      <sensor id="C3_pm" left="40.5" top="67.5" scale="1" unit="Torr" format="0.##e-0" color="Crimson" direction="hor">C3</sensor>
-      <sensor id="C3_tmp" left="48.5" top="67.5" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">C3 Temp</sensor>
-      <sensor id="C4_pm" left="26.5" top="49.5" scale="1" unit="Torr" format="0.##e-0" color="DarkOrange" direction="hor">C4</sensor>
-      <sensor id="C4_tmp" left="18.5" top="49.5" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">C4 Temp</sensor>
-      <sensor id="C2_pm" left="61" top="51.5" scale="1" unit="Torr" format="0.##e-0" color="Purple" direction="hor">C2</sensor>
-      <sensor id="C2_tmp" left="68.5" top="51.5" scale="1" unit="C" format="F2" color="Purple" direction="hor">C2 Temp</sensor>
-      <sensor id="C1_pm" left="61" top="35" scale="1" unit="Torr" format="0.##e-0" color="Teal" direction="hor">C1</sensor>
-      <sensor id="C1_tmp" left="68.5" top="35" scale="1" unit="C" format="F2" color="Teal" direction="hor">C1 Temp</sensor>
+      <sensor id="C3_pm" left="41.55" top="67" scale="0.88" unit="Torr" format="0.##e-0" color="Crimson" direction="hor">C3</sensor>
+      <sensor id="C3_tmp" left="48.45" top="67" scale="0.88" unit="C" format="F2" color="DarkOrange" direction="hor">Temp</sensor>
+      <sensor id="C4_pm" left="19.55" top="49.2" scale="0.88" unit="Torr" format="0.##e-0" color="DarkOrange" direction="hor">C4</sensor>
+      <sensor id="C4_tmp" left="26.45" top="49.2" scale="0.88" unit="C" format="F2" color="DarkOrange" direction="hor">Temp</sensor>
+      <sensor id="C2_pm" left="61.55" top="50.3" scale="0.88" unit="Torr" format="0.##e-0" color="Purple" direction="hor">C2</sensor>
+      <sensor id="C2_tmp" left="68.45" top="50.3" scale="0.88" unit="C" format="F2" color="Purple" direction="hor">Temp</sensor>
+      <sensor id="C1_pm" left="60.9" top="35" scale="0.88" unit="Torr" format="0.##e-0" color="Teal" direction="hor">C1</sensor>
+      <sensor id="C1_tmp" left="67.8" top="35" scale="0.88" unit="C" format="F2" color="Teal" direction="hor">Temp</sensor>
     </sensors>
     <leds type="APS.Controls.General.LedControl">
       <led id="POWER" left="4" top="88" scale="1" align="right" color="Green" bgcolor="">Power</led>
@@ -57,10 +57,10 @@
       <tpump id="C2_TP" left="90" top="50.5" scale="0.8" bgcolor="" dir="left">C2 TP</tpump>
     </tpumps>
     <stages type="APS.Controls.Vacuum.StageControl">
-      <stage id="C3_VS" left="35" top="66.5" scale="0.9" MB="16" index="5">Lift</stage>
-      <stage id="C4_VS" left="36.5" top="38.5" scale="0.9" MB="16" index="5">Lift</stage>
-      <stage id="C2_VS" left="57" top="22.5" scale="0.9" MB="16" index="5">Lift</stage>
-      <stage id="C1_VS" left="56" top="52.5" scale="0.9" MB="16" index="5">Lift</stage>
+      <stage id="C3_VS" left="36.5" top="64" scale="0.85" MB="16" index="5">Lift</stage>
+      <stage id="C4_VS" left="37.2" top="38" scale="0.85" MB="16" index="5">Lift</stage>
+      <stage id="C2_VS" left="56.8" top="51.8" scale="0.85" MB="16" index="5">Lift</stage>
+      <stage id="C1_VS" left="56.5" top="22.5" scale="0.85" MB="16" index="5">Lift</stage>
     </stages>
     <gasinlets type="APS.Controls.Vacuum.GasInletControl">
       <gasinlet id="GI_C3_Ar" left="44" top="94" scale="1" gas="Ar" dir="right">Ar Supply</gasinlet>
@@ -72,9 +72,9 @@
     <magnetrons type="APS.Controls.Vacuum.MagnetronControl">
       <magnetron id="MAG4" left="44" top="61" scale="1" gas="Ar" target="Si" dir="down" gasinlet="false">C3 Si Magnetron</magnetron>
       <magnetron id="MAG5" left="52" top="61" scale="1" gas="N2" target="B4C" dir="down" gasinlet="false">C3 B4C Magnetron</magnetron>
-      <magnetron id="MAG6" left="26.5" top="43" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C4 Magnetron</magnetron>
-      <magnetron id="MAG3" left="68.5" top="45" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C2 Magnetron</magnetron>
-      <magnetron id="MAG1" left="68" top="29" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C1 Magnetron</magnetron>
+      <magnetron id="MAG6" left="26" top="43" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C4 Magnetron</magnetron>
+      <magnetron id="MAG3" left="68" top="44.2" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C2 Magnetron</magnetron>
+      <magnetron id="MAG1" left="67.3" top="29" scale="1" gas="Ar" target="" dir="down" gasinlet="false">C1 Magnetron</magnetron>
     </magnetrons>
     <gatevalves type="APS.Controls.Vacuum.GateValveControl">
       <gatevalve id="LL_GV" left="40" top="12" scale="0.6"></gatevalve>

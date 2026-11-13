@@ -522,10 +522,16 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
             }
             bool isSource = m.Supply != null || m.ShutterOpen != null || m.SourceOn != null;
             g.DrawString(m.Name, smallF, isSource ? primary : dim, nameX, y);
-            if (m.Supply != null)
-                g.DrawString(m.Supply, smallF, dim, supplyX, y);
-
             var vs = g.MeasureString(m.Value, monoF);
+            if (m.Supply != null)
+            {
+                float supplyW = valueRight - vs.Width - colGap - supplyX;
+                if (supplyW > 0f)
+                {
+                    using var sf = new StringFormat(StringFormatFlags.NoWrap) { Trimming = StringTrimming.EllipsisCharacter };
+                    g.DrawString(m.Supply, smallF, dim, new RectangleF(supplyX, y, supplyW, smallH), sf);
+                }
+            }
             g.DrawString(m.Value, monoF, primary, valueRight - vs.Width, y);
 
             float ux = unitX;

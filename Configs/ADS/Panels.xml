@@ -37,7 +37,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>10.5</top>
+    <top>15.5</top>
   </panel>
   <panel>
     <id>PSU_C</id>
@@ -50,7 +50,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>20.75</top>
+    <top>30.5</top>
   </panel>
   <panel>
     <id>PSU_ION</id>
@@ -63,7 +63,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>31.0</top>
+    <top>45.75</top>
   </panel>
   <panel>
     <id>PSU_RF1</id>
@@ -76,7 +76,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>41.25</top>
+    <top>60.75</top>
   </panel>
   <panel>
     <id>PSU_RF2</id>
@@ -89,7 +89,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>51.5</top>
+    <top>76</top>
   </panel>
   <panel>
     <id>Process</id>

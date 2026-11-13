@@ -682,6 +682,17 @@ public partial class FrmMain : Form
         var prevState = _lastRecipeInfo?.State;
         _lastRecipeInfo = info;
 
+        if (info.State == APS.ProcessPanel.Contracts.RecipeState.Running && !string.IsNullOrWhiteSpace(info.Name))
+        {
+            string runName = info.Name;
+            ExecuteOnUIThread(() =>
+            {
+                string current = lblRecepieFileName.Text;
+                if (current != runName && current != runName + " (re-run)")
+                    lblRecepieFileName.Text = runName;
+            });
+        }
+
         // Finalize the deposition snapshot on the first active→terminal transition.
         // Active = Running/Paused/Aborting; terminal = Complete/Error/Idle.
         // _currentSnapshotPath is cleared afterwards so a second terminal message cannot

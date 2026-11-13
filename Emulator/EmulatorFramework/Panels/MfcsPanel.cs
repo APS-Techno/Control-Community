@@ -85,9 +85,9 @@ internal sealed class MfcsPanel : UserControl
         {
             _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / mfcs.Count));
 
-            var nameLbl = MakeLabel(mfcs[i].Id, header: true);
-            var setLbl  = MakeLabel("0.0",      header: false);
-            var actLbl  = MakeLabel("0.0",      header: false);
+            var nameLbl = MakeLabel(mfcs[i].Id, header: true,  ContentAlignment.MiddleLeft);
+            var setLbl  = MakeLabel("0.0",      header: false, ContentAlignment.MiddleLeft);
+            var actLbl  = MakeLabel("0.0",      header: false, ContentAlignment.MiddleLeft);
 
             _grid.Controls.Add(nameLbl, i + 1, 0);
             _grid.Controls.Add(setLbl,  i + 1, 1);
@@ -99,12 +99,12 @@ internal sealed class MfcsPanel : UserControl
         UpdateValues();
     }
 
-    private static Label MakeLabel(string text, bool header) => new()
+    private static Label MakeLabel(string text, bool header, ContentAlignment align = ContentAlignment.MiddleRight) => new()
     {
         Text = text,
         AutoSize = false,
         Dock = DockStyle.Fill,
-        TextAlign = header ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft,
+        TextAlign = align,
         Font = new Font(header ? "Segoe UI" : "Consolas", header ? 9f : 10f, header ? FontStyle.Bold : FontStyle.Regular),
     };
 

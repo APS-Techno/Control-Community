@@ -24,9 +24,9 @@
       <MFC id="N22" left="80" top="24" scale="1" gas="N2">MFC N2 2</MFC>
     </MFCs>
     <sensors type="APS.Controls.General.LEDPanel">
-      <sensor id="pm" left="37" top="52" scale="1" unit="Torr" format="0.##e-0" color="Red" direction="hor">PM</sensor>
-      <sensor id="pl" left="70" top="43" scale="1" unit="Torr" format="0.##e-0" color="Red" direction="hor">LL</sensor>
-      <sensor id="tmp" left="5" top="95" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">Temp</sensor>
+      <sensor id="pm" left="34.5" top="52" scale="1" unit="Torr" format="0.##e-0" color="Red" direction="hor">PM</sensor>
+      <sensor id="pl" left="65.8" top="51.2" scale="0.9" unit="Torr" format="0.##e-0" color="Red" direction="hor">LL</sensor>
+      <sensor id="tmp" left="34.5" top="47.2" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">Temp</sensor>
     </sensors>
     <leds type="APS.Controls.General.LedControl">
       <led id="POWER" left="4" top="88" scale="1" align="right" color="Green" bgcolor="">Power</led>
@@ -37,7 +37,7 @@
     </tpumps>
     <stages type="APS.Controls.Vacuum.StageControl">
       <stage id="VS" left="52" top="50" scale="1" MB="0" index="0">Substrate</stage>
-      <stage id="HS" left="76.5" top="49.6" scale="1" MB="0" index="0">Arm</stage>
+      <stage id="HS" left="75.8" top="48.8" scale="0.9" MB="0" index="0">Arm</stage>
     </stages>
     <gasinlets type="APS.Controls.Vacuum.GasInletControl">
       <gasinlet id="GI_Ar1" left="2" top="34.2" scale="1" gas="Ar" dir="down">Ar Supply 1</gasinlet>

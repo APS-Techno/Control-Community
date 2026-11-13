@@ -220,7 +220,7 @@ public class FrmDashboard : Form
         label.AutoSize = false;
         label.Dock = DockStyle.Fill;
         label.TextAlign = ContentAlignment.MiddleLeft;
-        label.BorderStyle = BorderStyle.Fixed3D;
+        label.BorderStyle = BorderStyle.FixedSingle;
         label.Font = new Font("Consolas", 10f);
     }
 
@@ -241,6 +241,7 @@ public class FrmDashboard : Form
         if (!chambersHas && !pumpsHas) _vacuumLayout.RowStyles[0] = new RowStyle(SizeType.Absolute, 0);
         if (!valvesHas)                _vacuumLayout.RowStyles[1] = new RowStyle(SizeType.Absolute, 0);
         if (!mfcsHas)                  _vacuumLayout.RowStyles[2] = new RowStyle(SizeType.Absolute, 0);
+        _vacuumLayout.PerformLayout();
     }
 
     private void BuildReplayTab()
@@ -844,7 +845,6 @@ public class FrmDashboard : Form
         };
     }
 
-    private void FrmDashboard_FormClosing(object? sender, FormClosingEventArgs e)
     private void ApplyWindowPlacement()
     {
         if (_settings.HasWindowBounds)
@@ -866,14 +866,15 @@ public class FrmDashboard : Form
         if (WindowState != FormWindowState.Minimized) _lastNonMinimizedState = WindowState;
     }
 
+    private void FrmDashboard_FormClosing(object? sender, FormClosingEventArgs e)
     {
         _uiTimer.Stop();
-        _uiTimer.Dispose();
         _settings.RememberWindow(
             WindowState, _lastNonMinimizedState,
             WindowState == FormWindowState.Normal ? Bounds : RestoreBounds);
         try { _settings.Save(EmulatorSettings.SettingsPathFor(_edition.SettingsFolder)); }
         catch { }
+        _uiTimer.Dispose();
         _engine?.Dispose();
     }
 

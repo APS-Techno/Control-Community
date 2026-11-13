@@ -164,6 +164,24 @@ public class LanPsuPanelTests
         panel.FrequencyInput.Value = 101;
         Assert.Single(sent);
     }
+
+    [Fact]
+    public void Update_FollowsSetpointChangedOutsidePanel()
+    {
+        var supply = new LanPowerSupplyStub("PSU1") { Connected = true };
+        var hardware = new StubMenuContext.StubHardware();
+        hardware.Devices["PSU1"] = supply;
+        using var panel = new LanPsuPanel { ID = "PSU1" };
+        panel.OnHardwareAvailable(hardware);
+        var sent = Capture(panel);
+        Assert.Equal(300m, panel.PowerInput.Value);
+
+        supply.PowerSetpoint = 400f;
+        panel.Update([0f, 0f, 0f, false]);
+
+        Assert.Equal(400m, panel.PowerInput.Value);
+        Assert.Empty(sent);
+    }
 }
 
 internal class LanPowerSupplyStub : APS.SystemControl.BaseHWClasses.BasePowerSupply
@@ -173,9 +191,11 @@ internal class LanPowerSupplyStub : APS.SystemControl.BaseHWClasses.BasePowerSup
 
     public override IReadOnlyCollection<string> SetpointParameterNames => ["Power", "Frequency", "DutyCycle"];
 
+    public float PowerSetpoint { get; set; } = 300f;
+
     public override bool TryGetSetpoint(string parameter, out float value)
     {
-        value = parameter switch { "Power" => 300f, "Frequency" => 100f, "DutyCycle" => 40f, _ => 0f };
+        value = parameter switch { "Power" => PowerSetpoint, "Frequency" => 100f, "DutyCycle" => 40f, _ => 0f };
         return Connected;
     }
 }

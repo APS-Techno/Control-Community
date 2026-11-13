@@ -193,6 +193,19 @@ public class LanPsuPanel : ScalablePanel, IBaseCustomPanel, IHardwareAwarePanel
         return true;
     }
 
+    private void ResyncIdleSetpoints()
+    {
+        if (!_nudPower.ContainsFocus)
+            Seed(_nudPower, "Power");
+        if (_supply!.SetpointParameterNames.Contains("Frequency"))
+        {
+            if (!_nudFrequency.ContainsFocus)
+                Seed(_nudFrequency, "Frequency");
+            if (!_nudDuty.ContainsFocus)
+                Seed(_nudDuty, "DutyCycle");
+        }
+    }
+
     private void BtnOutput_Click(object? sender, EventArgs e)
     {
         _btnOutput.Selected = !_btnOutput.Selected;
@@ -213,6 +226,8 @@ public class LanPsuPanel : ScalablePanel, IBaseCustomPanel, IHardwareAwarePanel
             _seeded = false;
         else if (!_seeded)
             _seeded = SeedFromSupply();
+        else
+            ResyncIdleSetpoints();
 
         _lddVoltage.Text = Convert.ToDouble(args[0], CultureInfo.InvariantCulture).ToString("F1", CultureInfo.InvariantCulture);
         _lddCurrent.Text = Convert.ToDouble(args[1], CultureInfo.InvariantCulture).ToString("F2", CultureInfo.InvariantCulture);

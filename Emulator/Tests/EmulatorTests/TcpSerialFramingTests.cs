@@ -93,15 +93,24 @@ public class TcpSerialFramingTests
         await client.ConnectAsync("127.0.0.1", port);
         var stream = client.GetStream();
 
-        // Send exactly 22 bytes (20-byte payload + 2-byte additive sum)
+        // Send a valid 22-byte frame ([len=0x16][0xFF-len=0xE9] + 18-byte body + 2-byte big-endian sum of [2..19])
         byte[] frame = new byte[22];
-        for (int i = 0; i < 22; i++) frame[i] = (byte)(i + 1);
+        frame[0] = 0x16;
+        frame[1] = 0xE9;
+        ushort sum = 0;
+        for (int i = 2; i < 20; i++)
+        {
+            frame[i] = (byte)(i + 1);
+            sum += frame[i];
+        }
+        frame[20] = (byte)(sum >> 8);
+        frame[21] = (byte)(sum & 0xFF);
         await stream.WriteAsync(frame);
         await Task.Delay(100);
 
         byte[] buf = new byte[64];
-        int read = await stream.ReadAsync(buf);
-
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        int read = await stream.ReadAsync(buf, cts.Token);
         Assert.NotNull(received);
         Assert.Equal(22, received!.Length);
         Assert.Equal(2, read); // 0xAA, 0xBB
