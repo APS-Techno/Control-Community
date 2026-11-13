@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<processPanel>
+  <readings>
+    <reading id="C1·Ar" label="C1·Ar" group="MassFlow" format="F1" unit="sccm"/>
+    <reading id="C2·Ar" label="C2·Ar" group="MassFlow" format="F1" unit="sccm"/>
+    <reading id="C3·Ar" label="C3·Ar" group="MassFlow" format="F1" unit="sccm"/>
+    <reading id="C4·Ar" label="C4·Ar" group="MassFlow" format="F1" unit="sccm"/>
+    <reading id="C3·N2" label="C3·N2" group="MassFlow" format="F1" unit="sccm"/>
+    <reading id="C1·pm" label="C1·pm" group="Pressure" format="E1" unit="Torr"/>
+    <reading id="C2·pm" label="C2·pm" group="Pressure" format="E1" unit="Torr"/>
+    <reading id="C3·pm" label="C3·pm" group="Pressure" format="E1" unit="Torr"/>
+    <reading id="C4·pm" label="C4·pm" group="Pressure" format="E1" unit="Torr"/>
+    <reading id="LL·pm" label="LL·pm" group="Pressure" format="E1" unit="Torr"/>
+    <reading id="TM·pm" label="TM·pm" group="Pressure" format="E1" unit="Torr"/>
+    <reading id="C1·tmp" label="C1·tmp" group="Substrate" format="F0" unit="°C"/>
+    <reading id="C2·tmp" label="C2·tmp" group="Substrate" format="F0" unit="°C"/>
+    <reading id="C3·tmp" label="C3·tmp" group="Substrate" format="F0" unit="°C"/>
+    <reading id="C4·tmp" label="C4·tmp" group="Substrate" format="F0" unit="°C"/>
+    <reading id="C1·PSU1" label="C1·PSU1" group="Power" format="F0" unit="W"/>
+    <reading id="C1·PSU2" label="C1·PSU2" group="Power" format="F0" unit="W"/>
+    <reading id="C2·PSU" label="C2·PSU" group="Power" format="F0" unit="W"/>
+    <reading id="C3·PSU1" label="C3·PSU1" group="Power" format="F0" unit="W"/>
+    <reading id="C3·PSU2" label="C3·PSU2" group="Power" format="F0" unit="W"/>
+    <reading id="C4·PSU" label="C4·PSU" group="Power" format="F0" unit="W"/>
+  </readings>
+</processPanel>

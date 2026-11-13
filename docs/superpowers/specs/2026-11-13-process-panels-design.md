@@ -85,3 +85,10 @@ Port of the cluster panel. Chamber list, tile order, valve and shutter LEDs, sou
 - File split inside `APS.Controls.Generic`.
 - Which of the three profiles have a Process tab and need a `Panels.xml` entry.
 - Choosing the reading ids for each profile from its HWConf.
+
+## Revisions made during implementation
+
+- The `<pumps>` section was dropped. Pump LEDs come from the pump states already in `ClusterSnapshot`, so the spec had nothing to add.
+- Panels are built through a parameterless constructor, so `FrmMain.LoadCustomPanelsXML` loads `ProcessPanel.xml` into `ProcessPanelSpec.Current` before it creates any panel. `Config.ProcessPanelConfigFile` names the file.
+- `BaseProcessPanel` builds its side stacks only when the spec has at least one reading. A spec without readings gives a panel without valve LEDs.
+- Drive pills are declared in the spec. The chamber schematic reacts to the drive ids `Holder` and `Shutter`.

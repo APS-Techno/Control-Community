@@ -91,4 +91,17 @@
     <left>86.5</left>
     <top>53.5</top>
   </panel>
+  <panel>
+    <id>ClusterProcess</id>
+    <caption>Cluster</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.ClusterProcessPanel</type>
+    <event></event>
+    <msghandler></msghandler>
+    <parent>tabProcess</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>0</left>
+    <top>0</top>
+  </panel>
 </panels>
