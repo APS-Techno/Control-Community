@@ -46,3 +46,4 @@ Only one profile runs at a time, so the port range is shared with the other prof
 ## Process tab
 
 `ProcessPanel.xml` declares what the Process panel (`APS.Controls.Generic.ChamberProcessPanel`, loaded from `Panels.xml`) shows: the reading rows (id, group, format, unit, scale, accent), the valve LED groups and the drive pills. Reading ids follow the telemetry names: a sensor or MFC by its id, a supply as `<id>_V`, `<id>_I`, `<id>_W`, a throttle controller as `<id>_P`, `<id>_Pos`. The file is read when the panels load, so use Reload GUI config after a change. A bad entry is skipped and reported in the Events log.
+Set `flanges="N"` on the root element (1 to 6, default 6) to draw only the flanges the system has.

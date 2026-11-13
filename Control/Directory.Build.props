@@ -10,7 +10,7 @@
          comparing DLL timestamps and hashes by hand, because the version told
          you nothing. They now carry the same <Version>.<commit count> stamp as
          the host, so a mismatched plugin is legible from its properties. -->
-    <Version>1.7.0</Version>
+    <Version>1.7.1</Version>
 
     <!-- Suppress NU1701: OpenTK 3.1.0 (transitive via ScottPlot) targets .NET Framework only -->
     <NoWarn>$(NoWarn);NU1701</NoWarn>
