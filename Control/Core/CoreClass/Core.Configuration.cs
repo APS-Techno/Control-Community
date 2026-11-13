@@ -117,6 +117,7 @@ internal class Config
     public string AlarmFile => Path.Combine(ConfigDir, @"Alarms.xml");
     public string DefaultJobsList => Path.Combine(ConfigDir, @"DefaultJobs.xml");
     public string GUIPanelsConfigFile => Path.Combine(ConfigDir, @"Panels.xml");
+    public string ProcessPanelConfigFile => Path.Combine(ConfigDir, @"ProcessPanel.xml");
     public string MenusConfigFile => Path.Combine(ConfigDir, @"Menus.xml");
     public string GraphFile => Path.Combine(ConfigDir, @"Graphs.xml");
     public string SourcesFile => Path.Combine(ConfigDir, @"Sources.xml");

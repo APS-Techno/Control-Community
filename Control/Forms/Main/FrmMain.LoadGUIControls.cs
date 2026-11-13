@@ -212,6 +212,11 @@ public partial class FrmMain
                 if (dragParent == null) return;
                 _panelDragManager = new PanelDragManager(dragParent, xml_panels, fileName);
 
+                var processSpec = APS.SystemControl.GUIControls.Process.ProcessPanelSpec.Load(config.ProcessPanelConfigFile);
+                APS.SystemControl.GUIControls.Process.ProcessPanelSpec.Current = processSpec;
+                foreach (var specError in processSpec.Errors)
+                    PublishEvent("ProcessPanel", specError, APS.SystemControl.Core.Logging.LogEventLevel.Operator);
+
                 foreach (XML_Panel xml_panel in xml_panels.Panels)
                 {
                     LoadPanel(xml_panel, _panelDragManager);

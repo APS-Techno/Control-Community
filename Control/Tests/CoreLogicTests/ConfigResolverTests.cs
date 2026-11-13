@@ -112,3 +112,17 @@ public class ConfigResolverTests
         Assert.Equal(@"E:\RunData", cfg.DataDir);
     }
 }
+
+public class ProcessPanelConfigFileTests
+{
+    [Fact]
+    public void ProcessPanelConfigFile_IsNextToPanelsXml()
+    {
+        var cfg = new Config(new AppConfig
+        {
+            ConfigDir = @"C:\Configs", Prefix = "ADS", WorkDir = @"C:\Work",
+        });
+        Assert.Equal(Path.GetDirectoryName(cfg.GUIPanelsConfigFile), Path.GetDirectoryName(cfg.ProcessPanelConfigFile));
+        Assert.Equal("ProcessPanel.xml", Path.GetFileName(cfg.ProcessPanelConfigFile));
+    }
+}
