@@ -4,7 +4,7 @@ title: "APS Control Community"
 type: software
 authors:
   - name: "APS Technology"
-version: 1.6.3
+version: 1.7.0
 repository-code: "https://github.com/APS-Techno/Control-Community"
 license: Apache-2.0
 preferred-citation:
