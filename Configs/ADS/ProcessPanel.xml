@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<processPanel>
+  <readings>
+    <reading id="Ar1" label="Ar1" group="MassFlow" format="F1" unit="sccm" accent="Ar"/>
+    <reading id="Ar2" label="Ar2" group="MassFlow" format="F1" unit="sccm" accent="Ar"/>
+    <reading id="N21" label="N21" group="MassFlow" format="F1" unit="sccm" accent="N2"/>
+    <reading id="N22" label="N22" group="MassFlow" format="F1" unit="sccm" accent="N2"/>
+
+    <reading id="pm" label="pm" group="Pressure" format="E1" unit="Torr" scale="Log" accent="Vacuum"/>
+    <reading id="pl" label="pl" group="Pressure" format="E1" unit="Torr" scale="Log" accent="Vacuum"/>
+    <reading id="tmp" label="tmp" group="Pressure" format="F0" unit="°C" accent="Temperature"/>
+
+    <reading id="PSU_A_V" label="PSU_A V" group="Power" format="F0" unit="V" accent="DcPower" device="PSU_A"/>
+    <reading id="PSU_A_I" label="PSU_A I" group="Power" format="F2" unit="A" accent="Current" device="PSU_A"/>
+    <reading id="PSU_B_V" label="PSU_B V" group="Power" format="F0" unit="V" accent="DcPower" device="PSU_B"/>
+    <reading id="PSU_B_I" label="PSU_B I" group="Power" format="F2" unit="A" accent="Current" device="PSU_B"/>
+    <reading id="PSU_C_V" label="PSU_C V" group="Power" format="F0" unit="V" accent="DcPower" device="PSU_C"/>
+    <reading id="PSU_C_I" label="PSU_C I" group="Power" format="F2" unit="A" accent="Current" device="PSU_C"/>
+    <reading id="PSU_ION_V" label="PSU_ION V" group="Power" format="F0" unit="V" accent="DcPower" device="PSU_ION"/>
+    <reading id="PSU_ION_I" label="PSU_ION I" group="Power" format="F2" unit="A" accent="Current" device="PSU_ION"/>
+    <reading id="PSU_RF1_W" label="PSU_RF1" group="Power" format="F0" unit="W" accent="RfPower" device="PSU_RF1"/>
+    <reading id="PSU_RF2_W" label="PSU_RF2" group="Power" format="F0" unit="W" accent="RfPower" device="PSU_RF2"/>
+
+    <reading id="TC1_P" label="Pressure" group="Process" format="F2" unit="mTorr" accent="Vacuum" section="Throttle (TC1)"/>
+    <reading id="TC1_Pos" label="Position" group="Process" format="F1" unit="%" accent="Position" section="Throttle (TC1)"/>
+  </readings>
+  <valveGroups>
+    <group header="Gas inlets">
+      <valve id="V1" descr="N2 inlet"/>
+      <valve id="V2" descr="Ar inlet"/>
+      <valve id="V3" descr="Ar inlet"/>
+      <valve id="V4" descr="N2 inlet"/>
+    </group>
+    <group header="Chamber">
+      <valve id="V5" descr="Inlet"/>
+      <valve id="V6" descr="Bypass"/>
+      <valve id="VI" descr="Ion"/>
+    </group>
+    <group header="Magnetrons">
+      <valve id="M1" descr="Magnetron 1"/>
+      <valve id="M2" descr="Magnetron 2"/>
+      <valve id="M3" descr="Magnetron 3"/>
+    </group>
+  </valveGroups>
+  <drives>
+    <drive id="Holder" label="Holder"/>
+    <drive id="Shutter" label="Shutter"/>
+  </drives>
+</processPanel>

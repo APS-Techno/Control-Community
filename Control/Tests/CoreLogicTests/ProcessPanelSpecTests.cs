@@ -120,7 +120,7 @@ public class ProcessPanelSpecTests : IDisposable
     }
 
     [Fact]
-    public void Load_ValveGroupsDrivesPumps_PreserveOrderAndText()
+    public void Load_ValveGroupsAndDrives_PreserveOrderAndText()
     {
         var spec = ProcessPanelSpec.Load(Write("""
             <valveGroups>
@@ -128,14 +128,12 @@ public class ProcessPanelSpecTests : IDisposable
               <group header="Chamber"><valve id="V5" descr="Inlet"/></group>
             </valveGroups>
             <drives><drive id="D1" label="Holder"/><drive id="D2" label="Shutter"/></drives>
-            <pumps><pump id="TM" label="TM"/></pumps>
             """));
         Assert.Empty(spec.Errors);
         Assert.Equal(["Gas inlets", "Chamber"], spec.ValveGroups.Select(g => g.Header));
         Assert.Equal([("V1", "N2 inlet"), ("V2", "Ar inlet")],
             spec.ValveGroups[0].Valves.Select(v => (v.Id, v.Description)));
         Assert.Equal(["Holder", "Shutter"], spec.Drives.Select(d => d.Label));
-        Assert.Equal("TM", spec.Pumps[0].Id);
     }
 
     [Fact]

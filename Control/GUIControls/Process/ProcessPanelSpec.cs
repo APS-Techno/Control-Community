@@ -10,16 +10,13 @@ public sealed record ValveGroupSpec(string Header, IReadOnlyList<ValveSpec> Valv
 
 public sealed record DriveSpec(string Id, string Label);
 
-public sealed record PumpSpec(string Id, string Label);
-
 public sealed record ProcessPanelSpec(
     IReadOnlyList<ReadingSpec> Readings,
     IReadOnlyList<ValveGroupSpec> ValveGroups,
     IReadOnlyList<DriveSpec> Drives,
-    IReadOnlyList<PumpSpec> Pumps,
     IReadOnlyList<string> Errors)
 {
-    public static ProcessPanelSpec Empty { get; } = new([], [], [], [], []);
+    public static ProcessPanelSpec Empty { get; } = new([], [], [], []);
 
     public static ProcessPanelSpec Current { get; set; } = Empty;
 
@@ -47,7 +44,6 @@ public sealed record ProcessPanelSpec(
             ParseReadings(root, errors),
             ParseValveGroups(root, errors),
             ParseIdLabel(root, "drives", "drive", (id, label) => new DriveSpec(id, label), errors),
-            ParseIdLabel(root, "pumps", "pump", (id, label) => new PumpSpec(id, label), errors),
             errors);
     }
 
