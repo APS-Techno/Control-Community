@@ -24,7 +24,7 @@ public class MFCControl : ThemedVacuumControl
     private Font? _captionFont;
     private Font? _valueFont;
     private Font? _gasFont;
-    private float _cachedBaseScale = -1f;
+    private float _cachedSf = -1f;
 
     private Action<string, float>? _sendHWMessage;
 
@@ -104,6 +104,37 @@ public class MFCControl : ThemedVacuumControl
         ];
     }
 
+    public readonly record struct MfcLayout(
+        int Inset, Rectangle Lcd, Rectangle Screen, RectangleF CaptionBand, RectangleF ValueBand, Rectangle GasStrip)
+    {
+        public bool ShowsCaption => !CaptionBand.IsEmpty;
+    }
+
+    public static MfcLayout ComputeLayout(int w, int h, float sf, bool hasCaption)
+    {
+        int inset = Math.Max(3, (int)Math.Round(6 * sf));
+        int gap = Math.Max(1, (int)Math.Round(2.5f * sf));
+        int gasStripH = Math.Max(9, (int)Math.Round(15 * sf));
+        int bezel = Math.Max(1, (int)Math.Round(2.5f * sf));
+
+        int lcdTop = inset;
+        int lcdBottom = h - inset - gasStripH - gap;
+        var lcd = new Rectangle(inset, lcdTop, w - inset * 2, lcdBottom - lcdTop);
+        var screen = Rectangle.Inflate(lcd, -bezel, -bezel);
+        var gasStrip = new Rectangle(inset, h - inset - gasStripH, w - inset * 2, gasStripH);
+
+        var captionBand = RectangleF.Empty;
+        RectangleF valueBand = screen;
+        if (hasCaption && screen.Height >= 18)
+        {
+            float captionH = screen.Height * 0.38f;
+            captionBand = new RectangleF(screen.X, screen.Y, screen.Width, captionH);
+            valueBand = new RectangleF(screen.X, screen.Y + captionH, screen.Width, screen.Height - captionH);
+        }
+
+        return new MfcLayout(inset, lcd, screen, captionBand, valueBand, gasStrip);
+    }
+
     protected override void CalculateSize()
     {
         float sf = BaseScale * _scale;
@@ -120,67 +151,64 @@ public class MFCControl : ThemedVacuumControl
         int h = ClientSize.Height;
         if (w < 8 || h < 8) return;
 
-        EnsureFonts();
+        float sf = BaseScale * _scale;
+        EnsureFonts(sf);
+        var L = ComputeLayout(w, h, sf, !string.IsNullOrEmpty(_caption));
 
         var bounds = new Rectangle(0, 0, w - 1, h - 1);
 
         DrawMetalHousing(g, bounds, 5);
 
-        if (w > 40 && h > 40)
-            DrawScrews(g, bounds, 7);
+        if (L.Inset >= 8 && w >= 70 && h >= 70)
+            DrawScrews(g, bounds, L.Inset / 2);
 
-        int inset = Math.Max(6, (int)(8 * BaseScale));
-        int gasStripH = Math.Max(14, (int)(16 * BaseScale));
-        int lcdTop = inset;
-        int lcdBottom = h - inset - gasStripH - Math.Max(2, (int)(3 * BaseScale));
-        var lcdRect = new Rectangle(inset, lcdTop, w - inset * 2, lcdBottom - lcdTop);
+        if (L.Lcd.Width > 4 && L.Lcd.Height > 4)
+            DrawMfcLcd(g, L);
 
-        if (lcdRect.Width > 4 && lcdRect.Height > 4)
-            DrawMfcLcd(g, lcdRect);
-
-        var gasStripRect = new Rectangle(
-            inset, h - inset - gasStripH,
-            w - inset * 2, gasStripH);
-        DrawGasStrip(g, gasStripRect);
+        DrawGasStrip(g, L.GasStrip);
 
         using var accentPen = new Pen(FrameColor, 1.5f);
         using var path = CreateRoundedRect(bounds, 5);
         g.DrawPath(accentPen, path);
     }
 
-    private void DrawMfcLcd(Graphics g, Rectangle lcdRect)
+    private void DrawMfcLcd(Graphics g, MfcLayout L)
     {
         using (var bezelBrush = new SolidBrush(Color.FromArgb(17, 17, 17)))
-            g.FillRectangle(bezelBrush, lcdRect);
+            g.FillRectangle(bezelBrush, L.Lcd);
         using (var bezelPen = new Pen(VacuumTheme.BorderSecondary, 1.5f))
-            g.DrawRectangle(bezelPen, lcdRect);
+            g.DrawRectangle(bezelPen, L.Lcd);
 
-        var screenRect = new Rectangle(lcdRect.X + 3, lcdRect.Y + 3,
-            lcdRect.Width - 6, lcdRect.Height - 6);
+        var screenRect = L.Screen;
         if (screenRect.Width < 2 || screenRect.Height < 2) return;
 
         using (var lcdBg = VacuumTheme.CreateLcdBackground(screenRect))
             g.FillRectangle(lcdBg, screenRect);
 
-        if (!string.IsNullOrEmpty(_caption) && _captionFont != null)
+        var state = g.Save();
+        g.SetClip(screenRect, CombineMode.Intersect);
+
+        if (L.ShowsCaption && _captionFont != null)
         {
             using var captionBrush = new SolidBrush(Color.FromArgb(0, 170, 102));
-            var captionSize = g.MeasureString(_caption, _captionFont);
-            float captionX = screenRect.X + (screenRect.Width - captionSize.Width) / 2f;
-            float captionY = screenRect.Y + 1;
-            g.DrawString(_caption, _captionFont, captionBrush, captionX, captionY);
+            DrawCentered(g, _caption, _captionFont, captionBrush, L.CaptionBand);
         }
 
         if (_valueFont != null)
         {
             using var valueBrush = new SolidBrush(_fontColor);
-            var valueSize = g.MeasureString(_value, _valueFont);
-            float valueX = screenRect.X + (screenRect.Width - valueSize.Width) / 2f;
-            float valueY = !string.IsNullOrEmpty(_caption)
-                ? screenRect.Y + 13 * BaseScale
-                : screenRect.Y + (screenRect.Height - valueSize.Height) / 2f;
-            g.DrawString(_value, _valueFont, valueBrush, valueX, valueY);
+            DrawCentered(g, _value, _valueFont, valueBrush, L.ValueBand);
         }
+
+        g.Restore(state);
+    }
+
+    private static void DrawCentered(Graphics g, string text, Font font, Brush brush, RectangleF band)
+    {
+        var size = g.MeasureString(text, font);
+        g.DrawString(text, font, brush,
+            band.X + (band.Width - size.Width) / 2f,
+            band.Y + (band.Height - size.Height) / 2f);
     }
 
     private void DrawGasStrip(Graphics g, Rectangle stripRect)
@@ -201,20 +229,18 @@ public class MFCControl : ThemedVacuumControl
         }
     }
 
-    private void EnsureFonts()
+    private void EnsureFonts(float sf)
     {
-        // Keyed on BaseScale only; DPI does not affect widget-internal fonts.
-        // Pixel-unit fonts: legacy pt × 4/3 so 96-DPI rendering is unchanged.
-        if (_captionFont != null && Math.Abs(_cachedBaseScale - BaseScale) <= 0.001f) return;
+        if (_captionFont != null && Math.Abs(_cachedSf - sf) <= 0.001f) return;
 
         _captionFont?.Dispose();
         _valueFont?.Dispose();
         _gasFont?.Dispose();
 
-        _captionFont = new Font("Consolas", 7f * 4f / 3f * BaseScale, FontStyle.Regular, GraphicsUnit.Pixel);
-        _valueFont   = new Font("Consolas", 12f * 4f / 3f * BaseScale, FontStyle.Bold,    GraphicsUnit.Pixel);
-        _gasFont     = new Font("Consolas", 8f  * 4f / 3f * BaseScale, FontStyle.Bold,    GraphicsUnit.Pixel);
-        _cachedBaseScale = BaseScale;
+        _captionFont = new Font("Consolas", Math.Max(5.5f, 6.5f * 4f / 3f * sf), FontStyle.Regular, GraphicsUnit.Pixel);
+        _valueFont   = new Font("Consolas", Math.Max(6.5f, 11f  * 4f / 3f * sf), FontStyle.Bold,    GraphicsUnit.Pixel);
+        _gasFont     = new Font("Consolas", Math.Max(6f,   7.5f * 4f / 3f * sf), FontStyle.Bold,    GraphicsUnit.Pixel);
+        _cachedSf = sf;
     }
 
     protected override void OnDoubleClick(EventArgs e)

@@ -266,15 +266,16 @@ public class TurboPumpControl : ThemedVacuumControl
 
         DrawIdLabel(g, r, angle);
 
-        int idAreaH = Math.Max(14, (int)(16 * BaseScale));
-        int topMargin = r.Y + idAreaH + (int)(4 * BaseScale);
-        int sideMargin = Math.Max(6, (int)(8 * BaseScale));
-        int bottomMargin = Math.Max(4, (int)(6 * BaseScale));
+        float sf = BaseScale * _scale;
+        int idAreaH = Math.Max(9, (int)Math.Round(15 * sf));
+        int topMargin = r.Y + idAreaH + (int)(4 * sf);
+        int sideMargin = Math.Max(3, (int)Math.Round(6 * sf));
+        int bottomMargin = Math.Max(2, (int)Math.Round(4 * sf));
         int availableH = r.Bottom - topMargin - bottomMargin;
         int slotH = availableH / 4;
 
-        int ledW = Math.Max(8, (int)(10 * BaseScale));
-        int ledH = Math.Max(6, (int)(8 * BaseScale));
+        int ledW = Math.Max(5, (int)(10 * sf));
+        int ledH = Math.Max(4, (int)(8 * sf));
         int ledX = r.X + sideMargin;
 
         EnsureLabelFont();
@@ -289,7 +290,7 @@ public class TurboPumpControl : ThemedVacuumControl
             DrawLedIndicator(g, ledRect, LedColors[i], _states[i], glowIntensity);
 
             Color textColor = _states[i] ? LedColors[i] : VacuumTheme.TextPrimary;
-            int textX = ledX + ledW + Math.Max(3, (int)(4 * BaseScale));
+            int textX = ledX + ledW + Math.Max(3, (int)(4 * sf));
             // Draw the label counter-rotated so it stays screen-upright and
             // readable regardless of Direction (the body still rotates).
             var textSize = g.MeasureString(LedLabels[i], _cachedFont!);
@@ -457,7 +458,7 @@ public class TurboPumpControl : ThemedVacuumControl
         // Position at the top-center of the panel header, then counter-rotate so
         // the label stays screen-upright and readable regardless of Direction.
         float centerX = panel.X + panel.Width / 2f;
-        float topY = panel.Y + Math.Max(3, (int)(4 * BaseScale));
+        float topY = panel.Y + Math.Max(3, (int)(4 * BaseScale * _scale));
         float centerY = topY + textSize.Height / 2f;
 
         var st = g.Save();
@@ -496,9 +497,8 @@ public class TurboPumpControl : ThemedVacuumControl
 
     private void EnsureIdFont()
     {
-        // Integer point size computed exactly as master ((int) truncation, 7pt floor, 12pt cap),
-        // then rendered as a pixel-unit font (pt × 4/3) to stay DPI-neutral.
-        int pt = Math.Max(7, (int)(9 * BaseScale));
+        // Integer point size rendered as a pixel-unit font (pt × 4/3) to stay DPI-neutral.
+        int pt = Math.Max(5, (int)(9 * BaseScale * _scale));
         pt = Math.Min(pt, 12);
         if (_cachedIdFont == null || _cachedIdFontSize != pt)
         {
@@ -510,9 +510,8 @@ public class TurboPumpControl : ThemedVacuumControl
 
     private void EnsureLabelFont()
     {
-        // Integer point size computed exactly as master ((int) truncation of 7.5f, 6pt floor, 10pt cap),
-        // then rendered as a pixel-unit font (pt × 4/3) to stay DPI-neutral.
-        int pt = Math.Max(6, (int)(7.5f * BaseScale));
+        // Integer point size rendered as a pixel-unit font (pt × 4/3) to stay DPI-neutral.
+        int pt = Math.Max(5, (int)(7.5f * BaseScale * _scale));
         pt = Math.Min(pt, 10);
         if (_cachedFont == null || _cachedFontSize != pt)
         {

@@ -391,13 +391,14 @@ public class ThemedVacuumControl : Panel
 
     public static void DrawScrews(Graphics g, Rectangle bounds, int inset = 8)
     {
-        float r = 2.5f;
+        float r = Math.Clamp(bounds.Width * 0.028f, 1.4f, 2.5f);
+        float c = Math.Clamp(inset, r + 1f, Math.Max(r + 1f, Math.Min(bounds.Width, bounds.Height) * 0.16f));
         PointF[] positions =
         [
-            new(bounds.X + inset, bounds.Y + inset),
-            new(bounds.Right - inset, bounds.Y + inset),
-            new(bounds.X + inset, bounds.Bottom - inset),
-            new(bounds.Right - inset, bounds.Bottom - inset)
+            new(bounds.X + c, bounds.Y + c),
+            new(bounds.Right - c, bounds.Y + c),
+            new(bounds.X + c, bounds.Bottom - c),
+            new(bounds.Right - c, bounds.Bottom - c)
         ];
         using var fillBrush = new SolidBrush(VacuumTheme.ScrewFill);
         using var borderPen = new Pen(VacuumTheme.ScrewBorder, 0.5f);

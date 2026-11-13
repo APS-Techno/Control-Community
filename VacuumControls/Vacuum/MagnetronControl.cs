@@ -20,7 +20,7 @@ public class MagnetronControl : ThemedVacuumControl
     private bool _energized;
     private Font? _labelFont;
     private Font? _idFont;
-    private float _cachedBaseScale = -1f;
+    private float _cachedSf = -1f;
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public string? TargetLabel { get; set; }
@@ -323,16 +323,16 @@ public class MagnetronControl : ThemedVacuumControl
 
     private void EnsureFonts()
     {
-        // Keyed on BaseScale only; DPI does not affect widget-internal fonts.
-        // Pixel-unit fonts: legacy pt × 4/3 so 96-DPI rendering is unchanged.
-        if (_labelFont != null && Math.Abs(_cachedBaseScale - BaseScale) <= 0.001f) return;
+        // Pixel-unit fonts (pt × 4/3): DPI does not affect widget-internal text.
+        float sf = _scale * BaseScale;
+        if (_labelFont != null && Math.Abs(_cachedSf - sf) <= 0.001f) return;
 
         _labelFont?.Dispose();
         _idFont?.Dispose();
 
-        _labelFont = new Font("Consolas", 8f  * 4f / 3f * BaseScale, FontStyle.Regular, GraphicsUnit.Pixel);
-        _idFont    = new Font("Consolas", 7f  * 4f / 3f * BaseScale, FontStyle.Regular, GraphicsUnit.Pixel);
-        _cachedBaseScale = BaseScale;
+        _labelFont = new Font("Consolas", 8f  * 4f / 3f * sf, FontStyle.Regular, GraphicsUnit.Pixel);
+        _idFont    = new Font("Consolas", 7f  * 4f / 3f * sf, FontStyle.Regular, GraphicsUnit.Pixel);
+        _cachedSf = sf;
     }
 
     #endregion

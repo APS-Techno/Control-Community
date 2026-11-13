@@ -19,7 +19,7 @@ public class GasInletControl : ThemedVacuumControl
     private float _scale = 1.0f;
     private Font? _gasFont;
     private Font? _idFont;
-    private float _cachedBaseScale = -1f;
+    private float _cachedSf = -1f;
 
     public string Gas => _gas;
 
@@ -59,7 +59,7 @@ public class GasInletControl : ThemedVacuumControl
     /// (constructor calls CalculateSize), so we use a scale-aware estimate
     /// instead of measuring the actual text.
     /// </summary>
-    private int HorizontalIdLabelH() => Math.Max(14, (int)(14 * BaseScale));
+    private int HorizontalIdLabelH() => Math.Max(14, (int)(14 * BaseScale * _scale));
 
     protected override IReadOnlyList<AnchorDef> DefineAnchors()
     {
@@ -115,11 +115,12 @@ public class GasInletControl : ThemedVacuumControl
     private void PaintVertical(Graphics g, int w, int h, bool domeAtBottom)
     {
         int idLabelH = _idFont != null ? TextRenderer.MeasureText(ID ?? "", _idFont).Height + 2 : 0;
-        int nozzleH = Math.Max(4, (int)(6 * BaseScale));
+        float sf = BaseScale * _scale;
+        int nozzleH = Math.Max(4, (int)(6 * sf));
         int cylinderH = h - idLabelH - nozzleH;
         if (cylinderH < 10) cylinderH = 10;
 
-        int bodyInset = Math.Max(3, (int)(4 * BaseScale));
+        int bodyInset = Math.Max(3, (int)(4 * sf));
         int bodyX = bodyInset;
         int bodyW = w - bodyInset * 2;
         int domeH = Math.Max(6, bodyW / 3);
@@ -164,12 +165,13 @@ public class GasInletControl : ThemedVacuumControl
 
     private void PaintHorizontal(Graphics g, int w, int h, bool domeAtRight)
     {
-        int nozzleW = Math.Max(4, (int)(6 * BaseScale));
+        float sf = BaseScale * _scale;
+        int nozzleW = Math.Max(4, (int)(6 * sf));
         int cylinderW = w - nozzleW;
         if (cylinderW < 10) cylinderW = 10;
 
         int idLabelH = HorizontalIdLabelH();
-        int bodyInset = Math.Max(3, (int)(4 * BaseScale));
+        int bodyInset = Math.Max(3, (int)(4 * sf));
         int bodyY = bodyInset;
         int bodyH = h - bodyInset * 2 - idLabelH;
         int domeW = Math.Max(6, bodyH / 3);
@@ -305,15 +307,16 @@ public class GasInletControl : ThemedVacuumControl
 
     private void EnsureFonts()
     {
-        // Keyed on BaseScale only. Pixel-unit fonts: pt × 4/3 so 96-DPI rendering is unchanged.
-        if (_gasFont != null && Math.Abs(_cachedBaseScale - BaseScale) <= 0.001f) return;
+        // Pixel-unit fonts (pt × 4/3): DPI does not affect widget-internal text.
+        float sf = BaseScale * _scale;
+        if (_gasFont != null && Math.Abs(_cachedSf - sf) <= 0.001f) return;
 
         _gasFont?.Dispose();
         _idFont?.Dispose();
 
-        _gasFont = new Font("Consolas", 10f * 4f / 3f * BaseScale, FontStyle.Bold,    GraphicsUnit.Pixel);
-        _idFont  = new Font("Consolas", 7f  * 4f / 3f * BaseScale, FontStyle.Regular, GraphicsUnit.Pixel);
-        _cachedBaseScale = BaseScale;
+        _gasFont = new Font("Consolas", 10f * 4f / 3f * sf, FontStyle.Bold,    GraphicsUnit.Pixel);
+        _idFont  = new Font("Consolas", 7f  * 4f / 3f * sf, FontStyle.Regular, GraphicsUnit.Pixel);
+        _cachedSf = sf;
     }
 
     #endregion

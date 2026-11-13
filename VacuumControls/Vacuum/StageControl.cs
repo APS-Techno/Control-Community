@@ -18,7 +18,7 @@ public sealed record StagePreset(string Name, float Position);
 public class StageControl : ThemedVacuumControl
 {
     private const int DefaultWidth = 100;
-    private const int DefaultHeight = 90;
+    private const int DefaultHeight = 104;
 
     private readonly string _id;
     private readonly Button _moveButton;
@@ -32,7 +32,6 @@ public class StageControl : ThemedVacuumControl
 
     private Font? _labelFont;
     private Font? _valueFont;
-    private float _cachedBaseScale = -1f;
 
     private Action<string, float>? _sendHWMessage;
     private Action<string>? _sendStop;
@@ -159,6 +158,32 @@ public class StageControl : ThemedVacuumControl
         g.FillPath(brush, path);
     }
 
+    public readonly record struct StageLayout(
+        int Inset, Rectangle Label, Rectangle Lcd, Rectangle Screen, Rectangle Move, Rectangle Stop);
+
+    public static StageLayout ComputeLayout(int w, int h, float sf)
+    {
+        int inset = Math.Max(3, (int)Math.Round(7 * sf));
+        int gap = Math.Max(2, (int)Math.Round(3 * sf));
+        int labelStripH = Math.Max(9, (int)Math.Round(15 * sf));
+        int btnH = Math.Max(12, (int)Math.Round(20 * sf));
+        int bezel = Math.Max(1, (int)Math.Round(2.5f * sf));
+
+        int innerW = w - inset * 2;
+        var label = new Rectangle(inset, inset, innerW, labelStripH);
+
+        int btnY = h - inset - btnH;
+        int moveW = (innerW - gap) / 2;
+        var move = new Rectangle(inset, btnY, moveW, btnH);
+        var stop = new Rectangle(inset + moveW + gap, btnY, innerW - moveW - gap, btnH);
+
+        int lcdTop = label.Bottom + gap;
+        var lcd = new Rectangle(inset, lcdTop, innerW, btnY - gap - lcdTop);
+        var screen = Rectangle.Inflate(lcd, -bezel, -bezel);
+
+        return new StageLayout(inset, label, lcd, screen, move, stop);
+    }
+
     protected override void CalculateSize()
     {
         float sf = BaseScale * _scale;
@@ -169,17 +194,9 @@ public class StageControl : ThemedVacuumControl
 
     private void LayoutButtons()
     {
-        int inset = Math.Max(8, (int)(10 * BaseScale));
-        int btnH = Math.Max(20, (int)(22 * BaseScale));
-        int gap = Math.Max(3, (int)(4 * BaseScale));
-        int totalW = Width - inset * 2;
-        int moveW = (totalW - gap) / 2;
-        int liftUp = Math.Max(1, (int)(3 * BaseScale));
-        int y = Height - inset - btnH - liftUp;
-        _moveButton.Size = new Size(moveW, btnH);
-        _moveButton.Location = new Point(inset, y);
-        _stopButton.Size = new Size(totalW - moveW - gap, btnH);
-        _stopButton.Location = new Point(inset + moveW + gap, y);
+        var L = ComputeLayout(Width, Height, BaseScale * _scale);
+        _moveButton.Bounds = L.Move;
+        _stopButton.Bounds = L.Stop;
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -191,27 +208,21 @@ public class StageControl : ThemedVacuumControl
         int h = ClientSize.Height;
         if (w < 8 || h < 8) return;
 
-        EnsureFonts();
+        float sf = BaseScale * _scale;
+        var L = ComputeLayout(w, h, sf);
+        EnsureFonts(sf, L.Screen.Height);
 
         var bounds = new Rectangle(0, 0, w - 1, h - 1);
 
         DrawMetalHousing(g, bounds, 5);
 
-        if (w > 40 && h > 40)
-            DrawScrews(g, bounds, 7);
+        if (L.Inset >= 8 && w >= 72 && h >= 72)
+            DrawScrews(g, bounds, L.Inset / 2);
 
-        int inset = Math.Max(8, (int)(10 * BaseScale));
-        int labelStripH = Math.Max(14, (int)(16 * BaseScale));
-        var labelRect = new Rectangle(inset, inset, w - inset * 2, labelStripH);
-        DrawLabelStrip(g, labelRect);
+        DrawLabelStrip(g, L.Label);
 
-        int lcdTop = inset + labelStripH + Math.Max(2, (int)(3 * BaseScale));
-        int btnH = Math.Max(20, (int)(22 * BaseScale));
-        int lcdBottom = h - inset - btnH - Math.Max(3, (int)(4 * BaseScale));
-        var lcdRect = new Rectangle(inset, lcdTop, w - inset * 2, lcdBottom - lcdTop);
-
-        if (lcdRect.Width > 4 && lcdRect.Height > 4)
-            DrawStageLcd(g, lcdRect);
+        if (L.Lcd.Width > 4 && L.Lcd.Height > 4)
+            DrawStageLcd(g, L.Lcd, L.Screen);
 
         using var accentPen = new Pen(VacuumTheme.GlowBlue, 1.5f);
         using var path = CreateRoundedRect(bounds, 5);
@@ -237,30 +248,31 @@ public class StageControl : ThemedVacuumControl
         }
     }
 
-    private void DrawStageLcd(Graphics g, Rectangle lcdRect)
+    private void DrawStageLcd(Graphics g, Rectangle lcdRect, Rectangle screenRect)
     {
         using (var bezelBrush = new SolidBrush(Color.FromArgb(17, 17, 17)))
             g.FillRectangle(bezelBrush, lcdRect);
         using (var bezelPen = new Pen(VacuumTheme.BorderSecondary, 1.5f))
             g.DrawRectangle(bezelPen, lcdRect);
 
-        var screenRect = new Rectangle(lcdRect.X + 3, lcdRect.Y + 3,
-            lcdRect.Width - 6, lcdRect.Height - 6);
         if (screenRect.Width < 2 || screenRect.Height < 2) return;
 
         using (var lcdBg = VacuumTheme.CreateLcdBackground(screenRect))
             g.FillRectangle(lcdBg, screenRect);
+
+        var state = g.Save();
+        g.SetClip(screenRect, CombineMode.Intersect);
 
         if (_valueFont != null)
         {
             using var valueBrush = new SolidBrush(VacuumTheme.LcdForeground);
             var valueSize = g.MeasureString(_displayValue, _valueFont);
             float valueX = screenRect.X + (screenRect.Width - valueSize.Width) / 2f;
-            float valueY = screenRect.Y + (screenRect.Height - valueSize.Height) / 2f - 4;
+            float valueY = screenRect.Y + (screenRect.Height - valueSize.Height) / 2f;
             g.DrawString(_displayValue, _valueFont, valueBrush, valueX, valueY);
         }
 
-        if (_labelFont != null)
+        if (_labelFont != null && screenRect.Width >= 46 && screenRect.Height >= 18)
         {
             using var unitBrush = new SolidBrush(VacuumTheme.TextDim);
             string unit = "mm";
@@ -269,20 +281,23 @@ public class StageControl : ThemedVacuumControl
                 screenRect.Right - unitSize.Width - 2,
                 screenRect.Bottom - unitSize.Height - 1);
         }
+
+        g.Restore(state);
     }
 
-    private void EnsureFonts()
+    private void EnsureFonts(float sf, int screenH)
     {
-        // Keyed on BaseScale only; DPI does not affect widget-internal fonts.
-        // Pixel-unit fonts: legacy pt × 4/3 so 96-DPI rendering is unchanged.
-        if (_labelFont != null && Math.Abs(_cachedBaseScale - BaseScale) <= 0.001f) return;
+        float labelPx = Math.Max(6f, 7.5f * 4f / 3f * sf);
+        float valuePx = Math.Clamp(12f * 4f / 3f * sf, 6f, Math.Max(6f, screenH * 0.72f));
+        if (_labelFont != null && _valueFont != null
+            && Math.Abs(_labelFont.Size - labelPx) <= 0.001f
+            && Math.Abs(_valueFont.Size - valuePx) <= 0.001f) return;
 
         _labelFont?.Dispose();
         _valueFont?.Dispose();
 
-        _labelFont = new Font("Consolas", 7.5f * 4f / 3f * BaseScale, FontStyle.Bold, GraphicsUnit.Pixel);
-        _valueFont = new Font("Consolas", 13f  * 4f / 3f * BaseScale, FontStyle.Bold, GraphicsUnit.Pixel);
-        _cachedBaseScale = BaseScale;
+        _labelFont = new Font("Consolas", labelPx, FontStyle.Bold, GraphicsUnit.Pixel);
+        _valueFont = new Font("Consolas", valuePx, FontStyle.Bold, GraphicsUnit.Pixel);
     }
 
     private void MoveButtonClick(object sender, EventArgs e)

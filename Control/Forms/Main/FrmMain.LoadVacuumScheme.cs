@@ -58,7 +58,7 @@ public partial class FrmMain
 
     private const float HudSymbolStep = 0.05f;
     private const float HudSymbolMin = 0.60f;
-    private const float HudSymbolMax = 1.25f;
+    private const float HudSymbolMax = 1.50f;
 
     private async void FrmMain_Load(object sender, EventArgs e)
     {
@@ -285,15 +285,15 @@ public partial class FrmMain
 
         Part("Icons:");
         var minus = Part("\u2212", click: () => StepSymbolScale(-HudSymbolStep));
-        _hudSymbolPct = Part("100%", "125%", () => ApplySymbolScale(_schematicDefaultSymbolScale));
+        _hudSymbolPct = Part("100%", "150%", () => ApplySymbolScale(_schematicDefaultSymbolScale));
         var plus = Part("+", click: () => StepSymbolScale(HudSymbolStep));
         Part("|").ForeColor = VacuumTheme.TextDim;
         _hudZoom = Part("Zoom: 100%", "Zoom: 250%");
         _hudFit = Part("Fit", click: () => vacuumSchematic.ResetZoom());
         hud.Width = x + DpiScale.Px(2);
 
-        _hints.Set(minus, "Smaller symbols|Shrink schematic symbols, pipes and labels (60–125%).");
-        _hints.Set(plus, "Larger symbols|Grow schematic symbols, pipes and labels (60–125%).");
+        _hints.Set(minus, "Smaller symbols|Shrink schematic symbols, pipes and labels (60–150%).");
+        _hints.Set(plus, "Larger symbols|Grow schematic symbols, pipes and labels (60–150%).");
         _hints.Set(_hudSymbolPct, "Symbol size|Click to restore this profile's default symbol size.");
         _hints.Set(_hudZoom, "Zoom|Mouse wheel over the schematic zooms at the cursor (100–250%). " +
             "When zoomed, drag the background or middle-drag anywhere to pan.");

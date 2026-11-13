@@ -139,8 +139,9 @@ public class ScrollPumpControl : ThemedVacuumControl
         if (w > 30 && h > 30)
             DrawScrews(g, housingRect, 7);
 
-        int cavInset = Math.Max(6, (int)(8 * BaseScale));
-        int ledAreaH = Math.Max(14, (int)(18 * BaseScale));
+        float sf = BaseScale * _scale;
+        int cavInset = Math.Max(3, (int)(8 * sf));
+        int ledAreaH = Math.Max(9, (int)Math.Round(15 * sf));
         var cavityRect = new Rectangle(
             cavInset, cavInset,
             w - cavInset * 2,
@@ -157,14 +158,14 @@ public class ScrollPumpControl : ThemedVacuumControl
             DrawGlow(g, glowRect, PulseColor, PulseIntensity);
         }
 
-        int ledW = Math.Max(10, (int)(14 * BaseScale));
-        int ledH = Math.Max(6, (int)(8 * BaseScale));
+        int ledW = Math.Max(10, (int)(14 * sf));
+        int ledH = Math.Max(6, (int)(8 * sf));
         int ledX = cavInset;
-        int ledY = cavityRect.Bottom + Math.Max(2, (int)(3 * BaseScale));
+        int ledY = cavityRect.Bottom + Math.Max(2, (int)(3 * sf));
         var ledRect = new Rectangle(ledX, ledY, ledW, ledH);
         DrawLedIndicator(g, ledRect, VacuumTheme.GlowGreen, _power, PulseIntensity);
 
-        DrawPumpLabel(g, ledRect, ledY, ledH, w);
+        DrawPumpLabel(g, ledRect, ledY, ledH, sf);
     }
 
     #endregion
@@ -210,11 +211,10 @@ public class ScrollPumpControl : ThemedVacuumControl
             g.DrawLines(pen, points.ToArray());
     }
 
-    private void DrawPumpLabel(Graphics g, Rectangle ledRect, int ledY, int ledH, int w)
+    private void DrawPumpLabel(Graphics g, Rectangle ledRect, int ledY, int ledH, float sf)
     {
-        // Integer point size computed exactly as master ((int) truncation, 7pt floor, 11pt cap),
-        // then rendered as a pixel-unit font (pt × 4/3) to stay DPI-neutral.
-        int pt = Math.Max(7, (int)(8 * BaseScale));
+        // Integer point size rendered as a pixel-unit font (pt × 4/3) to stay DPI-neutral.
+        int pt = Math.Max(5, (int)(8 * sf));
         if (pt > 11) pt = 11;
 
         if (_cachedFont == null || _cachedFontSize != pt)
@@ -227,7 +227,7 @@ public class ScrollPumpControl : ThemedVacuumControl
         if (string.IsNullOrEmpty(ID)) return;
 
         var textSize = TextRenderer.MeasureText(ID, _cachedFont);
-        int textX = ledRect.Right + Math.Max(3, (int)(4 * BaseScale));
+        int textX = ledRect.Right + Math.Max(3, (int)(4 * sf));
         int textY = ledY + (ledH - textSize.Height) / 2;
 
         if (IsDark)

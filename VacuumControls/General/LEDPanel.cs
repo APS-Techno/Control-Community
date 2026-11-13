@@ -66,6 +66,7 @@ public class LEDPanel : ThemedVacuumControl
         _unitsLabel.Visible = false;
 
         this.ledDisplay.Dock = DockStyle.Fill;
+        this.ledDisplay.Margin = Padding.Empty;
 
         if (style == PanelStyle.Vert)
         {
@@ -143,17 +144,17 @@ public class LEDPanel : ThemedVacuumControl
         if (Math.Abs(sf - _cachedChromeSf) < 0.001f) return;
         _cachedChromeSf = sf;
 
-        int bezel = Math.Max(2, (int)(4 * sf));
+        int bezel = Math.Max(1, (int)Math.Round(3.5f * sf));
         this.Padding = new Padding(bezel);
         if (_style == PanelStyle.Vert)
             _unitsLabel.Height = Math.Max(8, (int)(14 * sf));
 
         SetOwnedFont(ledDisplay, ref _ledFont, new Font("Digital-7 mono",
-            Math.Max(8f, LEDDisplay.DefaultFontSize * 4f / 3f * sf), FontStyle.Regular, GraphicsUnit.Pixel));
+            Math.Max(6f, LEDDisplay.DefaultFontSize * 4f / 3f * sf), FontStyle.Regular, GraphicsUnit.Pixel));
         SetOwnedFont(label, ref _ledLabelFont, new Font("Courier New",
-            Math.Max(8f, 10f * 4f / 3f * sf), FontStyle.Bold, GraphicsUnit.Pixel));
+            Math.Max(6f, 10f * 4f / 3f * sf), FontStyle.Bold, GraphicsUnit.Pixel));
         SetOwnedFont(_unitsLabel, ref _ledUnitsFont, new Font("Segoe UI",
-            Math.Max(7f, 8.5f * 4f / 3f * sf), FontStyle.Regular, GraphicsUnit.Pixel));
+            Math.Max(5.5f, 8.5f * 4f / 3f * sf), FontStyle.Regular, GraphicsUnit.Pixel));
     }
 
     private static void SetOwnedFont(Control c, ref Font? owned, Font next)
