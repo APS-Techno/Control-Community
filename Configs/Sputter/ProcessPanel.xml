@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<processPanel>
+<processPanel flanges="2">
   <readings>
     <reading id="Ar1" label="Ar1" group="MassFlow" format="F1" unit="sccm" accent="Ar"/>
     <reading id="N21" label="N21" group="MassFlow" format="F1" unit="sccm" accent="N2"/>

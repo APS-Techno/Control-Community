@@ -209,6 +209,36 @@ public class ProcessPanelSpecTests : IDisposable
     }
 
     [Fact]
+    public void Load_FlangesAttribute_IsRead()
+    {
+        var path = Path.Combine(_dir, "ProcessPanel.xml");
+        File.WriteAllText(path, "<processPanel flanges=\"2\"/>");
+        var spec = ProcessPanelSpec.Load(path);
+        Assert.Equal(2, spec.Flanges);
+        Assert.Empty(spec.Errors);
+    }
+
+    [Fact]
+    public void Load_NoFlangesAttribute_DefaultsToSix()
+    {
+        Assert.Equal(6, ProcessPanelSpec.Load(Write("")).Flanges);
+        Assert.Equal(6, ProcessPanelSpec.Empty.Flanges);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("7")]
+    [InlineData("two")]
+    public void Load_InvalidFlanges_DefaultsToSixAndReports(string value)
+    {
+        var path = Path.Combine(_dir, "ProcessPanel.xml");
+        File.WriteAllText(path, $"<processPanel flanges=\"{value}\"/>");
+        var spec = ProcessPanelSpec.Load(path);
+        Assert.Equal(6, spec.Flanges);
+        Assert.Single(spec.Errors);
+    }
+
+    [Fact]
     public void Current_DefaultsToEmpty()
     {
         Assert.Same(ProcessPanelSpec.Empty, ProcessPanelSpec.Current);

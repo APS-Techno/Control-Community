@@ -17,6 +17,10 @@ public sealed record ProcessPanelSpec(
     IReadOnlyList<DriveSpec> Drives,
     IReadOnlyList<string> Errors)
 {
+    public const int DefaultFlanges = 6;
+
+    public int Flanges { get; init; } = DefaultFlanges;
+
     public static ProcessPanelSpec Empty { get; } = new([], [], [], []);
 
     public static ProcessPanelSpec Current { get; set; } = Empty;
@@ -42,11 +46,23 @@ public sealed record ProcessPanelSpec(
         if (root.Name.LocalName != "processPanel")
             return Empty with { Errors = [$"ProcessPanel.xml: unexpected root element '{root.Name.LocalName}'"] };
 
+        int flanges = ParseFlanges(root, errors);
         return new ProcessPanelSpec(
             ParseReadings(root, errors),
             ParseValveGroups(root, errors),
             ParseIdLabel(root, "drives", "drive", (id, label) => new DriveSpec(id, label), errors),
-            errors);
+            errors)
+        { Flanges = flanges };
+    }
+
+    private static int ParseFlanges(XElement root, List<string> errors)
+    {
+        var text = Attr(root, "flanges");
+        if (text is null) return DefaultFlanges;
+        if (int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int n) && n is >= 1 and <= DefaultFlanges)
+            return n;
+        errors.Add($"flanges '{text}': expected a number from 1 to {DefaultFlanges}");
+        return DefaultFlanges;
     }
 
     private static string? Attr(XElement e, string name)

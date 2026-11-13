@@ -52,6 +52,7 @@ public class ChamberSchematicControl : Control
     private readonly System.Windows.Forms.Timer _renderTimer;
 
     private bool _showDepositionTimes;
+    private int _activeFlanges = FlangeCount;
 
     /// <summary>
     /// Seconds for the holder icon to sweep between two adjacent flanges (4024
@@ -71,6 +72,18 @@ public class ChamberSchematicControl : Control
         {
             if (_showDepositionTimes == value) return;
             _showDepositionTimes = value;
+            Invalidate();
+        }
+    }
+
+    public int ActiveFlanges
+    {
+        get => _activeFlanges;
+        set
+        {
+            int v = Math.Clamp(value, 1, FlangeCount);
+            if (_activeFlanges == v) return;
+            _activeFlanges = v;
             Invalidate();
         }
     }
@@ -280,7 +293,7 @@ public class ChamberSchematicControl : Control
         using Font timeFont = ScaledFont.Create(8.5f, FontStyle.Regular);
         using Font powerFont = ScaledFont.Create(9.5f, FontStyle.Regular);
 
-        for (int i = 0; i < FlangeCount; i++)
+        for (int i = 0; i < _activeFlanges; i++)
         {
             int flangeNum = i + 1;
             PointF center = GetFlangeCenter(i, cx, cy);
@@ -371,7 +384,7 @@ public class ChamberSchematicControl : Control
     {
         base.OnMouseDoubleClick(e);
 
-        for (int i = 0; i < FlangeCount; i++)
+        for (int i = 0; i < _activeFlanges; i++)
         {
             if (_flangeRects[i].Contains(e.Location))
             {

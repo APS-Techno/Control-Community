@@ -30,6 +30,7 @@ public class ChamberProcessPanel : BaseProcessPanel, IAnimatedSchematicPanel
         _schematic.Dock = DockStyle.Fill;
         SchematicPanel.Controls.Add(_schematic);
         _schematic.ShowDepositionTimes = true;
+        _schematic.ActiveFlanges = ProcessPanelSpec.Current.Flanges;
     }
 
     protected override IEnumerable<ReadingSpec> DefineReadings() => ProcessPanelSpec.Current.Readings;
@@ -228,7 +229,7 @@ public class ChamberProcessPanel : BaseProcessPanel, IAnimatedSchematicPanel
     protected override void OnSourcesChanged(
         IReadOnlyDictionary<int, Contracts.FlangeSourceInfo> flangeSources)
     {
-        for (int f = 1; f <= ChamberSchematicControl.FlangeCount; f++)
+        for (int f = 1; f <= _schematic.ActiveFlanges; f++)
         {
             if (flangeSources.TryGetValue(f, out var info))
             {
@@ -250,7 +251,7 @@ public class ChamberProcessPanel : BaseProcessPanel, IAnimatedSchematicPanel
         {
             int flange = (int)flangeParam.Value;
             double seconds = secondsParam.Value;
-            if (flange >= 1 && flange <= ChamberSchematicControl.FlangeCount)
+            if (flange >= 1 && flange <= _schematic.ActiveFlanges)
                 _schematic.SetFlangeDepositionSeconds(flange - 1, seconds);
         }
     }

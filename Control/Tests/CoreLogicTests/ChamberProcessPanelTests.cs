@@ -16,6 +16,9 @@ public class ChamberProcessPanelTests
         return hits[0];
     }
 
+    private static IEnumerable<Control> Descendants(Control root) =>
+        root.Controls.Cast<Control>().SelectMany(c => new[] { c }.Concat(Descendants(c)));
+
     private static IEnumerable<ValveLedControl> Leds(Control root) =>
         root.Controls.Cast<Control>().SelectMany(c => c is ValveLedControl l ? [l] : Leds(c));
 
@@ -106,6 +109,34 @@ public class ChamberProcessPanelTests
         panel.UpdateValves([new ValveInfo("ZZ", true)]);
         Assert.False(Leds(panel).Single().IsOpen);
     }
+
+    [Fact]
+    public void Ctor_SpecFlanges_AreAppliedToTheSchematic()
+    {
+        using var panel = Build(Spec() with { Flanges = 2 });
+        var schematic = Descendants(panel).OfType<ChamberSchematicControl>().Single();
+        Assert.Equal(2, schematic.ActiveFlanges);
+    }
+
+    [Fact]
+    public void Schematic_DrawsOnlyTheActiveFlanges()
+    {
+        static System.Drawing.Bitmap Render(int flanges)
+        {
+            using var c = new ChamberSchematicControl { Size = new System.Drawing.Size(400, 400), ActiveFlanges = flanges };
+            var bmp = new System.Drawing.Bitmap(400, 400);
+            c.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, 400, 400));
+            return bmp;
+        }
+        using var two = Render(2);
+        using var six = Render(6);
+
+        // Flange 1 sits at 0 deg and flange 3 at 120 deg on the orbit; sample the top of each flange circle.
+        var flange1Top = new System.Drawing.Point(327, 153);
+        var flange3Top = new System.Drawing.Point(136, 43);
+        Assert.Equal(six.GetPixel(flange1Top.X, flange1Top.Y), two.GetPixel(flange1Top.X, flange1Top.Y));
+        Assert.NotEqual(six.GetPixel(flange3Top.X, flange3Top.Y), two.GetPixel(flange3Top.X, flange3Top.Y));
+    }
 }
 
 [Collection("ProcessPanelSpec")]
@@ -143,5 +174,7 @@ public class SputterProcessPanelProfileTests
 
         Assert.All(spec.ValveGroups.SelectMany(g => g.Valves), v => Assert.Contains(v.Id, declared));
         Assert.All(spec.Readings.Select(r => r.Device).OfType<string>(), d => Assert.Contains(d, declared));
+        var sources = System.Xml.Linq.XDocument.Load(APS.SystemControl.Tests.Shared.ConfigsDir.Path("Sputter/Sources.xml"));
+        Assert.Equal(sources.Descendants("source").Count(), spec.Flanges);
     }
 }
