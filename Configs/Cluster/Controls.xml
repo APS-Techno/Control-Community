@@ -115,7 +115,7 @@
       <transferModule id="ROBOT" left="48" top="38" scale="1" chamber="TM" width="380" height="280">Transfer Module</transferModule>
     </transferModules>
   </vacuum>
-  <schematic>
+  <schematic symbolScale="0.82">
     <pipes>
       <pipe id="p_LL_tp" from="LL_GV:left" to="LL_TP:inlet" />
       <pipe id="p3" from="C3_TP:left" to="C3_FL:right" />

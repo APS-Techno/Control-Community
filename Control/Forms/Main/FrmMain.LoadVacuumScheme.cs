@@ -28,6 +28,15 @@ public partial class FrmMain
     private bool _systemEventsVisibleIntent = true;
     private bool _systemEventsLayoutApplied;
     private Control? _systemEventsChip;
+    private Control? _schematicHud;
+    private Label? _hudSymbolPct;
+    private Label? _hudZoom;
+    private Label? _hudFit;
+    private float _schematicDefaultSymbolScale = 1.0f;
+
+    private const float HudSymbolStep = 0.05f;
+    private const float HudSymbolMin = 0.60f;
+    private const float HudSymbolMax = 1.25f;
 
     private async void FrmMain_Load(object sender, EventArgs e)
     {
@@ -140,14 +149,21 @@ public partial class FrmMain
         vacuumSchematic.Controls.Add(_systemEventsChip);
         _systemEventsChip.BringToFront();
 
+        _schematicHud = CreateSchematicViewHud(_systemEventsChip.Right + DpiScale.Px(8));
+        vacuumSchematic.Controls.Add(_schematicHud);
+        _schematicHud.BringToFront();
+        vacuumSchematic.ScaleOrZoomChanged += (_, _) => UpdateSchematicHud();
+        UpdateSchematicHud();
+
         // vacuumSchematic may have other Dock=Fill controls added later;
-        // keep our overlay and chip on top whenever a sibling lands.
+        // keep the overlay, chip and view HUD on top whenever a sibling lands.
         vacuumSchematic.ControlAdded += (_, e) =>
         {
-            if (e.Control != _systemEventsLog && e.Control != _systemEventsChip)
+            if (e.Control != _systemEventsLog && e.Control != _systemEventsChip && e.Control != _schematicHud)
             {
                 _systemEventsLog.BringToFront();
                 _systemEventsChip?.BringToFront();
+                _schematicHud?.BringToFront();
             }
         };
         // Defer the actual bounds apply to Shown — by FrmMain_Load,
@@ -195,6 +211,101 @@ public partial class FrmMain
         toolTip.SetToolTip(chip, "Show/hide events overlay");
 
         return chip;
+    }
+
+    private Control CreateSchematicViewHud(int left)
+    {
+        var font = APS.SystemControl.Controls.Theme.ScaledFont.Create(9f, FontStyle.Bold);
+        var hud = new Panel
+        {
+            Anchor = AnchorStyles.Top | AnchorStyles.Left,
+            BackColor = Color.FromArgb(45, 60, 85),
+            Location = new Point(left, DpiScale.Px(12)),
+            Height = DpiScale.Px(22),
+        };
+        hud.Paint += (_, e) =>
+        {
+            using var border = new Pen(Color.FromArgb(120, 140, 170), 1f);
+            e.Graphics.DrawRectangle(border, 0, 0, hud.Width - 1, hud.Height - 1);
+        };
+        hud.Disposed += (_, _) => font.Dispose();
+
+        int x = DpiScale.Px(4);
+        Label Part(string text, string? widest = null, Action? click = null)
+        {
+            var size = TextRenderer.MeasureText(widest ?? text, font);
+            var label = new Label
+            {
+                AutoSize = false,
+                Text = text,
+                Font = font,
+                ForeColor = VacuumTheme.TextPrimary,
+                BackColor = Color.Transparent,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Location = new Point(x, DpiScale.Px(2)),
+                Size = new Size(size.Width + (click != null ? DpiScale.Px(8) : 0), hud.Height - DpiScale.Px(4)),
+            };
+            if (click != null)
+            {
+                label.Cursor = Cursors.Hand;
+                label.Click += (_, _) => click();
+                label.MouseEnter += (_, _) => label.BackColor = Color.FromArgb(70, 90, 125);
+                label.MouseLeave += (_, _) => label.BackColor = Color.Transparent;
+                label.Paint += (_, e) =>
+                {
+                    using var pen = new Pen(Color.FromArgb(100, 120, 150), 1f);
+                    e.Graphics.DrawRectangle(pen, 0, 0, label.Width - 1, label.Height - 1);
+                };
+            }
+            hud.Controls.Add(label);
+            x = label.Right + DpiScale.Px(2);
+            return label;
+        }
+
+        Part("Icons:");
+        var minus = Part("\u2212", click: () => StepSymbolScale(-HudSymbolStep));
+        _hudSymbolPct = Part("100%", "125%", () => ApplySymbolScale(_schematicDefaultSymbolScale));
+        var plus = Part("+", click: () => StepSymbolScale(HudSymbolStep));
+        Part("|").ForeColor = VacuumTheme.TextDim;
+        _hudZoom = Part("Zoom: 100%", "Zoom: 250%");
+        _hudFit = Part("Fit", click: () => vacuumSchematic.ResetZoom());
+        hud.Width = x + DpiScale.Px(2);
+
+        _hints.Set(minus, "Smaller symbols|Shrink schematic symbols, pipes and labels (60–125%).");
+        _hints.Set(plus, "Larger symbols|Grow schematic symbols, pipes and labels (60–125%).");
+        _hints.Set(_hudSymbolPct, "Symbol size|Click to restore this profile's default symbol size.");
+        _hints.Set(_hudZoom, "Zoom|Mouse wheel over the schematic zooms at the cursor (100–250%). " +
+            "When zoomed, drag the background or middle-drag anywhere to pan.");
+        _hints.Set(_hudFit, "Fit|Reset zoom and pan to show the whole schematic.");
+
+        return hud;
+    }
+
+    private void StepSymbolScale(float step) =>
+        ApplySymbolScale(Math.Clamp(MathF.Round(vacuumSchematic.SymbolScale + step, 2), HudSymbolMin, HudSymbolMax));
+
+    private void ApplySymbolScale(float scale)
+    {
+        vacuumSchematic.SymbolScale = scale;
+        RememberSymbolScale();
+    }
+
+    private void RememberSymbolScale()
+    {
+        string profile = Path.GetFileName(config.ConfigDir);
+        if (Math.Abs(vacuumSchematic.SymbolScale - _schematicDefaultSymbolScale) < 0.001f)
+            _userLayout.RemoveSymbolScale(profile);
+        else
+            _userLayout.SetSymbolScale(profile, vacuumSchematic.SymbolScale);
+    }
+
+    private void UpdateSchematicHud()
+    {
+        if (_hudSymbolPct == null || _hudZoom == null || _hudFit == null) return;
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        _hudSymbolPct.Text = ((int)Math.Round(vacuumSchematic.SymbolScale * 100)).ToString(inv) + "%";
+        _hudZoom.Text = "Zoom: " + ((int)Math.Round(vacuumSchematic.ZoomFactor * 100)).ToString(inv) + "%";
+        _hudFit.ForeColor = vacuumSchematic.ZoomFactor > 1.001f ? VacuumTheme.TextPrimary : VacuumTheme.TextDim;
     }
 
     private void ApplySystemEventsOverlayBounds()
@@ -267,6 +378,7 @@ public partial class FrmMain
             _userLayout.SystemEventsLogHeight = r.Height;
             _userLayout.SystemEventsLogVisible = _systemEventsVisibleIntent;
         }
+        RememberSymbolScale();
         _userLayout.Save();
     }
 
@@ -632,6 +744,7 @@ public partial class FrmMain
             // AddComponent sets BaseScale (-> CalculateSize), positions the vessel centre
             // at the (left, top) percent coordinate via its anchor midpoint, and registers
             // it for canvas-resize repositioning -- same path as every other component.
+            if (xtm.ScaleSet) widget.VScale = xtm.Scale;
             vacuumSchematic.AddComponent(widget, xtm.Left, xtm.Top);
             widget.BringToFront();
             transferModuleControls[xtm.Id] = widget;
@@ -953,7 +1066,11 @@ public partial class FrmMain
             if (guiconf.Vacuum == null) return;
 
             vacuumSchematic.LoadFromXml(guiconf.Schematic);
-
+            _schematicDefaultSymbolScale = guiconf.Schematic is { } sch && sch.SymbolScale > 0f && float.IsFinite(sch.SymbolScale)
+                ? sch.SymbolScale : 1.0f;
+            vacuumSchematic.ResetZoom();
+            vacuumSchematic.SymbolScale = _userLayout.GetSymbolScale(Path.GetFileName(config.ConfigDir))
+                ?? _schematicDefaultSymbolScale;
 
             if (guiconf.Vacuum.Valves != null) { LoadValves(guiconf.Vacuum.Valves); }
 

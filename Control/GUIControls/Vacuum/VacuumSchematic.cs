@@ -34,6 +34,7 @@ public class VacuumSchematic : APS.Controls.Vacuum.Schematic.VacuumSchematicCanv
     public VacuumSchematic()
     {
         BackColor = VacuumTheme.BackgroundDark;
+        InteractiveZoom = true;
     }
 
     /// <summary>

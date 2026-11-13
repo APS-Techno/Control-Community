@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Drawing2D;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using APS.Controls.Theme;
 using APS.Controls.Vacuum.Rendering;
 using APS.Controls.XML.GUI;
@@ -25,10 +26,24 @@ public class VacuumSchematicCanvas : Panel
     /// extreme ultrawide layouts — a typical 4K panel lands around 1.4–1.8×.
     /// </summary>
     private const float MaxCanvasScale = 2.5f;
+    private const float MinSymbolScale = 0.5f;
+    private const float MaxSymbolScale = 1.5f;
+    private const float MinZoom = 1.0f;
+    private const float MaxZoom = 2.5f;
+    private const float WheelZoomStep = 0.15f;
+    private const int WM_MOUSEWHEEL = 0x020A;
+    private const int WM_MBUTTONDOWN = 0x0207;
 
     private float _aspectRatio = 16f / 9f;
     private XML_Schematic? _schematic;
     private readonly List<(Control Control, float Left, float Top)> _children = [];
+    private float _symbolScale = 1.0f;
+    private float _zoomFactor = 1.0f;
+    private Point _panOffset;
+    private bool _panning;
+    private Point _panLastScreen;
+    private Cursor? _cursorBeforePan;
+    private InputFilter? _inputFilter;
 
     public VacuumSchematicCanvas()
     {
@@ -71,6 +86,72 @@ public class VacuumSchematicCanvas : Panel
         set { _schematic = value; Invalidate(); }
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public float SymbolScale
+    {
+        get => _symbolScale;
+        set
+        {
+            if (!float.IsFinite(value)) return;
+            float v = Math.Clamp(value, MinSymbolScale, MaxSymbolScale);
+            if (Math.Abs(v - _symbolScale) < 0.0001f) return;
+            _symbolScale = v;
+            RepositionChildren();
+            Invalidate();
+            ScaleOrZoomChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public float EffectiveSymbolScale => Math.Clamp(CanvasScale * _symbolScale, 0.1f, MaxCanvasScale);
+
+    public float ZoomFactor => _zoomFactor;
+
+    public Point PanOffset => _panOffset;
+
+    /// <summary>Enables wheel zoom and drag panning from the mouse. Programmatic zoom works either way.</summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public bool InteractiveZoom { get; set; }
+
+    public event EventHandler? ScaleOrZoomChanged;
+
+    public void SetZoom(float zoom, Point? anchorClientPoint = null)
+    {
+        if (!float.IsFinite(zoom)) return;
+        float z = Math.Clamp(zoom, MinZoom, MaxZoom);
+        if (Math.Abs(z - _zoomFactor) < 0.0001f) return;
+
+        int w = ClientSize.Width, h = ClientSize.Height;
+        if (w > 0 && h > 0 && CanvasArea.Width > 0 && CanvasArea.Height > 0)
+        {
+            var anchor = anchorClientPoint ?? new Point(w / 2, h / 2);
+            var (pctX, pctY) = PixelToPercent(anchor.X, anchor.Y);
+            var (fitW, fitH) = FitSize(w, h);
+            int canvasW = (int)Math.Round(fitW * z), canvasH = (int)Math.Round(fitH * z);
+            _panOffset = new Point(
+                (int)Math.Round(anchor.X - pctX / 100f * canvasW - (w - canvasW) / 2),
+                (int)Math.Round(anchor.Y - pctY / 100f * canvasH - (h - canvasH) / 2));
+        }
+        _zoomFactor = z;
+        ApplyView();
+        ScaleOrZoomChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ResetZoom()
+    {
+        EndPan();
+        _zoomFactor = 1.0f;
+        _panOffset = Point.Empty;
+        ApplyView();
+        ScaleOrZoomChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ApplyView()
+    {
+        RecalculateCanvasArea();
+        RepositionChildren();
+        Invalidate();
+    }
+
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
@@ -78,6 +159,16 @@ public class VacuumSchematicCanvas : Panel
         RepositionChildren();
         Invalidate();
     }
+
+    private (int W, int H) FitSize(int w, int h) =>
+        (float)w / h > _aspectRatio
+            ? ((int)(h * _aspectRatio), h)
+            : (w, (int)(w / _aspectRatio));
+
+    private static int PlaceAxis(int client, int canvas, int pan) =>
+        canvas <= client
+            ? (client - canvas) / 2
+            : Math.Clamp((client - canvas) / 2 + pan, client - canvas, 0);
 
     private void RecalculateCanvasArea()
     {
@@ -89,18 +180,13 @@ public class VacuumSchematicCanvas : Panel
             return;
         }
 
-        int canvasW, canvasH;
-        if ((float)w / h > _aspectRatio)
-        {
-            canvasH = h;
-            canvasW = (int)(h * _aspectRatio);
-        }
-        else
-        {
-            canvasW = w;
-            canvasH = (int)(w / _aspectRatio);
-        }
-        CanvasArea = new Rectangle((w - canvasW) / 2, (h - canvasH) / 2, canvasW, canvasH);
+        var (fitW, fitH) = FitSize(w, h);
+        int canvasW = (int)Math.Round(fitW * _zoomFactor);
+        int canvasH = (int)Math.Round(fitH * _zoomFactor);
+        int x = PlaceAxis(w, canvasW, _panOffset.X);
+        int y = PlaceAxis(h, canvasH, _panOffset.Y);
+        _panOffset = new Point(x - (w - canvasW) / 2, y - (h - canvasH) / 2);
+        CanvasArea = new Rectangle(x, y, canvasW, canvasH);
         CanvasScale = Math.Clamp(CanvasArea.Width / ReferenceCanvasWidth, 0.1f, MaxCanvasScale);
     }
 
@@ -114,7 +200,7 @@ public class VacuumSchematicCanvas : Panel
 
     public void AddComponent(Control ctrl, float leftPct, float topPct)
     {
-        if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = CanvasScale;
+        if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = EffectiveSymbolScale;
         _children.Add((ctrl, leftPct, topPct));
         ctrl.Location = GetChildLocation(ctrl, leftPct, topPct);
         Controls.Add(ctrl);
@@ -194,10 +280,138 @@ public class VacuumSchematicCanvas : Panel
     {
         foreach (var (ctrl, left, top) in _children)
         {
-            if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = CanvasScale;
+            if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = EffectiveSymbolScale;
             ctrl.Location = GetChildLocation(ctrl, left, top);
         }
     }
+
+    private bool CanPan => InteractiveZoom && _zoomFactor > MinZoom + 0.001f;
+
+    private bool IsSchematicTarget(Control? c)
+    {
+        for (; c != null; c = c.Parent)
+        {
+            if (c == this) return true;
+            if (c.Parent == this) return _children.Exists(t => t.Control == c);
+        }
+        return false;
+    }
+
+    private bool IsSchematicPoint(Point screen) =>
+        IsHandleCreated && Visible && IsSchematicTarget(FromChildHandle(WindowFromPoint(screen)));
+
+    private void BeginPan(Point screen)
+    {
+        if (_panning) return;
+        _panning = true;
+        _panLastScreen = screen;
+        _cursorBeforePan = Cursor;
+        Cursor = Cursors.SizeAll;
+        Capture = true;
+    }
+
+    private void UpdatePan(Point screen)
+    {
+        var before = CanvasArea;
+        _panOffset = new Point(
+            _panOffset.X + screen.X - _panLastScreen.X,
+            _panOffset.Y + screen.Y - _panLastScreen.Y);
+        _panLastScreen = screen;
+        RecalculateCanvasArea();
+        if (CanvasArea == before) return;
+        RepositionChildren();
+        Invalidate();
+    }
+
+    private void EndPan()
+    {
+        if (!_panning) return;
+        _panning = false;
+        Cursor = _cursorBeforePan ?? Cursors.Default;
+        _cursorBeforePan = null;
+        Capture = false;
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        base.OnMouseDown(e);
+        if (e.Button == MouseButtons.Left && CanPan) BeginPan(PointToScreen(e.Location));
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        if (_panning) UpdatePan(PointToScreen(e.Location));
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        base.OnMouseUp(e);
+        if (e.Button is MouseButtons.Left or MouseButtons.Middle) EndPan();
+    }
+
+    protected override void OnMouseCaptureChanged(EventArgs e)
+    {
+        base.OnMouseCaptureChanged(e);
+        if (!Capture) EndPan();
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        if (_inputFilter != null) return;
+        _inputFilter = new InputFilter(this);
+        Application.AddMessageFilter(_inputFilter);
+    }
+
+    protected override void OnHandleDestroyed(EventArgs e)
+    {
+        if (_inputFilter != null)
+        {
+            Application.RemoveMessageFilter(_inputFilter);
+            _inputFilter = null;
+        }
+        base.OnHandleDestroyed(e);
+    }
+
+    private bool HandleWheel(Point screen, int delta)
+    {
+        if (!InteractiveZoom || !IsSchematicPoint(screen)) return false;
+        SetZoom(_zoomFactor + WheelZoomStep * delta / 120f, PointToClient(screen));
+        return true;
+    }
+
+    private bool HandleMiddleDown()
+    {
+        var screen = MousePosition;
+        if (!CanPan || !IsSchematicPoint(screen)) return false;
+        BeginPan(screen);
+        return true;
+    }
+
+    /// <summary>
+    /// WinForms sends WM_MOUSEWHEEL to the focused control and button-down to the hovered
+    /// widget, so the canvas would never see either over its children; the filter routes
+    /// both by the window under the cursor and leaves overlays (events log, HUD) alone.
+    /// </summary>
+    private sealed class InputFilter(VacuumSchematicCanvas owner) : IMessageFilter
+    {
+        public bool PreFilterMessage(ref Message m)
+        {
+            if (owner.IsDisposed) return false;
+            if (m.Msg == WM_MOUSEWHEEL)
+            {
+                long lp = m.LParam.ToInt64();
+                var screen = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+                int delta = (short)((m.WParam.ToInt64() >> 16) & 0xFFFF);
+                return owner.HandleWheel(screen, delta);
+            }
+            return m.Msg == WM_MBUTTONDOWN && owner.HandleMiddleDown();
+        }
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr WindowFromPoint(Point point);
 
     protected static readonly Dictionary<string, Color> GasColors = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -253,10 +467,7 @@ public class VacuumSchematicCanvas : Panel
         var items = _schematic?.Pipes?.Items;
         if (items == null) return;
 
-        // Grow pipe geometry with the canvas above the reference width so pipes don't
-        // look hairline-thin on 4K. At/below the reference (CanvasScale <= 1) this is
-        // exactly 1.0, keeping rendering bit-identical to the FHD design.
-        float s = MathF.Max(1f, CanvasScale);
+        float s = GeometryScale;
 
         foreach (var pipe in items)
         {
@@ -283,9 +494,7 @@ public class VacuumSchematicCanvas : Panel
         var items = _schematic?.Chambers?.Items;
         if (items == null) return;
 
-        // Match the pipe/widget growth above the reference width so chamber captions
-        // stay proportional on 4K. Exactly 1.0 at/below the reference (bit-identical).
-        float s = MathF.Max(1f, CanvasScale);
+        float s = GeometryScale;
 
         foreach (var ch in items)
         {
@@ -341,6 +550,9 @@ public class VacuumSchematicCanvas : Panel
         }
     }
 
+    /// <summary>Pipe and chamber-caption scale; the floor keeps 8 px pipes and 9 pt captions legible on small canvases.</summary>
+    private float GeometryScale => Math.Clamp(EffectiveSymbolScale, 0.55f, MaxCanvasScale);
+
     protected virtual void OnPaintCanvasBackground(Graphics g) { }
     protected virtual void OnPaintAdornments(Graphics g) { }
     protected virtual void OnPaintOverChildren(Graphics g) { }
@@ -348,13 +560,13 @@ public class VacuumSchematicCanvas : Panel
     /// <summary>
     /// Font for <see cref="ThemedVacuumControl.ExternalCaption"/> labels. Uses the
     /// same integer-point-then-pixel-unit formula as the widgets' own captions so an
-    /// external caption matches the in-frame labels of its neighbours: 8 pt at the
-    /// reference width (CanvasScale 1.0), growing on 4K and shrinking on small
-    /// canvases, capped at 11 pt like every other widget label.
+    /// external caption matches the in-frame labels of its neighbours: 8 pt at
+    /// <see cref="EffectiveSymbolScale"/> 1.0, growing on 4K or zoom and shrinking on
+    /// small canvases or a reduced <see cref="SymbolScale"/>, capped at 11 pt like every other widget label.
     /// </summary>
     protected virtual Font CreateCaptionFont()
     {
-        int pt = Math.Clamp((int)Math.Round(8 * CanvasScale), 6, 11);
+        int pt = Math.Clamp((int)Math.Round(8 * EffectiveSymbolScale), 5, 11);
         return new Font("Arial", pt * 4f / 3f, FontStyle.Regular, GraphicsUnit.Pixel);
     }
 

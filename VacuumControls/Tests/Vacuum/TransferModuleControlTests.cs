@@ -351,4 +351,33 @@ public class TransferModuleControlTests
         Assert.Equal(c.Width, c.Height);
         Assert.InRange((double)c.Width / baseW, 1.9, 2.1);
     }
+
+    [Fact]
+    public void TransferModuleControl_VScale_MultipliesBaseScale()
+    {
+        using var c = new TransferModuleControl("ROBOT") { BaseScale = 0.5f };
+        c.VScale = 0.8f;
+        Assert.Equal(new System.Drawing.Size(96, 96), c.Size);
+
+        c.BaseScale = 0.1f;
+        Assert.Equal(new System.Drawing.Size(48, 48), c.Size);
+    }
+
+    [Fact]
+    public void Render_AtSmallSymbolScale_StillDrawsHex()
+    {
+        byte[] Render(RobotState state)
+        {
+            using var w = new TransferModuleControl("ROBOT") { BaseScale = 0.45f, VScale = 0.7f, State = state };
+            w.CreateControl();
+            using var bmp = new System.Drawing.Bitmap(w.Width, w.Height);
+            w.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height));
+            using var ms = new System.IO.MemoryStream();
+            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            return ms.ToArray();
+        }
+
+        Assert.False(Render(RobotState.Idle).SequenceEqual(Render(RobotState.Error)),
+            "A ~76 px ROBOT widget must still paint (state dot differs between Idle and Error)");
+    }
 }

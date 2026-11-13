@@ -301,6 +301,7 @@ public partial class FrmMain : Form
             // (ClearComponents only detached it; the controls persist as fields).
             if (_systemEventsLog != null) { vacuumSchematic.Controls.Add(_systemEventsLog); _systemEventsLog.BringToFront(); }
             if (_systemEventsChip != null) { vacuumSchematic.Controls.Add(_systemEventsChip); _systemEventsChip.BringToFront(); }
+            if (_schematicHud != null) { vacuumSchematic.Controls.Add(_schematicHud); _schematicHud.BringToFront(); }
 
             // Splitters created once in FrmMain_Load are not torn down here, so
             // they are intentionally NOT re-created (SideSplitterFactory.Install

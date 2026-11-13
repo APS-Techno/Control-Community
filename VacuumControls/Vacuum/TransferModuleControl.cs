@@ -27,6 +27,7 @@ public class TransferModuleControl : ThemedVacuumControl
     private readonly string _id;
     private string _chamberId = "TM";
     private string _stateText = "—";
+    private float _scale = 1.0f;
 
     private RobotState     _state     = RobotState.Startup;
     private RobotPhase     _phase     = RobotPhase.None;
@@ -179,9 +180,22 @@ public class TransferModuleControl : ThemedVacuumControl
         set { _extendNorm = value; Invalidate(); }
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public float VScale
+    {
+        get => _scale;
+        set
+        {
+            if (!float.IsFinite(value) || value <= 0f) return;
+            _scale = value;
+            CalculateSize();
+            Invalidate();
+        }
+    }
+
     protected override void CalculateSize()
     {
-        int s = (int)(ReferenceSize * BaseScale);
+        int s = Math.Max(48, (int)Math.Round(ReferenceSize * BaseScale * _scale));
         Size = new Size(s, s);
     }
 
@@ -195,7 +209,7 @@ public class TransferModuleControl : ThemedVacuumControl
 
         int w = ClientSize.Width;
         int h = ClientSize.Height;
-        if (w < 80 || h < 80) return;
+        if (w < 48 || h < 48) return;
 
         var centre = new PointF(w / 2f, h / 2f);
         float radius = HexRadius(w, h);

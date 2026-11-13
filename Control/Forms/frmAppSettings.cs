@@ -30,8 +30,6 @@ public partial class frmAppSettings : Form
         _hints.Set(txtRecipesDir,  "Folder the operator Load-Recipe dialog opens in. Blank = ConfigDir/Recipes.");
         _hints.Set(txtLogsDir,     "Root folder for dated text logs (events, process). Blank = WorkDir/Logs.");
         _hints.Set(txtDataDir,     "Root folder for TSV data files and .depo.json deposition snapshots. Blank = WorkDir/Data.");
-        _hints.Set(chkAutoUIScale, "Auto-scale the UI to the screen DPI; uncheck to set the scale manually.");
-        _hints.Set(numUIScale,     "Manual UI scale factor (0.5–2.0); used when auto-scale is off.");
         _hints.Set(chkLogUserRecipes,
             "Write the TSV data-log and step-by-step log for operator .recipe/.rcpx runs.");
         _hints.Set(chkLogEmbeddedRecipes,
@@ -49,8 +47,6 @@ public partial class frmAppSettings : Form
         txtRecipesDir.TextChanged += OnAnyChanged;
         txtLogsDir.TextChanged += OnAnyChanged;
         txtDataDir.TextChanged += OnAnyChanged;
-        numUIScale.ValueChanged += OnAnyChanged;
-        chkAutoUIScale.CheckedChanged += OnAutoScaleToggled;
         chkLogUserRecipes.CheckedChanged += OnAnyChanged;
         chkLogEmbeddedRecipes.CheckedChanged += OnAnyChanged;
 
@@ -99,31 +95,12 @@ public partial class frmAppSettings : Form
         txtDataDir.Text = _editing.DataDir ?? string.Empty;
         chkLogUserRecipes.Checked = _editing.LogUserRecipes;
         chkLogEmbeddedRecipes.Checked = _editing.LogEmbeddedRecipes;
-
-        if (_editing.UIScale <= 0f || !float.IsFinite(_editing.UIScale))
-        {
-            chkAutoUIScale.Checked = true;
-            numUIScale.Value = 1.0m;
-            numUIScale.Enabled = false;
-        }
-        else
-        {
-            chkAutoUIScale.Checked = false;
-            numUIScale.Value = (decimal)Math.Clamp(_editing.UIScale, 0.5f, 2.0f);
-            numUIScale.Enabled = true;
-        }
     }
 
     private void OnAnyChanged(object? sender, EventArgs e)
     {
         _dirty = true;
         btnApply.Enabled = _dirty;
-    }
-
-    private void OnAutoScaleToggled(object? sender, EventArgs e)
-    {
-        numUIScale.Enabled = !chkAutoUIScale.Checked;
-        OnAnyChanged(sender, e);
     }
 
     private void RescanAndUpdatePrefixStatus()
@@ -213,7 +190,7 @@ public partial class frmAppSettings : Form
             RecipesDir = NullIfBlank(txtRecipesDir.Text),
             LogsDir = NullIfBlank(txtLogsDir.Text),
             DataDir = NullIfBlank(txtDataDir.Text),
-            UIScale = chkAutoUIScale.Checked ? 0f : (float)numUIScale.Value,
+            UIScale = _editing.UIScale,
             LogUserRecipes = chkLogUserRecipes.Checked,
             LogEmbeddedRecipes = chkLogEmbeddedRecipes.Checked,
             ExtraElements = _editing.ExtraElements,
@@ -257,8 +234,7 @@ public partial class frmAppSettings : Form
         saved.WorkerDir != _editing.WorkerDir ||
         saved.RecipesDir != _editing.RecipesDir ||
         saved.LogsDir != _editing.LogsDir ||
-        saved.DataDir != _editing.DataDir ||
-        saved.UIScale != _editing.UIScale;
+        saved.DataDir != _editing.DataDir;
 
     private void OfferRestart()
     {

@@ -30,9 +30,6 @@ partial class frmAppSettings
     private Label lblDataDir = null!;
     private TextBox txtDataDir = null!;
     private Button btnBrowseDataDir = null!;
-    private Label lblUIScale = null!;
-    private NumericUpDown numUIScale = null!;
-    private CheckBox chkAutoUIScale = null!;
     private Label lblRecipeLog = null!;
     private CheckBox chkLogUserRecipes = null!;
     private CheckBox chkLogEmbeddedRecipes = null!;
@@ -54,7 +51,7 @@ partial class frmAppSettings
 
         Text = "App Settings";
         Width = DpiScale.Px(560);
-        Height = DpiScale.Px(510);
+        Height = DpiScale.Px(450);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MinimizeBox = false;
@@ -65,14 +62,14 @@ partial class frmAppSettings
         {
             Dock = DockStyle.Fill,
             ColumnCount = 3,
-            RowCount = 12,
+            RowCount = 11,
             Padding = new Padding(DpiScale.Px(12)),
             AutoSize = false,
         };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(150)));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, DpiScale.Px(32)));
-        for (int i = 0; i < 12; i++)
+        for (int i = 0; i < 11; i++)
             grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         // Row 0: ConfigDir
@@ -158,47 +155,7 @@ partial class frmAppSettings
         grid.Controls.Add(txtDataDir, 1, 8);
         grid.Controls.Add(btnBrowseDataDir, 2, 8);
 
-        // Row 9: UIScale + Auto checkbox
-        lblUIScale = MakeLabel("UI scale:");
-        var scalePanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 1,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Margin = new Padding(0, 4, 0, 4),
-            Padding = Padding.Empty,
-        };
-        scalePanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        scalePanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        scalePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        scalePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        numUIScale = new DarkNumericUpDown
-        {
-            Minimum = 0.5m,
-            Maximum = 2.0m,
-            DecimalPlaces = 2,
-            Increment = 0.05m,
-            Value = 1.0m,
-            Width = DpiScale.Px(80),
-            Anchor = AnchorStyles.Left,
-            Margin = Padding.Empty,
-        };
-        chkAutoUIScale = new CheckBox
-        {
-            Text = "Auto",
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            Margin = new Padding(DpiScale.Px(8), 0, 0, 0),
-        };
-        scalePanel.Controls.Add(numUIScale, 0, 0);
-        scalePanel.Controls.Add(chkAutoUIScale, 1, 0);
-        grid.Controls.Add(lblUIScale, 0, 9);
-        grid.Controls.Add(scalePanel, 1, 9);
-
-        // Row 10: Recipe logging — user recipes
+        // Row 9: Recipe logging — user recipes
         lblRecipeLog = MakeLabel("Recipe logging:");
         chkLogUserRecipes = new CheckBox
         {
@@ -207,10 +164,10 @@ partial class frmAppSettings
             Anchor = AnchorStyles.Left,
             Margin = new Padding(0, DpiScale.Px(4), 0, 0),
         };
-        grid.Controls.Add(lblRecipeLog, 0, 10);
-        grid.Controls.Add(chkLogUserRecipes, 1, 10);
+        grid.Controls.Add(lblRecipeLog, 0, 9);
+        grid.Controls.Add(chkLogUserRecipes, 1, 9);
 
-        // Row 11: Recipe logging — embedded recipes
+        // Row 10: Recipe logging — embedded recipes
         chkLogEmbeddedRecipes = new CheckBox
         {
             Text = "Log embedded recipes (SYSTEM_*, LOAD_*, …)",
@@ -218,7 +175,7 @@ partial class frmAppSettings
             Anchor = AnchorStyles.Left,
             Margin = new Padding(0, 0, 0, DpiScale.Px(4)),
         };
-        grid.Controls.Add(chkLogEmbeddedRecipes, 1, 11);
+        grid.Controls.Add(chkLogEmbeddedRecipes, 1, 10);
 
         // Button row
         buttonRow = new FlowLayoutPanel

@@ -138,4 +138,103 @@ public class VacuumSchematicCanvasTests
         Assert.Null(c.ResolveEndpoint("@1"));
         Assert.Null(c.ResolveEndpoint("@a,b"));
     }
+
+    [Fact]
+    public void SymbolScale_ScalesChildBaseScale_WithoutMovingPercentAnchorCenter()
+    {
+        using var c = NewCanvas(1600, 900);
+        var child = new APS.Controls.Vacuum.TransferModuleControl("ROBOT");
+        c.AddComponent(child, 50f, 50f);
+        float before = child.BaseScale;
+
+        c.SymbolScale = 0.8f;
+
+        Assert.Equal(before * 0.8f, child.BaseScale, 3);
+        var centre = child.Location + (Size)child.GetAnchorMidpoint();
+        var expected = c.PercentToPixel(50f, 50f);
+        Assert.InRange(centre.X, expected.X - 1, expected.X + 1);
+        Assert.InRange(centre.Y, expected.Y - 1, expected.Y + 1);
+    }
+
+    [Fact]
+    public void SetZoom_CursorAnchorPreservesPercentUnderCursor()
+    {
+        using var c = NewCanvas(1600, 900);
+        const int mx = 1000, my = 300;
+        var (bx, by) = c.PixelToPercent(mx, my);
+
+        c.SetZoom(1.8f, new Point(mx, my));
+
+        Assert.Equal(1.8f, c.ZoomFactor);
+        Assert.Equal(2880, c.CanvasArea.Width);
+        var (ax, ay) = c.PixelToPercent(mx, my);
+        Assert.InRange(ax, bx - 0.2f, bx + 0.2f);
+        Assert.InRange(ay, by - 0.2f, by + 0.2f);
+    }
+
+    [Fact]
+    public void SetZoom_AnchorInLetterboxBar_ClampsSoCanvasCoversClient()
+    {
+        using var c = NewCanvas(2000, 900);
+        c.SetZoom(2.5f, new Point(0, 450));
+
+        Assert.True(c.CanvasArea.Left <= 0 && c.CanvasArea.Top <= 0, c.CanvasArea.ToString());
+        Assert.True(c.CanvasArea.Right >= 2000 && c.CanvasArea.Bottom >= 900, c.CanvasArea.ToString());
+    }
+
+    [Fact]
+    public void SetZoom_ResetZoom_RestoresLetterboxCanvasArea()
+    {
+        using var c = NewCanvas(2000, 900);
+        var fit = c.CanvasArea;
+
+        c.SetZoom(2f, new Point(500, 500));
+        Assert.NotEqual(fit, c.CanvasArea);
+
+        c.ResetZoom();
+        Assert.Equal(new Rectangle(200, 0, 1600, 900), c.CanvasArea);
+        Assert.Equal(Point.Empty, c.PanOffset);
+        Assert.Equal(1.0f, c.ZoomFactor);
+    }
+
+    private sealed class PanProbeCanvas : VacuumSchematicCanvas
+    {
+        public PanProbeCanvas() { InteractiveZoom = true; SetBounds(0, 0, 1600, 900); }
+        public void Down(Point p) => OnMouseDown(new System.Windows.Forms.MouseEventArgs(System.Windows.Forms.MouseButtons.Left, 1, p.X, p.Y, 0));
+        public void Move(Point p) => OnMouseMove(new System.Windows.Forms.MouseEventArgs(System.Windows.Forms.MouseButtons.Left, 0, p.X, p.Y, 0));
+        public void Up(Point p) => OnMouseUp(new System.Windows.Forms.MouseEventArgs(System.Windows.Forms.MouseButtons.Left, 1, p.X, p.Y, 0));
+    }
+
+    [Fact]
+    public void Pan_SecondButtonPress_RestoresOriginalCursorOnRelease()
+    {
+        using var c = new PanProbeCanvas();
+        var original = c.Cursor;
+        c.SetZoom(2f);
+
+        c.Down(new Point(800, 450));
+        c.Down(new Point(800, 450));
+        c.Up(new Point(800, 450));
+
+        Assert.Equal(original, c.Cursor);
+    }
+
+    [Fact]
+    public void Pan_ZoomDuringDrag_KeepsAnchoredViewOnNextMove()
+    {
+        using var c = new PanProbeCanvas();
+        c.SetZoom(2f);
+        var start = c.CanvasArea;
+        c.Down(new Point(400, 300));
+        var cursor = new Point(360, 280);
+        c.Move(cursor);
+        Assert.Equal(new Point(start.X - 40, start.Y - 20), c.CanvasArea.Location);
+
+        c.SetZoom(2.3f, cursor);
+        var afterZoom = c.CanvasArea;
+        c.Move(cursor);
+
+        Assert.Equal(afterZoom, c.CanvasArea);
+        c.Up(cursor);
+    }
 }
