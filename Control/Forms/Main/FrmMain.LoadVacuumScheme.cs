@@ -18,10 +18,32 @@ namespace APS.SystemControl;
 
 public partial class FrmMain
 {
-    // Per-user persistent UI layout (splitter positions). Loaded in
-    // FrmMain_Load, applied to the System tab right away and to the
+    // Per-user persistent UI layout (splitter positions, main window placement).
+    // Loaded in the FrmMain ctor, applied to the System tab right away and to the
     // Process panel when it resolves, saved in FrmMain_FormClosing.
     private UserLayout _userLayout = new();
+    private FormWindowState _lastNonMinimizedState = FormWindowState.Maximized;
+
+    private void ApplyMainWindowPlacement()
+    {
+        if (_userLayout.HasMainWindowBounds)
+        {
+            var saved = new Rectangle(_userLayout.MainWindowX, _userLayout.MainWindowY,
+                _userLayout.MainWindowWidth, _userLayout.MainWindowHeight);
+            var areas = Screen.AllScreens.Select(s => s.WorkingArea);
+            StartPosition = FormStartPosition.Manual;
+            WindowState = FormWindowState.Normal;
+            DesktopBounds = WindowPlacement.Fit(saved, areas, Screen.PrimaryScreen!.WorkingArea);
+        }
+        WindowState = (_userLayout.MainWindowMaximized ?? true) ? FormWindowState.Maximized : FormWindowState.Normal;
+        _lastNonMinimizedState = WindowState;
+    }
+
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (WindowState != FormWindowState.Minimized) _lastNonMinimizedState = WindowState;
+    }
 
     private FloatingPanel? _systemEventsLog;
     private EventsLogControl? _systemEventsContent;
@@ -41,7 +63,6 @@ public partial class FrmMain
     private async void FrmMain_Load(object sender, EventArgs e)
     {
         Text = $"{APS.SystemControl.Hosting.ControlApp.Edition.ProductName}: {Path.GetFileName(config.ConfigDir)}";
-        _userLayout = UserLayout.Load();
 
         LoadVacuumComponentsXML(config.GUIVacuumConfigFile);
         LoadGraphs();
@@ -378,6 +399,9 @@ public partial class FrmMain
             _userLayout.SystemEventsLogHeight = r.Height;
             _userLayout.SystemEventsLogVisible = _systemEventsVisibleIntent;
         }
+        _userLayout.RememberMainWindow(
+            WindowState, _lastNonMinimizedState,
+            WindowState == FormWindowState.Normal ? Bounds : RestoreBounds);
         RememberSymbolScale();
         _userLayout.Save();
     }

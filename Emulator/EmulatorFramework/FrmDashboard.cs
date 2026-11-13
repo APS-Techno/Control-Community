@@ -25,6 +25,7 @@ public class FrmDashboard : Form
     private EmulatorConfig? _config;
     private readonly System.Windows.Forms.Timer _uiTimer;
     private EmulatorSettings _settings = new();
+    private FormWindowState _lastNonMinimizedState = FormWindowState.Normal;
     private ProjectLifecycleController? _controller;
     private readonly CliOptions? _cli;
     private ToolStripMenuItem? _recentProjectsMenu;
@@ -80,6 +81,8 @@ public class FrmDashboard : Form
         Text = edition.ProductName;
         ClientSize = new Size(DpiScale.Px(1024), DpiScale.Px(700));
         StartPosition = FormStartPosition.CenterScreen;
+        _settings = EmulatorSettings.Load(EmulatorSettings.SettingsPathFor(edition.SettingsFolder));
+        ApplyWindowPlacement();
 
         var iconPath = Path.Combine(AppContext.BaseDirectory, "EmulatorIcon.ico");
         if (File.Exists(iconPath)) Icon = new Icon(iconPath);
@@ -633,7 +636,6 @@ public class FrmDashboard : Form
             extension.OnLoad(this);
 
         var settingsPath = EmulatorSettings.SettingsPathFor(_edition.SettingsFolder);
-        _settings = EmulatorSettings.Load(settingsPath);
         _controller = new ProjectLifecycleController(_settings, _edition.Registrations, settingsPath, AppContext.BaseDirectory);
 
         _controller.ProjectOpened += OnProjectOpened;
@@ -843,9 +845,35 @@ public class FrmDashboard : Form
     }
 
     private void FrmDashboard_FormClosing(object? sender, FormClosingEventArgs e)
+    private void ApplyWindowPlacement()
+    {
+        if (_settings.HasWindowBounds)
+        {
+            var saved = new Rectangle(_settings.WindowX!.Value, _settings.WindowY!.Value,
+                _settings.WindowWidth!.Value, _settings.WindowHeight!.Value);
+            var areas = Screen.AllScreens.Select(s => s.WorkingArea);
+            StartPosition = FormStartPosition.Manual;
+            WindowState = FormWindowState.Normal;
+            DesktopBounds = EmulatorSettings.FitWindow(saved, areas, Screen.PrimaryScreen!.WorkingArea);
+        }
+        WindowState = (_settings.WindowMaximized ?? false) ? FormWindowState.Maximized : FormWindowState.Normal;
+        _lastNonMinimizedState = WindowState;
+    }
+
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (WindowState != FormWindowState.Minimized) _lastNonMinimizedState = WindowState;
+    }
+
     {
         _uiTimer.Stop();
         _uiTimer.Dispose();
+        _settings.RememberWindow(
+            WindowState, _lastNonMinimizedState,
+            WindowState == FormWindowState.Normal ? Bounds : RestoreBounds);
+        try { _settings.Save(EmulatorSettings.SettingsPathFor(_edition.SettingsFolder)); }
+        catch { }
         _engine?.Dispose();
     }
 

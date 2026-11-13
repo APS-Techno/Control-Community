@@ -199,6 +199,8 @@ public partial class FrmMain : Form
         {
             progress?.Invoke("Initializing UI...", 10);
             InitializeComponent();
+            _userLayout = UserLayout.Load();
+            ApplyMainWindowPlacement();
             APS.SystemControl.Core.UIScaling.ApplyToForm(this);
 
             // Main navigation tabs: larger header text and a taller strip than the

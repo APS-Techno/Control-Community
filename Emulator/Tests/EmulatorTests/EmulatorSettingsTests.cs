@@ -1,3 +1,5 @@
+using System.Drawing;
+using System.Windows.Forms;
 using APS.SystemEmulator.Hosting;
 using APS.SystemEmulator.Setup;
 
@@ -95,6 +97,60 @@ public class EmulatorSettingsTests
     {
         Assert.Equal("APS.EmulatorCommunity", EmulatorEdition.Community.SettingsFolder);
         Assert.NotEqual("APS.SystemEmulator", EmulatorEdition.Community.SettingsFolder);
+    }
+
+    [Fact]
+    public void WindowPlacement_RoundtripsThroughJson()
+    {
+        var path = TempPath();
+        try
+        {
+            var s = new EmulatorSettings();
+            s.RememberWindow(FormWindowState.Normal, FormWindowState.Normal, new Rectangle(40, 30, 1300, 800));
+            s.Save(path);
+
+            var loaded = EmulatorSettings.Load(path);
+
+            Assert.False(loaded.WindowMaximized);
+            Assert.True(loaded.HasWindowBounds);
+            Assert.Equal((40, 30, 1300, 800), (loaded.WindowX, loaded.WindowY, loaded.WindowWidth, loaded.WindowHeight));
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void LegacySettings_HaveNoWindowBounds()
+    {
+        var path = TempPath();
+        try
+        {
+            File.WriteAllText(path, "{\"lastProject\":\"X\"}");
+            var loaded = EmulatorSettings.Load(path);
+            Assert.Null(loaded.WindowMaximized);
+            Assert.False(loaded.HasWindowBounds);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void RememberWindow_MinimizedKeepsPreviousStateAndBounds()
+    {
+        var s = new EmulatorSettings();
+        s.RememberWindow(FormWindowState.Normal, FormWindowState.Normal, new Rectangle(40, 30, 1300, 800));
+        s.RememberWindow(FormWindowState.Minimized, FormWindowState.Maximized, new Rectangle(-32000, -32000, 160, 28));
+
+        Assert.True(s.WindowMaximized);
+        Assert.Equal((40, 30, 1300, 800), (s.WindowX, s.WindowY, s.WindowWidth, s.WindowHeight));
+    }
+
+    [Fact]
+    public void FitWindow_CentersOnPrimary_WhenSavedMonitorIsGone()
+    {
+        var primary = new Rectangle(0, 0, 1920, 1040);
+        var saved = new Rectangle(2100, 100, 1400, 800);
+
+        Assert.Equal(saved, EmulatorSettings.FitWindow(saved, [primary, new Rectangle(1920, 0, 1920, 1040)], primary));
+        Assert.Equal(new Rectangle(260, 120, 1400, 800), EmulatorSettings.FitWindow(saved, [primary], primary));
     }
 
     [Fact]

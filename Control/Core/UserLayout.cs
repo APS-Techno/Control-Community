@@ -16,6 +16,27 @@ public class UserLayout
     public int SystemTabLeftWidth { get; set; }
     public int SystemTabRightWidth { get; set; }
 
+    public bool? MainWindowMaximized { get; set; }
+    public int MainWindowX { get; set; } = int.MinValue;
+    public int MainWindowY { get; set; } = int.MinValue;
+    public int MainWindowWidth { get; set; }
+    public int MainWindowHeight { get; set; }
+
+    [XmlIgnore]
+    public bool HasMainWindowBounds =>
+        MainWindowX != int.MinValue && MainWindowY != int.MinValue
+        && MainWindowWidth >= WindowPlacement.MinWidth && MainWindowHeight >= WindowPlacement.MinHeight;
+
+    public void RememberMainWindow(FormWindowState state, FormWindowState lastNonMinimized, Rectangle normalBounds)
+    {
+        MainWindowMaximized = (state == FormWindowState.Minimized ? lastNonMinimized : state) == FormWindowState.Maximized;
+        if (normalBounds.Width < WindowPlacement.MinWidth || normalBounds.Height < WindowPlacement.MinHeight) return;
+        MainWindowX = normalBounds.X;
+        MainWindowY = normalBounds.Y;
+        MainWindowWidth = normalBounds.Width;
+        MainWindowHeight = normalBounds.Height;
+    }
+
     // Floating events log overlay on the System tab (vacuumSchematic).
     // Sentinel -1 on X/Y means "use default position" (top-left, 12 px inset).
     // Nullable bool so first-run users get the default-true behavior even if

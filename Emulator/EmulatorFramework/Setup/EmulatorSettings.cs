@@ -30,6 +30,58 @@ public class EmulatorSettings
     [JsonPropertyName("controlRootConfigPath")]
     public string? ControlRootConfigPath { get; set; }
 
+    [JsonPropertyName("windowMaximized")]
+    public bool? WindowMaximized { get; set; }
+
+    [JsonPropertyName("windowX")]
+    public int? WindowX { get; set; }
+
+    [JsonPropertyName("windowY")]
+    public int? WindowY { get; set; }
+
+    [JsonPropertyName("windowWidth")]
+    public int? WindowWidth { get; set; }
+
+    [JsonPropertyName("windowHeight")]
+    public int? WindowHeight { get; set; }
+
+    internal const int MinWindowWidth = 600;
+    internal const int MinWindowHeight = 400;
+    internal const int MinVisibleWidth = 120;
+    internal const int MinVisibleHeight = 60;
+
+    [JsonIgnore]
+    internal bool HasWindowBounds =>
+        WindowX.HasValue && WindowY.HasValue
+        && WindowWidth >= MinWindowWidth && WindowHeight >= MinWindowHeight;
+
+    internal void RememberWindow(FormWindowState state, FormWindowState lastNonMinimized, Rectangle normalBounds)
+    {
+        WindowMaximized = (state == FormWindowState.Minimized ? lastNonMinimized : state) == FormWindowState.Maximized;
+        if (normalBounds.Width < MinWindowWidth || normalBounds.Height < MinWindowHeight) return;
+        WindowX = normalBounds.X;
+        WindowY = normalBounds.Y;
+        WindowWidth = normalBounds.Width;
+        WindowHeight = normalBounds.Height;
+    }
+
+    internal static Rectangle FitWindow(Rectangle saved, IEnumerable<Rectangle> workingAreas, Rectangle primaryWorkingArea)
+    {
+        foreach (var wa in workingAreas)
+        {
+            var overlap = Rectangle.Intersect(saved, wa);
+            if (overlap.Width >= MinVisibleWidth && overlap.Height >= MinVisibleHeight)
+                return saved;
+        }
+
+        int w = Math.Min(saved.Width, primaryWorkingArea.Width);
+        int h = Math.Min(saved.Height, primaryWorkingArea.Height);
+        return new Rectangle(
+            primaryWorkingArea.X + (primaryWorkingArea.Width - w) / 2,
+            primaryWorkingArea.Y + (primaryWorkingArea.Height - h) / 2,
+            w, h);
+    }
+
     public static string SettingsPathFor(string settingsFolder)
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
