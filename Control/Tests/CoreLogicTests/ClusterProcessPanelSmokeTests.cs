@@ -190,7 +190,6 @@ public class ClusterProcessPanelSmokeTests
     {
         using var panel = NewPanel();
         panel.Size = new System.Drawing.Size(400, 300);
-        // No UpdateCluster call -> snapshot is null -> placeholder paint path.
         var ex = Record.Exception(() =>
         {
             using var bmp = new System.Drawing.Bitmap(panel.Width, panel.Height);
@@ -205,8 +204,6 @@ public class ClusterProcessPanelSmokeTests
         using var panel = NewPanel();
         panel.Size = new System.Drawing.Size(1000, 700);
 
-        // Two MFCs (Ar + N2) and two RF supplies (RF + RF B) exercise the
-        // secondary-device render path on both the tile and the reading rows.
         var c1 = new ClusterChamberInfo("C1", 60, SystemStateCode.Processing, 1.2e-3, true,
             Temperature: 25,
             Flows: new[] { new ClusterReadingInfo("C1_Ar", "Ar", 12),
@@ -220,8 +217,8 @@ public class ClusterProcessPanelSmokeTests
         var snap = new ClusterSnapshot(new[] { ll, c1 },
             new ClusterRobotInfo(RobotStateCode.Transferring, 2, 96, 220, true, false, 5e-7, true, true));
 
-        panel.UpdateCluster(snap);          // builds extras + routes readings/valves
-        panel.UpdateCluster(snap);          // second tick exercises the no-rebuild path
+        panel.UpdateCluster(snap);
+        panel.UpdateCluster(snap);
 
         var ex = Record.Exception(() =>
         {
@@ -249,12 +246,11 @@ public class ClusterProcessPanelSmokeTests
 
         var shutterLeds = AllControls(panel).OfType<ClusterValveLed>()
             .Where(l => l.ValveId == "C1_Sh").ToArray();
-        var led = Assert.Single(shutterLeds);          // exactly one — not duplicated in "C1 valves"
-        Assert.True(led.IsOpen);                       // driven via the existing valve pipeline
-        Assert.Equal("C1 Cu",                          // labelled with the target material
+        var led = Assert.Single(shutterLeds);
+        Assert.True(led.IsOpen);
+        Assert.Equal("C1 Cu",
             led.Controls.OfType<System.Windows.Forms.Label>().Single().Text);
 
-        // The plain gas valve still gets its generic LED.
         Assert.Single(AllControls(panel).OfType<ClusterValveLed>(), l => l.ValveId == "C1_V");
     }
 
@@ -264,8 +260,6 @@ public class ClusterProcessPanelSmokeTests
         using var panel = NewPanel();
         panel.Size = new System.Drawing.Size(1000, 700);
 
-        // C1: dual source — Cu matched to a live RF reading with shutter OPEN,
-        // Ti matched to a live RF B reading with shutter CLOSED.
         var c1 = new ClusterChamberInfo("C1", 60, SystemStateCode.Processing, 1.2e-3, true,
             Temperature: 120,
             Flows:  new[] { new ClusterReadingInfo("C1_Ar", "Ar", 20) },
@@ -276,9 +270,6 @@ public class ClusterProcessPanelSmokeTests
             Sources: new[] { new ClusterSourceInfo("Cu", "C1_Sh",   "C1_RF"),
                              new ClusterSourceInfo("Ti", "C1_Sh_B", "C1_RF_B") });
 
-        // C2: source whose supply has NO power reading (offline) → "—" row, no bar;
-        // material empty → falls back to the supply id label;
-        // third source has a shutter id not present in Valves → renders material row, no glyph.
         var c2 = new ClusterChamberInfo("C2", 120, SystemStateCode.Idle, 5.0e-7, false,
             Valves:  new[] { new ClusterValveInfo("C2_Sh", "shutter", false) },
             Sources: new[] { new ClusterSourceInfo("W",  "C2_Sh",         "C2_RF"),
@@ -303,8 +294,7 @@ public class ClusterProcessPanelSmokeTests
         using var panel = NewPanel();
         panel.Size = new System.Drawing.Size(1000, 700);
 
-        // Sources.xml says "c1_sh"; the HWConf valve is "C1_Sh". The LED must be
-        // registered under the VALVE's id so the Ordinal routing keeps driving it.
+        // Sources.xml id differs in case from the HWConf valve id; the LED must follow the valve id.
         var c1 = new ClusterChamberInfo("C1", 60, SystemStateCode.Idle, 1e-6, false,
             Valves:  new[] { new ClusterValveInfo("C1_Sh", "shutter", true) },
             Sources: new[] { new ClusterSourceInfo("Cu", "c1_sh", "C1_RF") });
@@ -330,7 +320,6 @@ public class ClusterProcessPanelSmokeTests
         panel.UpdateCluster(new ClusterSnapshot(new[] { c1 },
             new ClusterRobotInfo(RobotStateCode.Idle, 0, 0, 0, false, false, null, false, false)));
 
-        // No Shutters LED for the stale id — and the generic valve row is intact.
         Assert.DoesNotContain(AllControls(panel).OfType<ClusterValveLed>(),
             l => l.ValveId == "C1_GHOST");
         Assert.Single(AllControls(panel).OfType<ClusterValveLed>(), l => l.ValveId == "C1_V");
@@ -339,10 +328,8 @@ public class ClusterProcessPanelSmokeTests
     [Fact]
     public void Paint_at_high_dpi_does_not_throw()
     {
-        // Fonts are point-sized (render 1.5x at 144 DPI), so geometry must scale
-        // with DPI or text outruns the tiles.
-        // OnPaintSchematic is invoked via reflection with a Graphics whose DpiY
-        // is genuinely 144 (DrawToBitmap always paints at the screen DPI).
+        // Fonts are point-sized, so geometry must scale with DPI.
+        // OnPaintSchematic is invoked by reflection with a Graphics whose DpiY is genuinely 144.
         using var panel = NewPanel();
         panel.Size = new System.Drawing.Size(1000, 700);
 
@@ -374,12 +361,9 @@ public class ClusterProcessPanelSmokeTests
     [Fact]
     public void Tile_with_subepsilon_power_reading_does_not_throw()
     {
-        // Just after recipe start a PSU forward-power
-        // reading can be tiny-but-positive (ADC noise). norm = 1e-9/600 makes the
-        // mini-bar fill width fall below GDI+'s REAL_EPSILON (1.192e-7), which
-        // AddArc rejects as "Parameter is not valid" — a <= 0 guard doesn't catch it.
-        // DrawTile is driven directly with a tall tile so TilePlan keeps ShowBars on
-        // regardless of how the panel layout divides the screen.
+        // A tiny-but-positive PSU reading makes the mini-bar fill narrower than GDI+'s REAL_EPSILON (1.192e-7),
+        // which AddArc rejects; a <= 0 guard misses it.
+        // DrawTile is driven directly with a tall tile so ShowBars stays on.
         var c1 = new ClusterChamberInfo("C1", 60, SystemStateCode.Processing, 1.2e-3, true,
             Powers: new[] { new ClusterReadingInfo("C1_RF", "RF", 1e-9) });
 

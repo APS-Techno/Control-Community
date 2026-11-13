@@ -5,13 +5,7 @@ using Xunit;
 
 namespace CoreLogicTests;
 
-/// <summary>
-/// Row semantics for the cluster chamber tiles: the leading dot reflects the
-/// magnetron supply (lit = delivering power), NOT the shutter — during a
-/// multilayer the sources keep sputtering behind closed shutters (Cluster demo
-/// C3 Si/B), so a shutter-keyed dot reads as "magnetron cycling". Shutter state
-/// lives in the OPEN/CLOSED tag only.
-/// </summary>
+// The leading dot follows the magnetron supply, not the shutter: sources keep sputtering behind closed shutters.
 public class ClusterTileMetricsTests
 {
     private static readonly System.Drawing.Color State = System.Drawing.Color.Lime;
@@ -40,7 +34,7 @@ public class ClusterTileMetricsTests
         var rows = ClusterProcessPanel.BuildTileMetrics(C3(110, 90, siOpen: false, bOpen: true), State);
 
         var si = rows.Single(r => r.Name == "Si");
-        Assert.True(si.SourceOn);          // energized behind a closed shutter
+        Assert.True(si.SourceOn);
         Assert.False(si.ShutterOpen);
 
         var b = rows.Single(r => r.Name == "B");
@@ -66,7 +60,7 @@ public class ClusterTileMetricsTests
         var rows = ClusterProcessPanel.BuildTileMetrics(c, State);
 
         var w = rows.Single(r => r.Name == "W");
-        Assert.Null(w.SourceOn);           // supply not reporting — unknown, no dot
+        Assert.Null(w.SourceOn);
         Assert.Equal("—", w.Value);
     }
 
@@ -84,8 +78,6 @@ public class ClusterTileMetricsTests
     [Fact]
     public void Row_name_uses_effective_source_name_over_material()
     {
-        // Named source ("C1_Cu") + unnamed source (material "Ti"): the tile shows
-        // the recipe-addressable handle, falling back to material when unnamed.
         var c = new ClusterChamberInfo("C1", 60, SystemStateCode.Processing, 2e-3, false,
             Powers: new[]
             {
@@ -100,9 +92,9 @@ public class ClusterTileMetricsTests
 
         var rows = ClusterProcessPanel.BuildTileMetrics(c, State);
 
-        Assert.Contains(rows, r => r.Name == "C1_Cu");   // name wins
-        Assert.DoesNotContain(rows, r => r.Name == "Cu"); // material not shown for named source
-        Assert.Contains(rows, r => r.Name == "Ti");      // unnamed → material
+        Assert.Contains(rows, r => r.Name == "C1_Cu");
+        Assert.DoesNotContain(rows, r => r.Name == "Cu");
+        Assert.Contains(rows, r => r.Name == "Ti");
     }
 
     [Fact]

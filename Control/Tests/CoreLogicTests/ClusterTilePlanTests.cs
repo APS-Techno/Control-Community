@@ -5,8 +5,6 @@ namespace CoreLogicTests;
 
 public class ClusterTilePlanTests
 {
-    // Derive expectations from the row-height constants so these tests stay
-    // valid regardless of the schematic scale factor.
     private const int Bar   = TilePlan.RowWithBar;
     private const int NoBar = TilePlan.RowNoBar;
     private const int Min   = TilePlan.RowMin;
@@ -40,14 +38,11 @@ public class ClusterTilePlanTests
     [Fact]
     public void Tight_tile_compresses_rows_instead_of_dropping_them()
     {
-        // One pixel below the no-bar threshold: all rows survive at a
-        // compressed height between the floor and the normal height.
         var plan = TilePlan.For(3 * NoBar - 1, metricCount: 3);
         Assert.False(plan.ShowBars);
         Assert.Equal(3, plan.MetricRows);
         Assert.InRange(plan.RowHeight, Min, NoBar);
 
-        // Densest legal packing: exactly the floor.
         var atFloor = TilePlan.For(4 * Min, metricCount: 4);
         Assert.Equal(4, atFloor.MetricRows);
         Assert.Equal(Min, atFloor.RowHeight, precision: 3);
@@ -71,7 +66,6 @@ public class ClusterTilePlanTests
         Assert.True(atThreshold.ShowBars);
         Assert.Equal(3, atThreshold.MetricRows);
 
-        // One pixel short — bars drop, all rows still fit (>= 3 * RowNoBar).
         var belowThreshold = TilePlan.For(3 * Bar - 1, metricCount: 3);
         Assert.False(belowThreshold.ShowBars);
         Assert.Equal(3, belowThreshold.MetricRows);
@@ -80,9 +74,8 @@ public class ClusterTilePlanTests
     [Fact]
     public void Scale_multiplies_every_row_height_tier()
     {
-        const float dpi = 1.5f;   // 144 DPI
+        const float dpi = 1.5f;
 
-        // Bars threshold scales: what fit bars at 96 DPI no longer does at 144.
         var scaled = TilePlan.For((int)(3 * Bar * dpi), metricCount: 3, scale: dpi);
         Assert.True(scaled.ShowBars);
         Assert.Equal(Bar * dpi, scaled.RowHeight, precision: 3);
@@ -90,7 +83,6 @@ public class ClusterTilePlanTests
         var tooShortForBars = TilePlan.For(3 * Bar, metricCount: 3, scale: dpi);
         Assert.False(tooShortForBars.ShowBars);
 
-        // Compressed tier respects the scaled floor.
         var compressed = TilePlan.For((int)(3 * Min * dpi), metricCount: 3, scale: dpi);
         Assert.Equal(3, compressed.MetricRows);
         Assert.InRange(compressed.RowHeight, Min * dpi - 0.5f, NoBar * dpi);

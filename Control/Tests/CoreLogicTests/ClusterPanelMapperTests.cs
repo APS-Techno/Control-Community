@@ -32,8 +32,6 @@ public class ClusterPanelMapperTests
     [Fact]
     public void Readings_emit_secondary_flow_and_power_devices()
     {
-        // A chamber with two MFCs (Ar + N2) and two RF supplies (RF + RF B):
-        // none of the secondary devices may be dropped.
         var c3 = new ClusterChamberInfo("C3", 60, SystemStateCode.Processing, 1e-3, true,
             Temperature: 25,
             Flows: new[]
@@ -70,7 +68,7 @@ public class ClusterPanelMapperTests
         var ids = ClusterPanelMapper.ToReadings(snap).Select(r => r.Id).ToArray();
         Assert.Contains("LL·pm", ids);
         Assert.DoesNotContain("LL·Ar", ids);
-        Assert.Contains("TM·pm", ids);   // from robot pressure
+        Assert.Contains("TM·pm", ids);
     }
 
     [Fact]
@@ -96,12 +94,12 @@ public class ClusterPanelMapperTests
     {
         var snap = new ClusterSnapshot(new[] { Proc("C1") }, Robot(turbo: true, scroll: true));
         var v = ClusterPanelMapper.ToValves(snap).ToDictionary(x => x.Id, x => x.IsOpen);
-        Assert.True(v["SV_C1"]);          // slit (SlitOpen=true)
-        Assert.True(v["C1_V"]);           // per-chamber valve passthrough
+        Assert.True(v["SV_C1"]);
+        Assert.True(v["C1_V"]);
         Assert.True(v["C1 TP"]);
         Assert.False(v["C1 SP"]);
-        Assert.True(v["TM TP"]);          // from robot
-        Assert.True(v["TM SP"]);          // from robot
+        Assert.True(v["TM TP"]);
+        Assert.True(v["TM SP"]);
     }
 
     [Fact]
@@ -116,7 +114,7 @@ public class ClusterPanelMapperTests
     [Fact]
     public void Tm_pm_is_off_when_robot_ok()
     {
-        var snap = new ClusterSnapshot(new[] { Proc("C1") }, Robot());   // ErrorActive=false
+        var snap = new ClusterSnapshot(new[] { Proc("C1") }, Robot());
         var tm = ClusterPanelMapper.ToReadings(snap).First(r => r.Id == "TM·pm");
         Assert.Equal(ReadingState.Off, tm.State);
     }
@@ -124,8 +122,6 @@ public class ClusterPanelMapperTests
     [Fact]
     public void Idle_chamber_stays_alive_while_recipe_active()
     {
-        // Mid-recipe a chamber drops back to Idle when its wafer moves on —
-        // its readings (and sparklines) must stay alive for the whole run.
         var snap = new ClusterSnapshot(new[] { Proc("C1", SystemStateCode.Idle) }, Robot());
         var rs = ClusterPanelMapper.ToReadings(snap, recipeActive: true);
         Assert.Equal(ReadingState.Ok, rs.First(r => r.Id == "C1·pm").State);
@@ -154,7 +150,7 @@ public class ClusterPanelMapperTests
     [Fact]
     public void Tm_pm_is_alive_while_recipe_active()
     {
-        var snap = new ClusterSnapshot(new[] { Proc("C1") }, Robot());   // ErrorActive=false
+        var snap = new ClusterSnapshot(new[] { Proc("C1") }, Robot());
         var tm = ClusterPanelMapper.ToReadings(snap, recipeActive: true)
             .First(r => r.Id == "TM·pm");
         Assert.Equal(ReadingState.Ok, tm.State);
