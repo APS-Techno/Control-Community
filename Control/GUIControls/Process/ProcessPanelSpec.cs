@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Linq;
@@ -37,8 +38,9 @@ public sealed record ProcessPanelSpec(
         }
 
         var errors = new List<string>();
-        var root = doc.Root;
-        if (root is null) return Empty;
+        var root = doc.Root!;
+        if (root.Name.LocalName != "processPanel")
+            return Empty with { Errors = [$"ProcessPanel.xml: unexpected root element '{root.Name.LocalName}'"] };
 
         return new ProcessPanelSpec(
             ParseReadings(root, errors),
@@ -61,7 +63,6 @@ public sealed record ProcessPanelSpec(
         {
             var id = Attr(e, "id");
             if (id is null) { errors.Add("reading without id skipped"); continue; }
-            if (!seen.Add(id)) { errors.Add($"reading '{id}': duplicate id skipped"); continue; }
 
             if (!Enum.TryParse(Attr(e, "group"), true, out ReadingGroup group))
             { errors.Add($"reading '{id}': unknown group '{Attr(e, "group")}'"); continue; }
@@ -77,13 +78,19 @@ public sealed record ProcessPanelSpec(
                 { errors.Add($"reading '{id}': unknown accent '{accentText}'"); continue; }
                 accent = c;
             }
+            var format = Attr(e, "format") ?? "F1";
+            try { _ = 0d.ToString(format, CultureInfo.InvariantCulture); }
+            catch (FormatException)
+            { errors.Add($"reading '{id}': invalid format '{format}'"); continue; }
+
+            if (!seen.Add(id)) { errors.Add($"reading '{id}': duplicate id skipped"); continue; }
 
             var sparkline = !string.Equals(Attr(e, "sparkline"), "false", StringComparison.OrdinalIgnoreCase);
 
             list.Add(new ReadingSpec(
                 id, group,
                 Attr(e, "label") ?? id,
-                Attr(e, "format") ?? "F1",
+                format,
                 Attr(e, "unit") ?? "",
                 sparkline, scale, accent,
                 Attr(e, "section"),
@@ -95,6 +102,7 @@ public sealed record ProcessPanelSpec(
     private static List<ValveGroupSpec> ParseValveGroups(XElement root, List<string> errors)
     {
         var groups = new List<ValveGroupSpec>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var g in root.Elements("valveGroups").Elements("group"))
         {
             var valves = new List<ValveSpec>();
@@ -102,6 +110,7 @@ public sealed record ProcessPanelSpec(
             {
                 var id = Attr(v, "id");
                 if (id is null) { errors.Add("valve without id skipped"); continue; }
+                if (!seen.Add(id)) { errors.Add($"valve '{id}': duplicate id skipped"); continue; }
                 valves.Add(new ValveSpec(id, Attr(v, "descr") ?? ""));
             }
             groups.Add(new ValveGroupSpec(Attr(g, "header") ?? "", valves));
@@ -113,10 +122,12 @@ public sealed record ProcessPanelSpec(
         Func<string, string, T> make, List<string> errors)
     {
         var list = new List<T>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var e in root.Elements(container).Elements(item))
         {
             var id = Attr(e, "id");
             if (id is null) { errors.Add($"{item} without id skipped"); continue; }
+            if (!seen.Add(id)) { errors.Add($"{item} '{id}': duplicate id skipped"); continue; }
             list.Add(make(id, Attr(e, "label") ?? id));
         }
         return list;

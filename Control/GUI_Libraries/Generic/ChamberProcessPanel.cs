@@ -14,7 +14,6 @@ public class ChamberProcessPanel : BaseProcessPanel, IAnimatedSchematicPanel
     public float HolderFlangeSeconds { set => _schematic.HolderFlangeSeconds = value; }
     public float ShutterFlangeSeconds { set => _schematic.ShutterFlangeSeconds = value; }
 
-    private readonly ProcessPanelSpec _spec = ProcessPanelSpec.Current;
     private readonly ChamberSchematicControl _schematic = new();
     private readonly Dictionary<string, ValveLedControl> _valveLeds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Label> _drivePills = new(StringComparer.OrdinalIgnoreCase);

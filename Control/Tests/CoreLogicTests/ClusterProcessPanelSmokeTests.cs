@@ -31,6 +31,23 @@ public class ClusterProcessPanelSmokeTests
     }
 
     [Fact]
+    public void UpdateReadings_ExternalFeed_IsIgnoredBecauseTheSnapshotOwnsTheRows()
+    {
+        using var panel = NewPanel();
+        panel.Size = new System.Drawing.Size(600, 600);
+        var snap = new ClusterSnapshot(
+            [new ClusterChamberInfo("C1", 0, SystemStateCode.Processing, 1e-3, true)],
+            new ClusterRobotInfo(RobotStateCode.Idle, 0, 0, 0, false, false, 1e-6, true, true));
+        panel.UpdateCluster(snap);
+        var row = (ReadingRowControl)panel.Controls.Find("C1·pm", true).Single();
+        int before = row.History.Count;
+
+        panel.UpdateReadings([new ProcessReading("C1·pm", 5.0, ReadingState.Ok)]);
+
+        Assert.Equal(before, row.History.Count);
+    }
+
+    [Fact]
     public void Ctor_NoSpec_BuildsWithoutRows()
     {
         using var panel = NewPanel(ProcessPanelSpec.Empty);

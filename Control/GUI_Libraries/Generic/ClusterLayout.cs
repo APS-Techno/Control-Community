@@ -101,7 +101,6 @@ public sealed class ClusterLayout
     }
 
     public Rectangle TileFor(string key) => _tiles[key];
-    public Point CenterFor(string key) => _chamberCenters[key];
 
     public Point HexEdgeToward(string key)
     {

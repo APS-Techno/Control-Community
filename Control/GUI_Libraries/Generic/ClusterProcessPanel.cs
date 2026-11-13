@@ -27,7 +27,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
     private readonly Dictionary<string, Label> _drivePills = new(StringComparer.Ordinal);
     private const string RobotPillKey = "ROBOT";
 
-    private static readonly Color TileBg      = Color.FromArgb(22, 32, 50);
     private static readonly Color TileBorder  = Color.FromArgb(34, 51, 76);
     private static readonly Color TextPrimary = Color.FromArgb(200, 214, 229);
     private static readonly Color TextDim     = Color.FromArgb(119, 136, 153);
@@ -79,6 +78,9 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
     }
 
     protected override IEnumerable<ReadingSpec> DefineReadings() => ProcessPanelSpec.Current.Readings;
+
+    // Rows are owned by UpdateCluster; the host's telemetry feed would overwrite them with Off.
+    public override void UpdateReadings(ProcessReading[] readings) { }
 
     protected override void PopulateExtraSections(FlowLayoutPanel? leftStack, FlowLayoutPanel? rightStack)
     {
@@ -233,7 +235,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         // Idle between steps (wafer moved on to the next chamber).
         bool recipeActive = CurrentRecipe?.State
             is RecipeState.Running or RecipeState.Paused or RecipeState.Aborting;
-        UpdateReadings(ClusterPanelMapper.ToReadings(snapshot, recipeActive));
+        base.UpdateReadings(ClusterPanelMapper.ToReadings(snapshot, recipeActive));
         UpdateValves(ClusterPanelMapper.ToValves(snapshot));
         UpdateDrivePills(snapshot);
         string summary = ClusterPanelMapper.ToHeaderSummary(snapshot);

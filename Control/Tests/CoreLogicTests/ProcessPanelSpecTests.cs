@@ -156,6 +156,59 @@ public class ProcessPanelSpecTests : IDisposable
     }
 
     [Fact]
+    public void Load_InvalidNumberFormat_SkipsEntryAndReportsIt()
+    {
+        var spec = ProcessPanelSpec.Load(Write("""
+            <readings>
+              <reading id="bad" label="x" group="Power" format="D2" unit="V"/>
+              <reading id="good" label="x" group="Power" format="F1" unit="V"/>
+            </readings>
+            """));
+        Assert.Equal(["good"], spec.Readings.Select(r => r.Id));
+        Assert.Single(spec.Errors);
+        Assert.Contains("bad", spec.Errors[0]);
+    }
+
+    [Fact]
+    public void Load_InvalidFirstRowThenValidRowWithSameId_KeepsTheValidRow()
+    {
+        var spec = ProcessPanelSpec.Load(Write("""
+            <readings>
+              <reading id="pm" label="bad" group="Nonsense" format="E1" unit="Torr"/>
+              <reading id="pm" label="good" group="Pressure" format="E1" unit="Torr"/>
+            </readings>
+            """));
+        Assert.Equal(["good"], spec.Readings.Select(r => r.DisplayLabel));
+        Assert.Single(spec.Errors);
+        Assert.DoesNotContain("duplicate", spec.Errors[0]);
+    }
+
+    [Fact]
+    public void Load_DuplicateValveAndDriveIds_KeepFirstAndReportSecond()
+    {
+        var spec = ProcessPanelSpec.Load(Write("""
+            <valveGroups>
+              <group header="A"><valve id="V1" descr="first"/></group>
+              <group header="B"><valve id="V1" descr="second"/></group>
+            </valveGroups>
+            <drives><drive id="D1" label="first"/><drive id="D1" label="second"/></drives>
+            """));
+        Assert.Equal(["first"], spec.ValveGroups.SelectMany(g => g.Valves).Select(v => v.Description));
+        Assert.Equal(["first"], spec.Drives.Select(d => d.Label));
+        Assert.Equal(2, spec.Errors.Count);
+    }
+
+    [Fact]
+    public void Load_WrongRootElement_ReportsAnError()
+    {
+        var path = Path.Combine(_dir, "ProcessPanel.xml");
+        File.WriteAllText(path, "<processpanel><readings/></processpanel>");
+        var spec = ProcessPanelSpec.Load(path);
+        Assert.Empty(spec.Readings);
+        Assert.Single(spec.Errors);
+    }
+
+    [Fact]
     public void Current_DefaultsToEmpty()
     {
         Assert.Same(ProcessPanelSpec.Empty, ProcessPanelSpec.Current);

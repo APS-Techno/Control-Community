@@ -285,6 +285,8 @@ public partial class FrmMain : Form
                 _processPanel = null;
                 _processPanelSearched = false;
             }
+            _clusterPanel = null;
+            _clusterPanelSearched = false;
             _telemetryTimer?.Stop();
             _telemetryTimer?.Dispose();
             _telemetryTimer = null;
