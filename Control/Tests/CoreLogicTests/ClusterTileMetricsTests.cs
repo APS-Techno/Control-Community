@@ -104,4 +104,25 @@ public class ClusterTileMetricsTests
         Assert.DoesNotContain(rows, r => r.Name == "Cu"); // material not shown for named source
         Assert.Contains(rows, r => r.Name == "Ti");      // unnamed → material
     }
+
+    [Fact]
+    public void Values_UnderRuRuCulture_UseDotDecimals()
+    {
+        var saved = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("ru-RU");
+            var chamber = new ClusterChamberInfo("C1", 60, SystemStateCode.Processing, 1.2e-3, false,
+                Temperature: 250.4,
+                Flows: [ClusterReadingInfo.For("C1_Ar", "C1", 12.5)],
+                Powers: [ClusterReadingInfo.For("C1_RF", "C1", 150.4)]);
+
+            var rows = ClusterProcessPanel.BuildTileMetrics(chamber, State);
+
+            Assert.Equal("1.2e-3", rows.Single(r => r.Name == "pm").Value);
+            Assert.Equal("12.5", rows.Single(r => r.Name == "Ar").Value);
+            Assert.All(rows, r => Assert.DoesNotContain(',', r.Value));
+        }
+        finally { System.Globalization.CultureInfo.CurrentCulture = saved; }
+    }
 }

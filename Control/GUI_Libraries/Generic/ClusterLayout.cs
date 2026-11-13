@@ -2,11 +2,6 @@ using System.Drawing;
 
 namespace APS.Controls.Generic;
 
-/// <summary>
-/// Pure radial geometry for the cluster process panel. Given the client size and
-/// the chambers (key + face angle in degrees clockwise from 12 o'clock), computes
-/// the centre hex rect, each chamber's tile rect, and spoke/slit-marker points.
-/// </summary>
 public sealed class ClusterLayout
 {
     public Point Center { get; }
@@ -17,52 +12,29 @@ public sealed class ClusterLayout
 
     public Size TileSize { get; }
 
-    /// <param name="scale">Monitor DPI factor (DpiY / 96). The clamp bounds and
-    /// margins below are 96-DPI pixel values; scaling them keeps tile geometry in
-    /// step with the point-size fonts GDI+ enlarges on high-DPI monitors. The
-    /// client-proportional terms need no scaling — the client itself is bigger.</param>
     public ClusterLayout(Size client, IReadOnlyList<(string Key, int FaceAngle)> chambers,
         float scale = 1f)
     {
         if (scale <= 0f) scale = 1f;
         Center = new Point(client.Width / 2, client.Height / 2);
 
-        // Tile size scales with the panel; clamped so tiny windows stay legible.
-        // Upper caps are generous so tiles can grow to ~2x on a roomy window to
-        // hold the scaled-up tile content (see ClusterProcessPanel.UiScale).
         int tw = Math.Clamp(client.Width  / 5, (int)(90 * scale), (int)(320 * scale));
         int th = Math.Clamp(client.Height / 5, (int)(84 * scale), (int)(264 * scale));
         TileSize = new Size(tw, th);
 
-        // Hex is ~1.2x a tile width so the central indication chip
-        // (TM / pressure / state>face) has room.
         int hex = (int)(tw * 1.2);
         HexRect = new Rectangle(Center.X - hex / 2, Center.Y - hex / 2, hex, hex);
         double rHex = hex / 2.0;
 
-        // Base ring radius: the largest circle on which a tile still clears the
-        // panel edge — limited by the vertical chambers at 12/6 o'clock.
         int maxByWidth  = (client.Width  - tw) / 2 - 4;
         int maxByHeight = (client.Height - th) / 2 - 4;
         double baseRadius = Math.Max(hex, Math.Min(maxByWidth, maxByHeight));
 
-        // Every chamber gets the SAME *visible* pipe length L (hub edge -> tile
-        // edge). A single ring radius made the verticals look longer because a
-        // square tile covers different amounts of its radial spoke depending on
-        // the angle (th/2 straight up, more toward a corner on the diagonals), so
-        // each chamber's radius = hexRadius + L + that coverage.
-        //
-        // Target L is double the old 0.8-pull-in length, then capped so the
-        // tightest chamber's tile still clears the panel edge by EdgeMargin. The
-        // vertical chambers (12/6 o'clock) bind first, so a literal 2x isn't
-        // always reachable — the cap pushes LL/C3 out to a slim margin instead of
-        // off-screen, keeping all pipes equal.
+        // Every chamber gets the same visible pipe length: radius = hexRadius + L + tile coverage at that angle, capped to stay on screen.
         double edgeMargin = 16.0 * scale;
         double l0 = 0.8 * baseRadius - rHex - th / 2.0;
         double desiredPipe = 2.0 * l0;
 
-        // Coverage along the radial, and the max radius that keeps the tile in
-        // bounds, for a chamber at the given angle (axis-aligned slabs).
         double Cover(double sx, double sy)
         {
             double c = double.PositiveInfinity;

@@ -3,16 +3,9 @@ using APS.ProcessPanel.Contracts;
 
 namespace APS.Controls.Generic;
 
-/// <summary>
-/// Pure translation from a <see cref="ClusterSnapshot"/> to the base process-panel
-/// contract arrays. The valve/pump id helpers are shared with the panel's lazy
-/// LED construction so ids always match.
-/// </summary>
 internal static class ClusterPanelMapper
 {
-    // Internal display ids used to pair an LED with its value in ToValves; the
-    // space-containing pump ids ("C1 TP"/"C1 SP") are never matched against device
-    // keys (pump state is a bool, resolved by the feed), so the spaces are safe.
+    // Pump ids contain a space so they can never collide with a device key.
     public static string SlitId(string key)   => "SV_" + key;
     public static string TurboId(string key)  => key + " TP";
     public static string ScrollId(string key) => key + " SP";
@@ -20,11 +13,7 @@ internal static class ClusterPanelMapper
     private static bool IsProcessChamber(string key)
         => key.Length > 0 && (key[0] == 'C' || key[0] == 'c');
 
-    // While a recipe is executing the whole tool is "live": a chamber dropping
-    // back to Idle mid-recipe (wafer handed off to the next chamber) must keep
-    // its reading rows + sparklines alive, not dim to "off". Idle/Startup only
-    // read as Off when no recipe is running. Stopped/Maintenance always win —
-    // an alarmed or vented chamber stays flagged regardless of the recipe.
+    // During a recipe a chamber back at Idle stays live (the wafer moved on); Stopped and Maintenance always win.
     private static ReadingState StateFor(SystemStateCode s, bool recipeActive) => s switch
     {
         SystemStateCode.Processing  => ReadingState.Ok,

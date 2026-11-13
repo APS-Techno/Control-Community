@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -8,13 +9,6 @@ using Contracts = APS.ProcessPanel.Contracts;
 
 namespace APS.Controls.Generic;
 
-/// <summary>
-/// Cluster process panel. Wraps the radial TM/chamber map (centre schematic)
-/// in the shared <see cref="BaseProcessPanel"/> chrome: tool-summary header,
-/// whole-tool aggregated reading rows, valve LEDs, drive pills, and log drawer.
-/// Fed a <see cref="ClusterSnapshot"/> each UI tick via <see cref="UpdateCluster"/>.
-/// Read-only.
-/// </summary>
 public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
 {
     private ClusterSnapshot? _snapshot;
@@ -43,33 +37,21 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
     private static readonly Color GateClosed  = Color.FromArgb(58, 74, 90);
     private static readonly Color ErrorRed    = Color.FromArgb(239, 83, 80);
 
-    // Indicative display scales for mini bars — tune freely, no semantic impact.
-    private const double PmFullScaleLo = 1e-7;   // Torr → bar empty
-    private const double PmFullScaleHi = 1e-2;   // Torr → bar full
-    private const double RfFullScaleW  = 600;    // W
-    private const double TempFullScaleC = 300;   // °C
-    private const double FlowFullScaleSccm = 50; // sccm → bar full
+    private const double PmFullScaleLo = 1e-7;
+    private const double PmFullScaleHi = 1e-2;
+    private const double RfFullScaleW  = 600;
+    private const double TempFullScaleC = 300;
+    private const double FlowFullScaleSccm = 50;
 
-    // Global size multiplier for the radial schematic — fonts, line widths, dots,
-    // pills, bars, glow, paddings, corner radii. One knob; tune freely. NOTE: the
-    // metric-row heights live in TilePlan.RowWithBar/RowNoBar and are scaled to
-    // match (keep them in step with this value). Named UiScale (not Scale) to
-    // avoid hiding Control.Scale(float).
-    //
-    // Units: UiScale multiplies FONT POINT sizes directly (GDI+ then renders
-    // points × DpiY/72, so fonts track the monitor automatically). All pixel
-    // geometry instead uses `ui = UiScale * dpi` (dpi = Graphics.DpiY / 96),
-    // threaded through the paint helpers, so boxes grow with the text on
-    // high-DPI monitors instead of being outrun by it.
+    // Multiplies font point sizes only; pixel geometry uses ui = UiScale * dpi.
+    // ClusterTilePlan row heights are matched to this value.
     private const float UiScale = 1.4f;
 
-    // Monitor DPI factor for the WinForms-control side (side stacks, pills).
-    // The paint path derives its own factor from Graphics.DpiY instead.
     private float DpiF => DeviceDpi / 96f;
 
     protected override int LeftPanelWidth   => (int)(288 * DpiF);
     protected override int RightPanelWidth  => (int)(360 * DpiF);
-    protected override int BottomPanelHeight => 0;   // no step strip; map gets the height
+    protected override int BottomPanelHeight => 0;
 
     public ClusterProcessPanel()
     {
@@ -101,16 +83,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
                 AddLed(slitRow, ClusterPanelMapper.SlitId(c.Key), "slit " + c.Key);
             _rightStackRef.Controls.Add(slitRow);
 
-            // Shutters: one LED per sputter source, registered under the shutter
-            // VALVE id so the existing ToValves → OnValvesChanged pipeline drives
-            // it; the visible text is "<chamber> <material>", the tooltip keeps
-            // the raw id. Each Sources.xml shutterId is resolved against the
-            // chamber's actual valve list (case-insensitive) and the LED keyed by
-            // the VALVE's id, so a mis-cased shutterId still gets a live LED; a
-            // stale id with no matching valve gets none at all rather than a
-            // dead, never-updating one. The resolved id set excludes shutters
-            // from the generic per-chamber valve rows below (Ordinal — the ids
-            // come from the same valve list they filter).
+            // Shutter LEDs are keyed by the resolved valve id; a shutterId with no matching valve gets no LED.
             var shutterIds = new HashSet<string>(StringComparer.Ordinal);
             var shutterLeds = new List<(string ValveId, string Descr, string Display)>();
             foreach (var c in snap.Chambers)
@@ -136,12 +109,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
                 _rightStackRef.Controls.Add(shutterRow);
             }
 
-            // Per-chamber valve LED sections are built once, from the first snapshot.
-            // This relies on the feed presenting every chamber with its full valve set
-            // on the first tick — true here because all valves are instantiated from
-            // HWConf at startup (independent of PLC connection), and the 200 ms tick
-            // only fires after hardware load. Slit/pump rows are built from
-            // snap.Chambers so they are immune regardless.
+            // Built once from the first snapshot, which must carry every chamber's full valve set.
             foreach (var c in snap.Chambers)
             {
                 var valves = (c.Valves ?? System.Array.Empty<ClusterValveInfo>())
@@ -187,7 +155,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
 
     private void AddLed(FlowLayoutPanel row, string id, string descr, string? display = null)
     {
-        if (_valveLeds.ContainsKey(id)) return;   // read-only display: a duplicate id is harmlessly skipped
+        if (_valveLeds.ContainsKey(id)) return;
         var led = new ClusterValveLed(id, descr, display);
         _valveLeds[id] = led;
         row.Controls.Add(led);
@@ -195,12 +163,8 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
 
     private Label AddDrivePill(FlowLayoutPanel stack, string label)
     {
-        // Heights/widths are 96-DPI values scaled by DpiF so the point-size
-        // fonts (which WinForms renders DPI-scaled) keep fitting their rows.
         float s = DpiF;
         int rowH = (int)(26 * s), labelH = (int)(22 * s), pillW = (int)(92 * s);
-        // Width 220 is only a pre-layout seed; the base FitRowsToStack
-        // resizes each row to the stack width and the anchored pill reflows.
         var row = new Panel { Height = rowH, Width = (int)(220 * s), BackColor = Color.FromArgb(13, 27, 42) };
         var name = new Label
         {
@@ -229,10 +193,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
     {
         _snapshot = snapshot;
         EnsureExtraControls(snapshot);
-        // CurrentRecipe arrives via the base IProcessPanel.UpdateRecipe feed
-        // (FrmMain.HandleRecipeProgress). While a recipe is executing, every
-        // chamber's readings stay alive even when its own state returns to
-        // Idle between steps (wafer moved on to the next chamber).
         bool recipeActive = CurrentRecipe?.State
             is RecipeState.Running or RecipeState.Paused or RecipeState.Aborting;
         base.UpdateReadings(ClusterPanelMapper.ToReadings(snapshot, recipeActive));
@@ -264,7 +224,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         }
         foreach (var c in snap.Chambers)
             if (_drivePills.TryGetValue(c.Key, out var p))
-                p.Text = c.DrivePosition is double d ? d.ToString("F0") : "—";
+                p.Text = c.DrivePosition is double d ? d.ToString("F0", CultureInfo.InvariantCulture) : "—";
     }
 
     protected override void OnPaintHeader(Graphics g, Rectangle bounds)
@@ -289,9 +249,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
             return;
         }
 
-        // Monitor DPI factor: fonts are point-sized (GDI+ scales them by DpiY/72
-        // at render time), so every pixel-tuned geometry constant below must grow
-        // by the same factor or text outruns its boxes on high-DPI monitors.
         float dpi = g.DpiY / 96f;
         float ui  = UiScale * dpi;
 
@@ -312,24 +269,16 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
 
         DrawHex(g, layout, snap.Robot, dpi);
 
-        // Slit/gate-valve markers sit just outside the TM hub edge and are drawn
-        // after the hub, so the chamber tiles (drawn last, out at the ring) never
-        // cover them.
         foreach (var c in snap.Chambers)
         {
             var inner = layout.HexEdgeToward(c.Key);
             double dx = inner.X - layout.Center.X, dy = inner.Y - layout.Center.Y;
             double len = Math.Sqrt(dx * dx + dy * dy);
-            float off = 10f * ui;   // gap beyond the hub edge, tunable
+            float off = 10f * ui;
             var mid = len < 1
                 ? new PointF(inner.X, inner.Y)
                 : new PointF(inner.X + (float)(dx / len * off), inner.Y + (float)(dy / len * off));
             float pw = 18f * ui, ph = 9f * ui, pr = 4.5f * ui;
-            // Orient the pill ACROSS the spoke (perpendicular to the hub→chamber
-            // pipe) so the gate marker follows each chamber's port direction
-            // instead of always sitting horizontal. The pill's long (X) axis is
-            // turned to spoke-angle + 90°; the rect is centered on the origin and
-            // positioned by the transform.
             float angleDeg = (float)(Math.Atan2(dy, dx) * 180.0 / Math.PI) + 90f;
             var pill = new RectangleF(-pw / 2f, -ph / 2f, pw, ph);
             var savedPill = g.Save();
@@ -386,9 +335,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         return p;
     }
 
-    // GDI+ has no blur; emulate a soft glow with a few expanding translucent passes.
-    // Per-pass base alpha is tuned per shape (ellipse 30, line 28, pill 26): smaller
-    // shapes get a slightly dimmer halo to avoid muddiness. Keep them independent.
+    // GDI+ has no blur: the soft glow is a few expanding translucent passes.
     private static void GlowEllipse(Graphics g, float cx, float cy, float r, Color c, float ui)
     {
         for (int i = 3; i >= 1; i--)
@@ -450,10 +397,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         g.FillPath(cb, core);
     }
 
-    // GDI+ has no blur; fake a soft drop shadow with a few expanding translucent
-    // black passes offset downward, so the shape reads as lifted off the panel.
-    // Drawn BEFORE the body fill (which then covers the overlap, leaving the halo
-    // below/around). Inner pass is darkest+tightest, outer is faint+wide.
+    // GDI+ has no blur: the soft shadow is a few expanding translucent passes drawn before the body fill.
     private static void DropShadowRect(Graphics g, RectangleF r, float radius, float dy, float ui)
     {
         for (int i = 4; i >= 1; i--)
@@ -466,8 +410,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         }
     }
 
-    // Same soft-shadow trick for the hub polygon: scale the points out from the
-    // centre and offset down, a few translucent passes.
     private static void DropShadowPolygon(Graphics g, PointF[] pts, PointF c, float dy)
     {
         for (int i = 4; i >= 1; i--)
@@ -502,7 +444,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
 
         Color state = StateColor(c.State);
 
-        // Top accent bar, clipped to the rounded body so it follows the corners.
         using (var bodyPath = RoundedRect(rf, radius))
         {
             var saved = g.Save();
@@ -523,9 +464,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         float x0 = rf.X + padX, x1 = rf.Right - padX;
         float y = rf.Y + 10f * ui;
 
-        // Text metrics in DEVICE pixels: Font.Height reports the primary-screen
-        // value, which diverges from this Graphics on a different-DPI bitmap, so
-        // measure through g instead.
+        // Measure through g: Font.Height reports primary-screen metrics, wrong on a bitmap at another DPI.
         float smallH = smallF.GetHeight(g);
         float nameH  = nameF.GetHeight(g);
 
@@ -544,15 +483,10 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
 
         var metrics = BuildTileMetrics(c, state);
 
-        // Degrade by available height: bars+rows → rows-only → compressed → fewer
-        // rows. Rows are clipped to the rounded body so an over-long value
-        // truncates at the card edge instead of bleeding onto the panel.
         var plan = TilePlan.For((int)(rf.Bottom - y - padBottom), metrics.Count, dpi);
         float rowH = plan.RowHeight;
         if (metrics.Count == 0) return;
 
-        // Column geometry, measured once per tile so every row aligns:
-        // ① source glyph ② name ③ supply ④ value (right-aligned) ⑤ unit + tag.
         float colGap = 6f * ui;
         float dotR   = 3f * ui;
         float glyphW = metrics.Any(m => m.SourceOn != null) ? dotR * 2f + 4f * ui : 0f;
@@ -564,9 +498,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         float nameX      = x0 + glyphW;
         float supplyX    = nameX + nameW + colGap;
         float unitX      = x1 - unitColW;
-        // Values right-align at the unit column's edge; on a degenerate tile a
-        // squeeze shows as overlap with the supply column, contained by the
-        // body clip below.
         float valueRight = unitX - colGap;
 
         using var rowClip = RoundedRect(rf, radius);
@@ -577,10 +508,7 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
             var m = metrics[i];
             if (m.SourceOn is bool srcOn)
             {
-                // Source glyph: glowing green dot while the magnetron supply
-                // delivers power, dim grey at 0 W. Shutter state is the
-                // OPEN/CLOSED tag, not this dot — during a multilayer the
-                // sources keep sputtering behind closed shutters.
+                // The dot tracks delivered power; shutter state is the OPEN/CLOSED tag, since sources keep sputtering behind closed shutters.
                 float dotCy = y + smallH / 2f;
                 if (srcOn)
                 {
@@ -611,8 +539,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
                 string tag = open2 ? "OPEN" : "CLOSED";
                 using var tagB = new SolidBrush(open2 ? GateOpen : GateClosed);
                 var ts = g.MeasureString(tag, tagF);
-                // Centered within the text line, so the tag never extends past
-                // y + smallH into the next row at maximum compression.
                 g.DrawString(tag, tagF, tagB, ux, y + (smallH - ts.Height) / 2f);
             }
             if (plan.ShowBars && m.Norm >= 0)
@@ -622,33 +548,19 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         g.Restore(savedRows);
     }
 
-    /// <summary>One metric row on a chamber tile, rendered as five aligned
-    /// columns: ① source glyph (<see cref="SourceOn"/> non-null: dot lit while
-    /// the magnetron supply delivers power) ② <see cref="Name"/> (pm / material
-    /// / tmp / gas) ③ <see cref="Supply"/> (RF, RF B — source rows only) ④ <see
-    /// cref="Value"/>, right-aligned ⑤ <see cref="Unit"/> + OPEN/CLOSED shutter
-    /// tag (<see cref="ShutterOpen"/> non-null). <see cref="Norm"/> &lt; 0
-    /// suppresses the mini-bar (source rows with no power reading).</summary>
     internal sealed record TileMetric(string Name, string Value, string Unit,
         double Norm, Color Bar, string? Supply = null, bool? ShutterOpen = null,
         bool? SourceOn = null);
 
-    /// <summary>Builds the metric rows for one chamber tile: pm, one row per
-    /// power supply (joined to its sputter source by PowerSupplyId), leftover
-    /// sources with no live reading, tmp, then MFC flows.</summary>
+    private static string FormatPressure(double torr) => torr.ToString("0.0e-0", CultureInfo.InvariantCulture);
+
     internal static List<TileMetric> BuildTileMetrics(ClusterChamberInfo c, Color state)
     {
         var sources = c.Sources ?? System.Array.Empty<ClusterSourceInfo>();
         var metrics = new List<TileMetric>();
         if (c.Pressure is double pm)
-            metrics.Add(new("pm", pm.ToString("0.0e-0"), "Torr", PmNorm(pm), AccentBlue));
+            metrics.Add(new("pm", FormatPressure(pm), "Torr", PmNorm(pm), AccentBlue));
 
-        // One row per power supply (RF, RF B, …), joined to its sputter source by
-        // PowerSupplyId: the target material becomes the row's name, the supply
-        // label moves to its own column, the live wattage drives the source dot,
-        // and the shutter state adds the OPEN/CLOSED tag. Unmatched supplies
-        // render with the supply label as the name; sources whose supply has no
-        // live reading fall through to the no-reading rows below.
         var usedSources = new HashSet<ClusterSourceInfo>();
         foreach (var p in c.Powers ?? System.Array.Empty<ClusterReadingInfo>())
         {
@@ -657,23 +569,19 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
                 string.Equals(s.PowerSupplyId, p.Id, StringComparison.OrdinalIgnoreCase));
             if (src is null)
             {
-                metrics.Add(new(p.Label, rfw.ToString("F0"), "W", rfw / RfFullScaleW, state));
+                metrics.Add(new(p.Label, rfw.ToString("F0", CultureInfo.InvariantCulture), "W", rfw / RfFullScaleW, state));
                 continue;
             }
             usedSources.Add(src);
-            // Effective = source name if set, else material (recipe-addressable handle).
             bool hasLabel = src.Effective.Length > 0;
             metrics.Add(new(hasLabel ? src.Effective : p.Label,
-                rfw.ToString("F0"), "W", rfw / RfFullScaleW, state,
+                rfw.ToString("F0", CultureInfo.InvariantCulture), "W", rfw / RfFullScaleW, state,
                 hasLabel ? p.Label : null, ShutterOpenFor(c, src), rfw > 0));
         }
         foreach (var src in sources)
         {
             if (usedSources.Contains(src)) continue;
-            // Supply label derived from the id the same way live readings derive
-            // theirs, so the column stays consistent when the supply is offline.
-            // SourceOn stays null — no live reading means the energized state is
-            // unknown, so no dot rather than a false "off".
+            // SourceOn stays null without a live reading: unknown, not off.
             string? supply = src.PowerSupplyId is null
                 ? null : ClusterReadingInfo.For(src.PowerSupplyId, c.Key, null).Label;
             bool hasLabel = src.Effective.Length > 0;
@@ -683,22 +591,16 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         }
 
         if (c.Temperature is double tmp)
-            metrics.Add(new("tmp", tmp.ToString("F0"), "°C", tmp / TempFullScaleC, AccentBlue));
+            metrics.Add(new("tmp", tmp.ToString("F0", CultureInfo.InvariantCulture), "°C", tmp / TempFullScaleC, AccentBlue));
 
-        // One row per MFC flow (Ar, N2, …), after tmp: bottom rows truncate
-        // first on short tiles, so flows yield before temperature.
         foreach (var f in c.Flows ?? System.Array.Empty<ClusterReadingInfo>())
             if (f.Value is double sccm)
-                metrics.Add(new(f.Label, sccm.ToString("F1"), "sccm",
+                metrics.Add(new(f.Label, sccm.ToString("F1", CultureInfo.InvariantCulture), "sccm",
                     sccm / FlowFullScaleSccm, AccentBlue));
         return metrics;
     }
 
-    /// <summary>Live shutter state for a source, looked up in the chamber's valve
-    /// list by ShutterId. Null when the source has no shutter or the valve is not
-    /// in the snapshot (no glyph drawn).
-    /// IgnoreCase on purpose — this is a display-only lookup, not a routing key
-    /// (contrast the Ordinal shutter-id set in EnsureExtraControls).</summary>
+    // IgnoreCase: display-only lookup, unlike the Ordinal shutter-id set in EnsureExtraControls.
     private static bool? ShutterOpenFor(ClusterChamberInfo c, ClusterSourceInfo src)
     {
         if (src.ShutterId is null) return null;
@@ -736,15 +638,13 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
                 g.DrawPath(pen, path);
         }
 
-        // Indication chip text + fonts, measured up front so the chip is sized
-        // to fit its content (then clamped to the hex's flat side-band, below).
         using var nameF   = ScaledFont.Create(11f * UiScale, FontStyle.Bold);
         using var monoF   = new Font("Consolas", 8.5f * UiScale);
         using var primary = new SolidBrush(TextPrimary);
         using var dim     = new SolidBrush(TextDim);
 
         const string tmText = "TM";
-        string presText  = robot.Pressure is double p ? p.ToString("0.0e-0") + " Torr" : "—";
+        string presText  = robot.Pressure is double p ? FormatPressure(p) + " Torr" : "—";
         string stateText = $"{robot.State} ▸ {robot.CurrentFace}";
         var tmS    = g.MeasureString(tmText, nameF);
         var presS  = g.MeasureString(presText, monoF);
@@ -755,24 +655,17 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         float chipW = contentW + 2f * padX;
         float chipH = tmS.Height + presS.Height + stateS.Height + 2f * lineGap + 2f * padY;
 
-        // The hex's left/right edges are vertical at x = ±0.866r spanning
-        // y ∈ [−0.5r, +0.5r]; keep the chip inside that flat band so it can
-        // never cross the outline. Clamp only bites on tiny panels.
         chipW = Math.Min(chipW, 2f * 0.82f * radius);
         chipH = Math.Min(chipH, 2f * 0.48f * radius);
         float hw = chipW / 2f, hh = chipH / 2f;
         var chip = new RectangleF(c.X - hw, c.Y - hh, chipW, chipH);
 
-        // Arm: pivots from centre but is drawn UNDER the chip. Map extension onto
-        // [chipExit + minStub, 0.95r] so a directional stub always pokes past the
-        // chip — a fully-retracted arm still shows which face it is parked at,
-        // instead of hiding entirely behind the chip.
         double armAngle = robot.AngleNorm / 255.0 * 2 * Math.PI;
         float dx = (float)Math.Sin(armAngle), dy = -(float)Math.Cos(armAngle);
-        float tExit = float.PositiveInfinity;                         // ray→chip-box exit distance
+        float tExit = float.PositiveInfinity;
         if (Math.Abs(dx) > 1e-4f) tExit = Math.Min(tExit, hw / Math.Abs(dx));
         if (Math.Abs(dy) > 1e-4f) tExit = Math.Min(tExit, hh / Math.Abs(dy));
-        if (float.IsInfinity(tExit)) tExit = Math.Max(hw, hh);        // safety (d is unit, unreachable)
+        if (float.IsInfinity(tExit)) tExit = Math.Max(hw, hh);
         float minStub = 0.18f * radius;
         float inner = tExit + minStub;
         float outer = Math.Max(0.95f * radius, inner);
@@ -783,7 +676,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
         if (robot.HasWafer)
             GlowEllipse(g, tip.X, tip.Y, 6f * ui, ArmCyan, ui);
 
-        // Chip body on top, covering the arm's inner segment.
         using (var chipPath = RoundedRect(chip, 6f * ui))
         {
             using (var fill = new SolidBrush(Color.FromArgb(11, 20, 34)))
@@ -792,7 +684,6 @@ public sealed class ClusterProcessPanel : BaseProcessPanel, IClusterProcessPanel
                 g.DrawPath(pen, chipPath);
         }
 
-        // State goes red on robot error to match the red hex outline.
         using var stateBr = new SolidBrush(robot.ErrorActive
             ? Color.FromArgb(255, 100, 100) : ArmCyan);
         float ty = chip.Y + padY;
