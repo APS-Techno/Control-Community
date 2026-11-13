@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<processPanel>
+  <readings>
+    <reading id="Ar1" label="Ar1" group="MassFlow" format="F1" unit="sccm" accent="Ar"/>
+    <reading id="N21" label="N21" group="MassFlow" format="F1" unit="sccm" accent="N2"/>
+
+    <reading id="pm" label="pm" group="Pressure" format="E1" unit="Torr" scale="Log" accent="Vacuum"/>
+    <reading id="tmp" label="tmp" group="Pressure" format="F0" unit="°C" accent="Temperature"/>
+
+    <reading id="PSU1_V" label="PSU1 V" group="Power" format="F0" unit="V" accent="DcPower" device="PSU1"/>
+    <reading id="PSU1_I" label="PSU1 I" group="Power" format="F2" unit="A" accent="Current" device="PSU1"/>
+    <reading id="PSU2_W" label="PSU2" group="Power" format="F0" unit="W" accent="RfPower" device="PSU2"/>
+  </readings>
+  <valveGroups>
+    <group header="Gas inlets">
+      <valve id="V1" descr="Ar inlet"/>
+      <valve id="V2" descr="N2 inlet"/>
+    </group>
+    <group header="Magnetrons">
+      <valve id="M1" descr="Magnetron 1"/>
+      <valve id="M2" descr="Magnetron 2"/>
+    </group>
+    <group header="Shutters">
+      <valve id="Sh1" descr="Magnetron 1 shutter"/>
+      <valve id="Sh2" descr="Magnetron 2 shutter"/>
+    </group>
+  </valveGroups>
+</processPanel>

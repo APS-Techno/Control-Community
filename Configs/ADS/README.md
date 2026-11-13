@@ -42,3 +42,7 @@ Only one profile runs at a time, so the port range is shared with the other prof
 - `deposit <source> <time> <retract>` is bound to `Holder`: the holder moves to the source, the `Shutter` drive opens over it for the dwell, then parks at the retract position.
 - `Alarms.xml` has two state machines: `Main` (idle pressure alarm with a 60 s settling delay) and `Loadlock` (maintenance while `A2` is open and `GVL` is closed).
 - `LOAD_SUBSTRATE` and `UNLOAD_SUBSTRATE` move the substrate through `GVL` with stages `VS` and `HS`.
+
+## Process tab
+
+`ProcessPanel.xml` declares what the Process panel (`APS.Controls.Generic.ChamberProcessPanel`, loaded from `Panels.xml`) shows: the reading rows (id, group, format, unit, scale, accent), the valve LED groups and the drive pills. Reading ids follow the telemetry names: a sensor or MFC by its id, a supply as `<id>_V`, `<id>_I`, `<id>_W`, a throttle controller as `<id>_P`, `<id>_Pos`. The file is read when the panels load, so use Reload GUI config after a change. A bad entry is skipped and reported in the Events log.

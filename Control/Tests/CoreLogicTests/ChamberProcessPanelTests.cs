@@ -127,3 +127,21 @@ public class AdsProcessPanelProfileTests
         Assert.All(spec.Drives, d => Assert.Contains(d.Id, declared));
     }
 }
+
+public class SputterProcessPanelProfileTests
+{
+    [Fact]
+    public void ProcessPanelXml_LoadsCleanAndReferencesDevicesDeclaredInHwConf()
+    {
+        var spec = ProcessPanelSpec.Load(APS.SystemControl.Tests.Shared.ConfigsDir.Path("Sputter/ProcessPanel.xml"));
+        Assert.Empty(spec.Errors);
+        Assert.NotEmpty(spec.Readings);
+
+        var hw = System.Xml.Linq.XDocument.Load(APS.SystemControl.Tests.Shared.ConfigsDir.Path("Sputter/HWConf.xml"));
+        var declared = hw.Descendants().Where(e => !e.HasElements).Select(e => e.Value.Trim())
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.All(spec.ValveGroups.SelectMany(g => g.Valves), v => Assert.Contains(v.Id, declared));
+        Assert.All(spec.Readings.Select(r => r.Device).OfType<string>(), d => Assert.Contains(d, declared));
+    }
+}

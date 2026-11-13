@@ -39,4 +39,17 @@
     <left>85</left>
     <top>15.25</top>
   </panel>
+  <panel>
+    <id>Process</id>
+    <caption>Process Monitor</caption>
+    <lib>APS.Controls.Generic.dll</lib>
+    <type>APS.Controls.Generic.ChamberProcessPanel</type>
+    <event>SendCommandEvent</event>
+    <msghandler>ProcessCustomPanelEvent</msghandler>
+    <parent>tabProcess</parent>
+    <col>0</col>
+    <row>0</row>
+    <left>0</left>
+    <top>0</top>
+  </panel>
 </panels>
