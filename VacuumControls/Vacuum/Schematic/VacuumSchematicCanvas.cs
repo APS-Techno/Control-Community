@@ -26,8 +26,6 @@ public class VacuumSchematicCanvas : Panel
     /// extreme ultrawide layouts — a typical 4K panel lands around 1.4–1.8×.
     /// </summary>
     private const float MaxCanvasScale = 2.5f;
-    private const float MinSymbolScale = 0.5f;
-    private const float MaxSymbolScale = 1.5f;
     private const float MinZoom = 1.0f;
     private const float MaxZoom = 2.5f;
     private const float WheelZoomStep = 0.15f;
@@ -37,7 +35,6 @@ public class VacuumSchematicCanvas : Panel
     private float _aspectRatio = 16f / 9f;
     private XML_Schematic? _schematic;
     private readonly List<(Control Control, float Left, float Top)> _children = [];
-    private float _symbolScale = 1.0f;
     private float _zoomFactor = 1.0f;
     private Point _panOffset;
     private bool _panning;
@@ -86,24 +83,6 @@ public class VacuumSchematicCanvas : Panel
         set { _schematic = value; Invalidate(); }
     }
 
-    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public float SymbolScale
-    {
-        get => _symbolScale;
-        set
-        {
-            if (!float.IsFinite(value)) return;
-            float v = Math.Clamp(value, MinSymbolScale, MaxSymbolScale);
-            if (Math.Abs(v - _symbolScale) < 0.0001f) return;
-            _symbolScale = v;
-            RepositionChildren();
-            Invalidate();
-            ScaleOrZoomChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    public float EffectiveSymbolScale => Math.Clamp(CanvasScale * _symbolScale, 0.1f, MaxCanvasScale);
-
     public float ZoomFactor => _zoomFactor;
 
     public Point PanOffset => _panOffset;
@@ -112,7 +91,7 @@ public class VacuumSchematicCanvas : Panel
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public bool InteractiveZoom { get; set; }
 
-    public event EventHandler? ScaleOrZoomChanged;
+    public event EventHandler? ZoomChanged;
 
     public void SetZoom(float zoom, Point? anchorClientPoint = null)
     {
@@ -133,7 +112,7 @@ public class VacuumSchematicCanvas : Panel
         }
         _zoomFactor = z;
         ApplyView();
-        ScaleOrZoomChanged?.Invoke(this, EventArgs.Empty);
+        ZoomChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void ResetZoom()
@@ -142,7 +121,7 @@ public class VacuumSchematicCanvas : Panel
         _zoomFactor = 1.0f;
         _panOffset = Point.Empty;
         ApplyView();
-        ScaleOrZoomChanged?.Invoke(this, EventArgs.Empty);
+        ZoomChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void ApplyView()
@@ -200,7 +179,7 @@ public class VacuumSchematicCanvas : Panel
 
     public void AddComponent(Control ctrl, float leftPct, float topPct)
     {
-        if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = EffectiveSymbolScale;
+        if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = CanvasScale;
         _children.Add((ctrl, leftPct, topPct));
         ctrl.Location = GetChildLocation(ctrl, leftPct, topPct);
         Controls.Add(ctrl);
@@ -280,7 +259,7 @@ public class VacuumSchematicCanvas : Panel
     {
         foreach (var (ctrl, left, top) in _children)
         {
-            if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = EffectiveSymbolScale;
+            if (ctrl is ThemedVacuumControl tvc) tvc.BaseScale = CanvasScale;
             ctrl.Location = GetChildLocation(ctrl, left, top);
         }
     }
@@ -551,7 +530,7 @@ public class VacuumSchematicCanvas : Panel
     }
 
     /// <summary>Pipe and chamber-caption scale; the floor keeps 8 px pipes and 9 pt captions legible on small canvases.</summary>
-    private float GeometryScale => Math.Clamp(EffectiveSymbolScale, 0.55f, MaxCanvasScale);
+    private float GeometryScale => Math.Clamp(CanvasScale, 0.55f, MaxCanvasScale);
 
     protected virtual void OnPaintCanvasBackground(Graphics g) { }
     protected virtual void OnPaintAdornments(Graphics g) { }
@@ -561,12 +540,12 @@ public class VacuumSchematicCanvas : Panel
     /// Font for <see cref="ThemedVacuumControl.ExternalCaption"/> labels. Uses the
     /// same integer-point-then-pixel-unit formula as the widgets' own captions so an
     /// external caption matches the in-frame labels of its neighbours: 8 pt at
-    /// <see cref="EffectiveSymbolScale"/> 1.0, growing on 4K or zoom and shrinking on
-    /// small canvases or a reduced <see cref="SymbolScale"/>, capped at 11 pt like every other widget label.
+    /// <see cref="CanvasScale"/> 1.0, growing on 4K or zoom and shrinking on
+    /// small canvases, capped at 11 pt like every other widget label.
     /// </summary>
     protected virtual Font CreateCaptionFont()
     {
-        int pt = Math.Clamp((int)Math.Round(8 * EffectiveSymbolScale), 5, 11);
+        int pt = Math.Clamp((int)Math.Round(8 * CanvasScale), 5, 11);
         return new Font("Arial", pt * 4f / 3f, FontStyle.Regular, GraphicsUnit.Pixel);
     }
 

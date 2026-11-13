@@ -45,7 +45,6 @@ public class XML_Chambers
 [XmlRoot("schematic")]
 public class XML_Schematic
 {
-    [XmlAttribute("symbolScale"), DefaultValue(1.0f)] public float SymbolScale { get; set; } = 1.0f;
     [XmlElement("pipes")] public XML_Pipes? Pipes { get; set; }
     [XmlElement("chambers")] public XML_Chambers? Chambers { get; set; }
 }

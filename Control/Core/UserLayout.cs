@@ -53,21 +53,6 @@ public class UserLayout
     public bool HideInactiveSupplies { get; set; } = true;
     public bool AutoAlignOnHide { get; set; } = true;
 
-    [XmlArrayItem("Profile")]
-    public List<ProfileScaleEntry> SymbolScales { get; set; } = [];
-
-    public float? GetSymbolScale(string profile) =>
-        SymbolScales.Find(e => string.Equals(e.Profile, profile, StringComparison.OrdinalIgnoreCase))?.Scale;
-
-    public void SetSymbolScale(string profile, float scale)
-    {
-        RemoveSymbolScale(profile);
-        SymbolScales.Add(new ProfileScaleEntry { Profile = profile, Scale = scale });
-    }
-
-    public void RemoveSymbolScale(string profile) =>
-        SymbolScales.RemoveAll(e => string.Equals(e.Profile, profile, StringComparison.OrdinalIgnoreCase));
-
     private static string LayoutPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "APS", "System", "layout.xml");
@@ -104,10 +89,4 @@ public class UserLayout
             // best-effort — never crash on layout save
         }
     }
-}
-
-public class ProfileScaleEntry
-{
-    [XmlAttribute("profile")] public string Profile { get; set; } = "";
-    [XmlAttribute("scale")] public float Scale { get; set; }
 }

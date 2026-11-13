@@ -51,14 +51,10 @@ public partial class FrmMain
     private bool _systemEventsLayoutApplied;
     private Control? _systemEventsChip;
     private Control? _schematicHud;
-    private Label? _hudSymbolPct;
     private Label? _hudZoom;
     private Label? _hudFit;
-    private float _schematicDefaultSymbolScale = 1.0f;
 
-    private const float HudSymbolStep = 0.05f;
-    private const float HudSymbolMin = 0.60f;
-    private const float HudSymbolMax = 1.50f;
+    private const float HudZoomStep = 0.25f;
 
     private async void FrmMain_Load(object sender, EventArgs e)
     {
@@ -173,7 +169,7 @@ public partial class FrmMain
         _schematicHud = CreateSchematicViewHud(_systemEventsChip.Right + DpiScale.Px(8));
         vacuumSchematic.Controls.Add(_schematicHud);
         _schematicHud.BringToFront();
-        vacuumSchematic.ScaleOrZoomChanged += (_, _) => UpdateSchematicHud();
+        vacuumSchematic.ZoomChanged += (_, _) => UpdateSchematicHud();
         UpdateSchematicHud();
 
         // vacuumSchematic may have other Dock=Fill controls added later;
@@ -283,49 +279,32 @@ public partial class FrmMain
             return label;
         }
 
-        Part("Icons:");
-        var minus = Part("\u2212", click: () => StepSymbolScale(-HudSymbolStep));
-        _hudSymbolPct = Part("100%", "150%", () => ApplySymbolScale(_schematicDefaultSymbolScale));
-        var plus = Part("+", click: () => StepSymbolScale(HudSymbolStep));
-        Part("|").ForeColor = VacuumTheme.TextDim;
-        _hudZoom = Part("Zoom: 100%", "Zoom: 250%");
+        Part("Zoom:");
+        var minus = Part("\u2212", click: () => StepZoom(-HudZoomStep));
+        _hudZoom = Part("100%", "250%", () => vacuumSchematic.ResetZoom());
+        var plus = Part("+", click: () => StepZoom(HudZoomStep));
         _hudFit = Part("Fit", click: () => vacuumSchematic.ResetZoom());
         hud.Width = x + DpiScale.Px(2);
 
-        _hints.Set(minus, "Smaller symbols|Shrink schematic symbols, pipes and labels (60–150%).");
-        _hints.Set(plus, "Larger symbols|Grow schematic symbols, pipes and labels (60–150%).");
-        _hints.Set(_hudSymbolPct, "Symbol size|Click to restore this profile's default symbol size.");
-        _hints.Set(_hudZoom, "Zoom|Mouse wheel over the schematic zooms at the cursor (100–250%). " +
-            "When zoomed, drag the background or middle-drag anywhere to pan.");
+        _hints.Set(minus, "Zoom out|Zoom out from the centre of the schematic.");
+        _hints.Set(plus, "Zoom in|Zoom in at the centre of the schematic (100–250%). " +
+            "The mouse wheel zooms at the cursor; when zoomed, drag the background or middle-drag anywhere to pan.");
+        _hints.Set(_hudZoom, "Zoom|Click to reset zoom to 100%.");
         _hints.Set(_hudFit, "Fit|Reset zoom and pan to show the whole schematic.");
 
         return hud;
     }
 
-    private void StepSymbolScale(float step) =>
-        ApplySymbolScale(Math.Clamp(MathF.Round(vacuumSchematic.SymbolScale + step, 2), HudSymbolMin, HudSymbolMax));
-
-    private void ApplySymbolScale(float scale)
-    {
-        vacuumSchematic.SymbolScale = scale;
-        RememberSymbolScale();
-    }
-
-    private void RememberSymbolScale()
-    {
-        string profile = Path.GetFileName(config.ConfigDir);
-        if (Math.Abs(vacuumSchematic.SymbolScale - _schematicDefaultSymbolScale) < 0.001f)
-            _userLayout.RemoveSymbolScale(profile);
-        else
-            _userLayout.SetSymbolScale(profile, vacuumSchematic.SymbolScale);
-    }
+    private void StepZoom(float step) =>
+        vacuumSchematic.SetZoom(
+            vacuumSchematic.ZoomFactor + step,
+            new Point(vacuumSchematic.ClientSize.Width / 2, vacuumSchematic.ClientSize.Height / 2));
 
     private void UpdateSchematicHud()
     {
-        if (_hudSymbolPct == null || _hudZoom == null || _hudFit == null) return;
+        if (_hudZoom == null || _hudFit == null) return;
         var inv = System.Globalization.CultureInfo.InvariantCulture;
-        _hudSymbolPct.Text = ((int)Math.Round(vacuumSchematic.SymbolScale * 100)).ToString(inv) + "%";
-        _hudZoom.Text = "Zoom: " + ((int)Math.Round(vacuumSchematic.ZoomFactor * 100)).ToString(inv) + "%";
+        _hudZoom.Text = ((int)Math.Round(vacuumSchematic.ZoomFactor * 100)).ToString(inv) + "%";
         _hudFit.ForeColor = vacuumSchematic.ZoomFactor > 1.001f ? VacuumTheme.TextPrimary : VacuumTheme.TextDim;
     }
 
@@ -402,7 +381,6 @@ public partial class FrmMain
         _userLayout.RememberMainWindow(
             WindowState, _lastNonMinimizedState,
             WindowState == FormWindowState.Normal ? Bounds : RestoreBounds);
-        RememberSymbolScale();
         _userLayout.Save();
     }
 
@@ -1090,11 +1068,7 @@ public partial class FrmMain
             if (guiconf.Vacuum == null) return;
 
             vacuumSchematic.LoadFromXml(guiconf.Schematic);
-            _schematicDefaultSymbolScale = guiconf.Schematic is { } sch && sch.SymbolScale > 0f && float.IsFinite(sch.SymbolScale)
-                ? sch.SymbolScale : 1.0f;
             vacuumSchematic.ResetZoom();
-            vacuumSchematic.SymbolScale = _userLayout.GetSymbolScale(Path.GetFileName(config.ConfigDir))
-                ?? _schematicDefaultSymbolScale;
 
             if (guiconf.Vacuum.Valves != null) { LoadValves(guiconf.Vacuum.Valves); }
 

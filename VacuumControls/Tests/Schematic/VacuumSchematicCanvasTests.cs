@@ -140,23 +140,6 @@ public class VacuumSchematicCanvasTests
     }
 
     [Fact]
-    public void SymbolScale_ScalesChildBaseScale_WithoutMovingPercentAnchorCenter()
-    {
-        using var c = NewCanvas(1600, 900);
-        var child = new APS.Controls.Vacuum.TransferModuleControl("ROBOT");
-        c.AddComponent(child, 50f, 50f);
-        float before = child.BaseScale;
-
-        c.SymbolScale = 0.8f;
-
-        Assert.Equal(before * 0.8f, child.BaseScale, 3);
-        var centre = child.Location + (Size)child.GetAnchorMidpoint();
-        var expected = c.PercentToPixel(50f, 50f);
-        Assert.InRange(centre.X, expected.X - 1, expected.X + 1);
-        Assert.InRange(centre.Y, expected.Y - 1, expected.Y + 1);
-    }
-
-    [Fact]
     public void SetZoom_CursorAnchorPreservesPercentUnderCursor()
     {
         using var c = NewCanvas(1600, 900);
