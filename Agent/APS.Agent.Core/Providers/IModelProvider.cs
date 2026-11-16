@@ -95,7 +95,10 @@ internal static class ProviderHttpHelper
     public static HttpClient EnsureClient(ProviderConfig config, HttpClient? supplied)
     {
         EndpointGuard.Validate(config.BaseUri, config.AllowExternalEndpoints);
-        return supplied ?? new HttpClient(EndpointGuard.CreateNoRedirectHandler(), disposeHandler: true);
+        return supplied ?? new HttpClient(EndpointGuard.CreateNoRedirectHandler(), disposeHandler: true)
+        {
+            Timeout = TimeSpan.FromMinutes(10),
+        };
     }
 
     public static async Task<(JsonDocument Doc, string RedactedSnapshot)> PostJsonAsync(

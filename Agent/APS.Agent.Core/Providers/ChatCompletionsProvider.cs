@@ -92,6 +92,8 @@ public sealed partial class ChatCompletionsProvider(ProviderConfig config, HttpC
 
         if (config.MaxReasoningTokens is int budget && budget > 0)
             body["reasoning_budget_tokens"] = budget;
+        if (!string.IsNullOrWhiteSpace(config.ReasoningEffort))
+            body["reasoning_effort"] = config.ReasoningEffort;
 
         string? apiKey = EndpointGuard.ReadApiKey(config.ApiKeyEnvVar);
         var (doc, snapshot) = await ProviderHttpHelper.PostJsonAsync(

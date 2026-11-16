@@ -105,13 +105,14 @@ public sealed class ProvidersTests
                 """, Encoding.UTF8, "application/json"),
         });
 
-        var cfg = new ProviderConfig(ProviderProtocol.ChatCompletions, new Uri("http://127.0.0.1:8081/v1"), "qwen3.8", MaxReasoningTokens: 2048);
+        var cfg = new ProviderConfig(ProviderProtocol.ChatCompletions, new Uri("http://127.0.0.1:8081/v1"), "qwen3.8", MaxReasoningTokens: 2048, ReasoningEffort: "medium");
         var provider = new ChatCompletionsProvider(cfg, new HttpClient(handler));
         var res = await provider.CompleteAsync(SampleRequest());
 
         Assert.Equal("http://127.0.0.1:8081/v1/chat/completions", handler.Requests[0].Uri.ToString());
         using var reqDoc = JsonDocument.Parse(handler.Requests[0].Body);
         Assert.Equal(2048, reqDoc.RootElement.GetProperty("reasoning_budget_tokens").GetInt32());
+        Assert.Equal("medium", reqDoc.RootElement.GetProperty("reasoning_effort").GetString());
         Assert.Equal("Calling tool", res.AssistantText);
         Assert.Contains("step1", res.ReasoningText);
         Assert.Single(res.ToolCalls);

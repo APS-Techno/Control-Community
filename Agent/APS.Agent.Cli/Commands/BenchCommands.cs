@@ -150,7 +150,7 @@ public static partial class BenchCommands
                 opts.AllowExternalEndpoints,
                 opts.MaxReasoningTokens,
                 MaxOutputTokens: 8192,
-                ReasoningEffort: thinking == "none" ? null : thinking);
+                ReasoningEffort: string.IsNullOrWhiteSpace(thinking) ? null : thinking);
             IModelProvider provider = ModelProviderFactory.Create(providerConfig);
 
             foreach (var tasksInTrack in tasks.GroupBy(t =>
