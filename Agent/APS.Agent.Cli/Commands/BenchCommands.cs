@@ -60,11 +60,7 @@ public static partial class BenchCommands
         Directory.CreateDirectory(inputsDir);
         Directory.CreateDirectory(resultsDir);
 
-        string suiteSource = tracks.Count == 1
-            ? Path.Combine(resolvedSuiteDir, tracks[0].SuiteFile)
-            : Path.Combine(resolvedSuiteDir, "ads-bench-v2.json");
-
-        WriteFrozenSuite(suiteSource, resolvedSuiteDir, Path.Combine(inputsDir, "suite.json"));
+        WriteFrozenSuite(tracks, resolvedSuiteDir, Path.Combine(inputsDir, "suite.json"));
         CopyRequiredInput(Path.Combine(resolvedSuiteDir, "scoring-reference.json"), Path.Combine(inputsDir, "scoring-reference.json"));
         CopyRequiredInput(Path.Combine(resolvedSuiteDir, "system_prompt.md"), Path.Combine(inputsDir, "system_prompt.md"));
 
@@ -460,65 +456,109 @@ public static partial class BenchCommands
         }
     }
 
-    private static void WriteFrozenSuite(string suiteSource, string resolvedSuiteDir, string suiteDest)
+    private static void WriteFrozenSuite(IReadOnlyList<TrackSpec> tracks, string resolvedSuiteDir, string suiteDest)
     {
-        if (!File.Exists(suiteSource))
-            throw new FileNotFoundException($"Required suite input file not found: {suiteSource}", suiteSource);
-
-        string rawSuite = File.ReadAllText(suiteSource, Encoding.UTF8);
         string fixturesDir = Path.Combine(Path.GetDirectoryName(resolvedSuiteDir) ?? "", "fixtures");
         string fixturesIndexPath = Path.Combine(fixturesDir, "fixtures.json");
-        if (!File.Exists(fixturesIndexPath))
-        {
-            File.WriteAllText(suiteDest, rawSuite, new UTF8Encoding(false));
-            return;
-        }
+        using JsonDocument? fixturesDoc = File.Exists(fixturesIndexPath)
+            ? StrictJson.Parse(File.ReadAllText(fixturesIndexPath, Encoding.UTF8))
+            : null;
+        JsonElement? attachmentsIndex = fixturesDoc is not null
+            && fixturesDoc.RootElement.TryGetProperty("attachments", out JsonElement attEl)
+            && attEl.ValueKind == JsonValueKind.Object
+            ? attEl
+            : null;
 
-        using var fixturesDoc = StrictJson.Parse(File.ReadAllText(fixturesIndexPath, Encoding.UTF8));
-        if (!fixturesDoc.RootElement.TryGetProperty("attachments", out JsonElement attachmentsIndex)
-            || attachmentsIndex.ValueKind != JsonValueKind.Object)
+        if (tracks.Count == 1)
         {
-            File.WriteAllText(suiteDest, rawSuite, new UTF8Encoding(false));
-            return;
-        }
-
-        JsonNode suiteNode = JsonNode.Parse(rawSuite)
-            ?? throw new InvalidOperationException($"Invalid suite JSON: {suiteSource}");
-        if (suiteNode["tasks"] is JsonArray tasksArr)
-        {
-            foreach (JsonNode? tNode in tasksArr)
+            string suiteSource = Path.Combine(resolvedSuiteDir, tracks[0].SuiteFile);
+            if (!File.Exists(suiteSource))
+                throw new FileNotFoundException($"Required suite input file not found: {suiteSource}", suiteSource);
+            JsonNode suiteNode = JsonNode.Parse(File.ReadAllText(suiteSource, Encoding.UTF8))
+                ?? throw new InvalidOperationException($"Invalid suite JSON: {suiteSource}");
+            if (suiteNode["tasks"] is JsonArray tasksArr)
             {
-                if (tNode is not JsonObject taskObj) continue;
-                if (taskObj["attachments"] is not JsonArray attArr || attArr.Count == 0) continue;
-
-                string ask = taskObj["ask"]?.GetValue<string>() ?? "";
-                foreach (JsonNode? attIdNode in attArr)
+                foreach (JsonNode? tNode in tasksArr)
                 {
-                    string attId = attIdNode?.GetValue<string>()
-                        ?? throw new InvalidOperationException("Attachment id must be a string.");
-                    if (!attachmentsIndex.TryGetProperty(attId, out JsonElement meta) || meta.ValueKind != JsonValueKind.Object)
-                        throw new InvalidOperationException($"Unknown attachment '{attId}' in '{fixturesIndexPath}'.");
-                    string fileName = meta.GetProperty("file").GetString()!;
-                    string expectedSha = meta.GetProperty("sha256").GetString()!;
-                    string fixturePath = Path.GetFullPath(Path.Combine(fixturesDir, fileName));
-                    string dirPrefix = Path.GetFullPath(fixturesDir).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                    if (!fixturePath.StartsWith(dirPrefix, StringComparison.OrdinalIgnoreCase) || !File.Exists(fixturePath))
-                        throw new InvalidOperationException($"Missing fixture file for attachment '{attId}': {fileName}");
-                    byte[] data = File.ReadAllBytes(fixturePath);
-                    string actualSha = Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
-                    if (!string.Equals(actualSha, expectedSha, StringComparison.OrdinalIgnoreCase))
-                        throw new InvalidOperationException($"Fixture SHA-256 mismatch for '{attId}' ({fileName}).");
-                    string text = Encoding.UTF8.GetString(data);
-                    ask += "\n\nAttached file: " + fileName + "\n\n" + FenceText(text);
+                    if (tNode is JsonObject taskObj)
+                    {
+                        taskObj["track"] ??= tracks[0].Key;
+                        ExpandTaskAttachments(taskObj, fixturesDir, fixturesIndexPath, attachmentsIndex);
+                    }
                 }
-                taskObj["ask"] = ask;
+            }
+            File.WriteAllText(
+                suiteDest,
+                suiteNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n",
+                new UTF8Encoding(false));
+            return;
+        }
+
+        string indexSource = Path.Combine(resolvedSuiteDir, "ads-bench-v2.json");
+        if (!File.Exists(indexSource))
+            throw new FileNotFoundException($"Required suite input file not found: {indexSource}", indexSource);
+        JsonObject rootObj = JsonNode.Parse(File.ReadAllText(indexSource, Encoding.UTF8))?.AsObject()
+            ?? throw new InvalidOperationException($"Invalid suite JSON: {indexSource}");
+        rootObj["suite"] ??= "all";
+
+        var mergedTasks = new JsonArray();
+        foreach (TrackSpec track in tracks)
+        {
+            string trackSuitePath = Path.Combine(resolvedSuiteDir, track.SuiteFile);
+            if (!File.Exists(trackSuitePath))
+                throw new FileNotFoundException($"Required suite input file not found: {trackSuitePath}", trackSuitePath);
+            JsonNode trackSuiteNode = JsonNode.Parse(File.ReadAllText(trackSuitePath, Encoding.UTF8))
+                ?? throw new InvalidOperationException($"Invalid suite JSON: {trackSuitePath}");
+            if (trackSuiteNode["tasks"] is not JsonArray trackTasks)
+                continue;
+
+            foreach (JsonNode? tNode in trackTasks)
+            {
+                if (tNode is not JsonObject srcTask) continue;
+                JsonObject taskObj = JsonNode.Parse(srcTask.ToJsonString())!.AsObject();
+                taskObj["track"] ??= track.Key;
+                ExpandTaskAttachments(taskObj, fixturesDir, fixturesIndexPath, attachmentsIndex);
+                mergedTasks.Add(taskObj);
             }
         }
+        rootObj["tasks"] = mergedTasks;
 
         File.WriteAllText(
             suiteDest,
-            suiteNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n",
+            rootObj.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n",
             new UTF8Encoding(false));
+    }
+
+    private static void ExpandTaskAttachments(
+        JsonObject taskObj,
+        string fixturesDir,
+        string fixturesIndexPath,
+        JsonElement? attachmentsIndex)
+    {
+        if (attachmentsIndex is null) return;
+        if (taskObj["attachments"] is not JsonArray attArr || attArr.Count == 0) return;
+
+        string ask = taskObj["ask"]?.GetValue<string>() ?? "";
+        foreach (JsonNode? attIdNode in attArr)
+        {
+            string attId = attIdNode?.GetValue<string>()
+                ?? throw new InvalidOperationException("Attachment id must be a string.");
+            if (!attachmentsIndex.Value.TryGetProperty(attId, out JsonElement meta) || meta.ValueKind != JsonValueKind.Object)
+                throw new InvalidOperationException($"Unknown attachment '{attId}' in '{fixturesIndexPath}'.");
+            string fileName = meta.GetProperty("file").GetString()!;
+            string expectedSha = meta.GetProperty("sha256").GetString()!;
+            string fixturePath = Path.GetFullPath(Path.Combine(fixturesDir, fileName));
+            string dirPrefix = Path.GetFullPath(fixturesDir).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!fixturePath.StartsWith(dirPrefix, StringComparison.OrdinalIgnoreCase) || !File.Exists(fixturePath))
+                throw new InvalidOperationException($"Missing fixture file for attachment '{attId}': {fileName}");
+            byte[] data = File.ReadAllBytes(fixturePath);
+            string actualSha = Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
+            if (!string.Equals(actualSha, expectedSha, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Fixture SHA-256 mismatch for '{attId}' ({fileName}).");
+            string text = Encoding.UTF8.GetString(data);
+            ask += "\n\nAttached file: " + fileName + "\n\n" + FenceText(text);
+        }
+        taskObj["ask"] = ask;
     }
 
     private static string FenceText(string text)

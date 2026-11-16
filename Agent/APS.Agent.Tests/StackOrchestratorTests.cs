@@ -435,4 +435,56 @@ public sealed class StackOrchestratorTests : IDisposable
         StackOrchestrator.CollectTrialArtifacts(profileDir, dest, null, additionalLogsDir: appLogsDir);
         Assert.True(File.Exists(Path.Combine(dest, "Logs", "Process_20261116.log")));
     }
+
+    [Fact]
+    public void BenchCommands_Freeze_TrackAll_MergesTrackSuitesSetsTrackAndEmbedsAttachments()
+    {
+        string root = Path.Combine(_dir, "bench-all");
+        string suiteDir = Path.Combine(root, "suite");
+        string fixturesDir = Path.Combine(root, "fixtures");
+        Directory.CreateDirectory(suiteDir);
+        Directory.CreateDirectory(fixturesDir);
+
+        byte[] logBytes = Encoding.UTF8.GetBytes("2026-11-16 10:00:00.000 [Execute] exec: pwait 0 10\n");
+        File.WriteAllBytes(Path.Combine(fixturesDir, "S09-log.txt"), logBytes);
+        string logSha = Convert.ToHexString(SHA256.HashData(logBytes)).ToLowerInvariant();
+
+        File.WriteAllText(
+            Path.Combine(fixturesDir, "fixtures.json"),
+            JsonSerializer.Serialize(new
+            {
+                attachments = new Dictionary<string, object>
+                {
+                    ["S09-log"] = new { file = "S09-log.txt", sha256 = logSha },
+                },
+            }));
+
+        File.WriteAllText(Path.Combine(suiteDir, "ads-bench-v2.json"), """{"benchmark":"ADS-Bench","version":"2.0","tracks":[]}""");
+        File.WriteAllText(
+            Path.Combine(suiteDir, "sputter-suite.json"),
+            """{"suite":"sputter","version":"2.0","tasks":[{"id":"S09","type":"short","key":"manual","ask":"Check S09","attachments":["S09-log"],"tools":["describe_machine"]}]}""");
+        File.WriteAllText(
+            Path.Combine(suiteDir, "ads-suite.json"),
+            """{"suite":"ads","version":"2.0","tasks":[{"id":"A01","type":"short","key":"read","ask":"Check A01","attachments":[],"tools":["describe_machine"]}]}""");
+        File.WriteAllText(
+            Path.Combine(suiteDir, "cluster-suite.json"),
+            """{"suite":"cluster","version":"2.0","tasks":[{"id":"C01","type":"short","key":"read","ask":"Check C01","attachments":[],"tools":["describe_machine"]}]}""");
+        File.WriteAllText(Path.Combine(suiteDir, "scoring-reference.json"), """{"tasks":[]}""");
+        File.WriteAllText(Path.Combine(suiteDir, "system_prompt.md"), "Prompt\n");
+        File.WriteAllText(Path.Combine(suiteDir, "SC1-brief.md"), "SC1 Brief\n");
+        File.WriteAllText(Path.Combine(suiteDir, "AC1-brief.md"), "AC1 Brief\n");
+        File.WriteAllText(Path.Combine(suiteDir, "CC1-brief.md"), "CC1 Brief\n");
+
+        string camp = Path.Combine(_dir, "camp-all");
+        BenchCommands.Freeze(camp, "all", [("model-a", "high")], suiteDir);
+
+        using var frozenDoc = JsonDocument.Parse(File.ReadAllText(Path.Combine(camp, "inputs", "suite.json")));
+        Assert.Equal("all", frozenDoc.RootElement.GetProperty("suite").GetString());
+        var tasks = frozenDoc.RootElement.GetProperty("tasks").EnumerateArray().ToList();
+        Assert.Equal(3, tasks.Count);
+        Assert.Equal("sputter", tasks[0].GetProperty("track").GetString());
+        Assert.Contains("Attached file: S09-log.txt", tasks[0].GetProperty("ask").GetString());
+        Assert.Equal("ads", tasks[1].GetProperty("track").GetString());
+        Assert.Equal("cluster", tasks[2].GetProperty("track").GetString());
+    }
 }
