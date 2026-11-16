@@ -298,6 +298,7 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
         // outcome kept beside the failure protocol's own progress (see RecipeProgressTracker).
         var s = RecipeProgressTracker.Snapshot(Core.IsRecipeRunning);
         var receipt = RecipeProgressTracker.Receipt();
+        var watch = RecipeProgressTracker.WatchCounters();
         return new
         {
             isRecipeRunning = Core.IsRecipeRunning,
@@ -309,6 +310,11 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
             progressUpdatedAt = s.UpdatedAt,
             basePressureLogQuotes = receipt.BasePressureLogQuotes,
             executedDepositsCount = receipt.ExecutedDepositsCount,
+            stepSequence = watch.StepSequence,
+            loopStack = watch.LoopStack.Select(f => new { iteration = f.Iteration, total = f.Total }),
+            currentLoopIteration = watch.CurrentLoopIteration,
+            activeAlarms = Core.ActiveAlarms.Snapshot().Select(a => new { chamber = a.Chamber, message = a.Message }),
+            activeTelemetry = BuildActiveTelemetry(),
             lastOutcome = s.LastOutcome is null ? null : new
             {
                 name = s.LastOutcome.Name,
@@ -317,6 +323,59 @@ internal sealed class CoreAgentSystemAccess(CoreThread systemThread, ChannelPool
                 at = s.LastOutcome.At,
             },
         };
+    }
+
+    private object BuildActiveTelemetry()
+    {
+        var psus = new List<object>();
+        if (Core.hwElements.Item.TryGetValue(DeviceType.Power, out var powers) && powers is not null)
+        {
+            foreach (var (id, dev) in powers.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+            {
+                if (dev is not BasePowerSupply { IsOutputOn: true } p) continue;
+                bool supportsCurrent = p.SetpointParameterNames.Count == 0 || p.SetpointParameterNames.Contains("Current");
+                psus.Add(new
+                {
+                    id,
+                    voltageV = Math.Round((double)p.Voltage, 3),
+                    currentMa = Math.Round((double)p.Current, 3),
+                    powerW = Math.Round((double)p.Power, 3),
+                    supportsCurrent,
+                    setCurrentMa = Math.Round((double)p.SetCurrent, 3),
+                    setPowerW = Math.Round((double)p.SetPower, 3),
+                });
+            }
+        }
+
+        var pressures = new List<object>();
+        if (Core.hwElements.Item.TryGetValue(DeviceType.Sensor, out var sensors) && sensors is not null)
+        {
+            if (Core.FindElement(DeviceType.Sensor, "pm") is BaseSensor { Connected: true } pm)
+            {
+                string chamber = string.IsNullOrWhiteSpace(pm.Chamber) ? "Main" : pm.Chamber;
+                pressures.Add(new { chamber, sensor = "pm", pressureTorr = (double)pm.LastValue });
+            }
+            else
+            {
+                var candidates = new List<BasePressureSensors.Candidate>();
+                foreach (var kvp in sensors)
+                {
+                    if (kvp.Value is BaseSensor { Connected: true } sensor)
+                        candidates.Add(new BasePressureSensors.Candidate(kvp.Key, sensor.Chamber, sensor.Params.Description));
+                }
+                var primaries = BasePressureSensors.PickPrimaries(candidates, chamber =>
+                    Core.chamberAlarms.TryGetValue(chamber, out var alarms)
+                        ? alarms.Rules.Select(r => r.Sensor).ToList()
+                        : []);
+                foreach (var (chamber, sensorId) in primaries)
+                {
+                    var sensor = (BaseSensor)sensors[sensorId]!;
+                    pressures.Add(new { chamber, sensor = sensorId, pressureTorr = (double)sensor.LastValue });
+                }
+            }
+        }
+
+        return new { psus, pressures };
     }
 
     public IReadOnlyList<RecipeError> ValidateRecipe(string content, bool isRcpx)

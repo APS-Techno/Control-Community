@@ -9,7 +9,7 @@ namespace APS.Mcp;
 
 [McpServerToolType]
 public sealed class ControlTools(IWireCaller wire, Func<TimeSpan, CancellationToken, Task>? delay = null,
-    McpBridgeConfig? cfg = null)
+    McpBridgeConfig? cfg = null, TimeProvider? timeProvider = null, string? telemetryDirOverride = null)
 {
     private static readonly JsonSerializerOptions Pretty = new() { WriteIndented = true };
 
@@ -122,6 +122,34 @@ public sealed class ControlTools(IWireCaller wire, Func<TimeSpan, CancellationTo
         dict["waitedSeconds"] = (int)Math.Round(waited);
         dict["runEnded"] = ended;
         return JsonSerializer.Serialize(dict, Pretty);
+    }
+
+    [McpServerTool(Name = "watch_recipe"),
+     Description("Wait and monitor a running recipe natively with zero model tokens until completion, pause, " +
+                 "abort, fault/alarm, deposit milestone, step change, discharge drop, telemetry drift, or " +
+                 "nominal timeout. Writes poll samples to a telemetry .tsv file and returns a bounded JSON receipt (< 1 KB).")]
+    public Task<string> WatchRecipe(
+        [Description("Seconds between polls (default 2.0, clamped 0.5..30.0).")] double poll_interval_seconds = 2.0,
+        [Description("Maximum wait seconds before nominal_timeout (default 300.0, clamped 1.0..1800.0).")] double max_wait_seconds = 300.0,
+        [Description("Optional completed-deposit delta in this window to wake on (>= 1).")] int? wake_after_deposits = null,
+        [Description("If true, wake on every stepSequence change.")] bool wake_on_every_step = false,
+        [Description("Optional minimum discharge current (mA) on active DC/PDC deposit supplies.")] double? min_discharge_current_ma = null,
+        [Description("Optional maximum allowed PSU voltage drift (%) during active deposit steps.")] double? max_voltage_drift_pct = null,
+        [Description("Optional maximum allowed PSU current drift (%) during active deposit steps.")] double? max_current_drift_pct = null,
+        [Description("Optional maximum allowed chamber pressure drift (%) during active deposit steps.")] double? max_pressure_drift_pct = null,
+        IProgress<ProgressNotificationValue>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        string dir = telemetryDirOverride
+            ?? Environment.GetEnvironmentVariable("APS_MCP_TELEMETRY_DIR")
+            ?? Path.Combine(Path.GetTempPath(), "aps-mcp-telemetry");
+        var runner = new RecipeWatchRunner(wire, _delay, timeProvider ?? TimeProvider.System, dir);
+        return runner.RunAsync(
+            new WatchOptions(
+                poll_interval_seconds, max_wait_seconds, wake_after_deposits, wake_on_every_step,
+                min_discharge_current_ma, max_voltage_drift_pct, max_current_drift_pct, max_pressure_drift_pct),
+            progress,
+            cancellationToken);
     }
 
     private async Task<JsonElement> CallRaw(string cmd, object? args = null)

@@ -250,4 +250,46 @@ public class RecipeProgressTrackerTests : IDisposable
         Assert.Single(first);
         Assert.Equal(2, RecipeProgressTracker.Receipt().BasePressureLogQuotes.Length);
     }
+
+    [Fact]
+    public void WatchCounters_increment_stepSequence_on_running_steps_and_ignore_failure_protocol()
+    {
+        RecipeProgressTracker.BeginRun();
+        Assert.Equal(0, RecipeProgressTracker.WatchCounters().StepSequence);
+
+        RecipeProgressTracker.Update(Running(1, "valve V1 open", 1));
+        RecipeProgressTracker.Update(Running(2, "deposit Ru 31.26 Home", 5));
+        Assert.Equal(2, RecipeProgressTracker.WatchCounters().StepSequence);
+
+        RecipeProgressTracker.SetFailureProtocolActive(true);
+        RecipeProgressTracker.Update(Running(1, "power PSU_C off", 6));
+        Assert.Equal(2, RecipeProgressTracker.WatchCounters().StepSequence);
+
+        RecipeProgressTracker.BeginRun();
+        Assert.Equal(0, RecipeProgressTracker.WatchCounters().StepSequence);
+    }
+
+    [Fact]
+    public void WatchCounters_track_nested_loops_and_clear_on_pop_and_reset()
+    {
+        RecipeProgressTracker.BeginRun();
+        RecipeProgressTracker.PushLoop(2);
+        RecipeProgressTracker.SetLoopIteration(1);
+        RecipeProgressTracker.PushLoop(50);
+        RecipeProgressTracker.SetLoopIteration(5);
+
+        var snap = RecipeProgressTracker.WatchCounters();
+        Assert.Equal(5, snap.CurrentLoopIteration);
+        Assert.Equal(2, snap.LoopStack.Length);
+        Assert.Equal(new LoopFrame(1, 2), snap.LoopStack[0]);
+        Assert.Equal(new LoopFrame(5, 50), snap.LoopStack[1]);
+
+        RecipeProgressTracker.PopLoop();
+        Assert.Equal(1, RecipeProgressTracker.WatchCounters().CurrentLoopIteration);
+        Assert.Single(RecipeProgressTracker.WatchCounters().LoopStack);
+
+        RecipeProgressTracker.Reset();
+        Assert.Empty(RecipeProgressTracker.WatchCounters().LoopStack);
+        Assert.Equal(0, RecipeProgressTracker.WatchCounters().CurrentLoopIteration);
+    }
 }

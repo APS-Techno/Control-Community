@@ -152,7 +152,7 @@ saying which tier is required and which tier the key grants); it does not touch 
 
 | Tier     | Tools allowed | Typical use |
 |----------|----------------|-------------|
-| `Read`   | `describe_machine`, `describe_hardware`, `describe_recipes`, `describe_dsl`, `describe_interlocks`, `describe_alarms`, `system_status`, `device_snapshot`, `tail_log`, `recipe_status`, `list_runs`, `fetch_run_files`, `compute_deposition_plan`, `validate_recipe` | Read-only monitoring/inspection agent |
+| `Read`   | `describe_machine`, `describe_hardware`, `describe_recipes`, `describe_dsl`, `describe_interlocks`, `describe_alarms`, `system_status`, `device_snapshot`, `tail_log`, `recipe_status`, `watch_recipe`, `list_runs`, `fetch_run_files`, `compute_deposition_plan`, `validate_recipe` | Read-only monitoring/inspection agent |
 | `Recipe` | everything in `Read`, plus `upload_recipe`, `start_recipe`, `abort_recipe` | Recipe authoring/automation, no manual device control |
 | `Manual` | everything in `Recipe`, plus `device_command` | Full manual control, same as an operator panel |
 
@@ -287,6 +287,8 @@ steps that have completed. Quote the strings verbatim. Both reset when the next 
 whole-second dwells, and the period they give. Its `measurementStatus` is
 `planned_from_rate_and_dwell_not_measured`; it touches no hardware and a bad input fails with
 `bad_request`.
+
+`watch_recipe` (Read tier) polls `recipe.status` inside `APS.Mcp` without consuming model tokens, writes each poll sample to a `.tsv` file under `APS_MCP_TELEMETRY_DIR` (or the temp directory), emits MCP progress notifications, and returns a bounded JSON receipt (`< 1 KB`) on `completed`, `paused`, `aborted`, `fault_or_alarm`, `deposit_milestone`, `step_changed`, `discharge_drop`, `telemetry_drift`, or `nominal_timeout`.
 
 ## 10. `validate_recipe` response (`findings`, `xmlLine`, `scriptSummary`)
 

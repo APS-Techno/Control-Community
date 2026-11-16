@@ -6,6 +6,10 @@ namespace APS.SystemControl.Core.Remote.Agent;
 /// update carrying <see cref="RecipeProgressTracker.AbortedDescription"/>.</summary>
 internal sealed record RecipeOutcome(string Name, RecipeState State, string Message, DateTime At);
 
+internal sealed record LoopFrame(int Iteration, int Total);
+
+internal sealed record WatchCountersSnapshot(long StepSequence, LoopFrame[] LoopStack, int CurrentLoopIteration);
+
 /// <summary>What a poller should see. <see cref="Progress"/> is the last worker update with
 /// its clock carried forward to now while the recipe is running; <see cref="StepElapsed"/> is
 /// how long the current step has been in progress; <see cref="LastOutcome"/> survives the
@@ -42,6 +46,8 @@ internal static class RecipeProgressTracker
     private static bool _failureProtocolActive;
     private static List<string> _basePressureLogQuotes = [];
     private static int _executedDepositsCount;
+    private static long _stepSequence;
+    private static List<LoopFrame> _loopStack = [];
 
     internal static void BeginRun()
     {
@@ -49,6 +55,40 @@ internal static class RecipeProgressTracker
         {
             _basePressureLogQuotes = [];
             _executedDepositsCount = 0;
+            _stepSequence = 0;
+            _loopStack = [];
+        }
+    }
+
+    internal static void PushLoop(int total)
+    {
+        lock (_sync) _loopStack.Add(new LoopFrame(0, total));
+    }
+
+    internal static void SetLoopIteration(int iteration1Based)
+    {
+        lock (_sync)
+        {
+            if (_loopStack.Count > 0)
+                _loopStack[^1] = _loopStack[^1] with { Iteration = iteration1Based };
+        }
+    }
+
+    internal static void PopLoop()
+    {
+        lock (_sync)
+        {
+            if (_loopStack.Count > 0)
+                _loopStack.RemoveAt(_loopStack.Count - 1);
+        }
+    }
+
+    internal static WatchCountersSnapshot WatchCounters()
+    {
+        lock (_sync)
+        {
+            int current = _loopStack.Count > 0 ? _loopStack[^1].Iteration : 0;
+            return new WatchCountersSnapshot(_stepSequence, [.. _loopStack], current);
         }
     }
 
@@ -80,6 +120,8 @@ internal static class RecipeProgressTracker
         {
             _current = info;
             _updatedAt = now;
+            if (!_failureProtocolActive && info.State == RecipeState.Running && info.CurrentStep > 0)
+                _stepSequence++;
             if (IsTerminal(info))
                 _lastOutcome = new RecipeOutcome(info.Name, info.State, info.StepDescription, now);
         }
@@ -99,6 +141,8 @@ internal static class RecipeProgressTracker
             _failureProtocolActive = false;
             _basePressureLogQuotes = [];
             _executedDepositsCount = 0;
+            _stepSequence = 0;
+            _loopStack = [];
         }
     }
 

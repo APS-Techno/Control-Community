@@ -970,6 +970,7 @@ partial class CoreThread : BaseThread
                 if (ReferenceEquals(tokenLines, _estimatorLines))
                     _estimator?.SetLoopIterations(i, loopCount);
 
+                APS.SystemControl.Core.Remote.Agent.RecipeProgressTracker.PushLoop(loopCount);
                 try
                 {
                     for (int iteration = 0; iteration < loopCount; iteration++)
@@ -977,12 +978,14 @@ partial class CoreThread : BaseThread
                         cancellationToken.ThrowIfCancellationRequested();
                         interpreter.SetVariable("_i", iteration);
                         if (isOutermost) _currentStack = iteration + 1;
+                        APS.SystemControl.Core.Remote.Agent.RecipeProgressTracker.SetLoopIteration(iteration + 1);
                         if (!await ExecuteTokenLines(tokenLines, blocks, block.StartLine + 1, block.EndLine, interpreter, cancellationToken))
                             return false;
                     }
                 }
                 finally
                 {
+                    APS.SystemControl.Core.Remote.Agent.RecipeProgressTracker.PopLoop();
                     if (isOutermost)
                     {
                         _currentStack = 0;

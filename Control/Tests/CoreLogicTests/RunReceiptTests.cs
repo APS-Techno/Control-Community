@@ -34,6 +34,28 @@ public class RunReceiptTests : IDisposable
         protected override float ReadHW() => _value;
     }
 
+    private sealed class FakePsu : BasePowerSupply
+    {
+        public FakePsu(string id, float voltage, float current, float power, bool outputOn, float setCurrent, float setPower, string[]? paramNames = null)
+            : base(new BaseDeviceParams(id, 0, "psu"))
+        {
+            Connected = true;
+            Voltage = voltage;
+            Current = current;
+            Power = power;
+            IsOutputOn = outputOn;
+            SetCurrent = setCurrent;
+            SetPower = setPower;
+            _paramNames = paramNames ?? ["Power", "Current"];
+        }
+
+        private readonly string[] _paramNames;
+
+        public override IReadOnlyCollection<string> SetpointParameterNames => _paramNames;
+
+        public override void ReadFeedback() => throw new InvalidOperationException("RecipeStatus must not perform live I/O");
+    }
+
     private const string OneLiner = """
         <?xml version="1.0" encoding="utf-8"?>
         <recipes>
@@ -221,5 +243,60 @@ public class RunReceiptTests : IDisposable
         Assert.Equal("physical", doc.RootElement.GetProperty("executionTarget").GetString());
         Assert.True(doc.RootElement.TryGetProperty("profile", out _));
         Assert.True(doc.RootElement.TryGetProperty("controlMode", out _));
+    }
+
+    [Fact]
+    public void RecipeStatus_reports_stepSequence_loopStack_activeAlarms_and_cached_activeTelemetry()
+    {
+        var pool = new ChannelPool();
+        var thread = new CoreThread(pool);
+        var psuOn = new FakePsu("PSU_C", voltage: 382.5f, current: 50.0f, power: 19.125f, outputOn: true, setCurrent: 50f, setPower: 0f);
+        var psuOff = new FakePsu("PSU_B", voltage: 0f, current: 0f, power: 0f, outputOn: false, setCurrent: 300f, setPower: 0f);
+        thread.Core.hwElements.Item[DeviceType.Power].Add("PSU_C", psuOn);
+        thread.Core.hwElements.Item[DeviceType.Power].Add("PSU_B", psuOff);
+        AddSensor(thread, new Gauge("pm", "Main", 0.003f));
+        thread.Core.ActiveAlarms.Report("Main", "Main chamber pressure too high!");
+
+        RecipeProgressTracker.BeginRun();
+        RecipeProgressTracker.PushLoop(50);
+        RecipeProgressTracker.SetLoopIteration(5);
+        RecipeProgressTracker.Update(new APS.ProcessPanel.Contracts.RecipeInfo(
+            "RuC", 12, 40, "deposit Ru 31.26 Home", APS.ProcessPanel.Contracts.RecipeState.Running, TimeSpan.FromSeconds(180), null));
+
+        var agent = new CoreAgentSystemAccess(thread, pool, new EventLogRingBuffer());
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(agent.RecipeStatus()));
+        var root = doc.RootElement;
+
+        Assert.Equal(1, root.GetProperty("stepSequence").GetInt64());
+        Assert.Equal(5, root.GetProperty("currentLoopIteration").GetInt32());
+        Assert.Equal(50, root.GetProperty("loopStack")[0].GetProperty("total").GetInt32());
+        Assert.Single(root.GetProperty("activeAlarms").EnumerateArray());
+        var psus = root.GetProperty("activeTelemetry").GetProperty("psus");
+        Assert.Single(psus.EnumerateArray());
+        Assert.Equal("PSU_C", psus[0].GetProperty("id").GetString());
+        Assert.True(psus[0].GetProperty("supportsCurrent").GetBoolean());
+        Assert.Equal(382.5, psus[0].GetProperty("voltageV").GetDouble(), 2);
+        Assert.Equal(0.003, root.GetProperty("activeTelemetry").GetProperty("pressures")[0].GetProperty("pressureTorr").GetDouble(), 6);
+    }
+
+    [Fact]
+    public void RecipeStatus_without_pm_reports_chamber_primaries_and_rf_supportsCurrent_false()
+    {
+        var pool = new ChannelPool();
+        var thread = new CoreThread(pool);
+        var rfPsu = new FakePsu("PSU2", voltage: 0f, current: 0f, power: 150f, outputOn: true, setCurrent: 0f, setPower: 150f, paramNames: ["Power"]);
+        thread.Core.hwElements.Item[DeviceType.Power].Add("PSU2", rfPsu);
+        AddSensor(thread, new Gauge("C1_pm", "C1", 2.5e-3f));
+        AddSensor(thread, new Gauge("C2_pm", "C2", 1.5e-6f));
+
+        var agent = new CoreAgentSystemAccess(thread, pool, new EventLogRingBuffer());
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(agent.RecipeStatus()));
+        var telemetry = doc.RootElement.GetProperty("activeTelemetry");
+
+        Assert.False(telemetry.GetProperty("psus")[0].GetProperty("supportsCurrent").GetBoolean());
+        var pressures = telemetry.GetProperty("pressures");
+        Assert.Equal(2, pressures.GetArrayLength());
+        Assert.Equal("C1", pressures[0].GetProperty("chamber").GetString());
+        Assert.Equal("C2", pressures[1].GetProperty("chamber").GetString());
     }
 }

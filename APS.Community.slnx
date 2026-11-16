@@ -1,5 +1,8 @@
 <Solution>
   <Project Path="Accounts/Core/APS.Accounts.Core.csproj" />
+  <Project Path="Agent/APS.Agent.Cli/APS.Agent.Cli.csproj" />
+  <Project Path="Agent/APS.Agent.Core/APS.Agent.Core.csproj" />
+  <Project Path="Agent/APS.Agent.Tests/APS.Agent.Tests.csproj" />
   <Project Path="Control/APS.ProcessPanel.Contracts/APS.ProcessPanel.Contracts.csproj" />
   <Project Path="Control/APS.SystemControl.Framework.csproj" />
   <Project Path="Control/APS.SystemControl.Plugin/APS.SystemControl.Plugin.csproj" />
