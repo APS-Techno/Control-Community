@@ -376,7 +376,7 @@ public static partial class CapstoneScorers
             if (s.Result is null || s.Args.Count == 0) continue;
             string cmd = s.Command.ToLowerInvariant();
             if (cmd == "pwait" && s.Args.Count >= 3)
-                active[s.Args[0]] = ParseTorr(s.Args[1]);
+                active[NormalizeClusterController(s.Args[0])] = ParseTorr(s.Args[1]);
             else if (cmd == "deposit" && atSource.TryGetValue(s.Args[0], out var list))
             {
                 string ctrl = s.Args[0] == "C1_Cu" ? "C1_TC" : "C2_TC";
@@ -392,10 +392,20 @@ public static partial class CapstoneScorers
         foreach (var s in run)
         {
             if (s.Result is not null && s.Command.Equals("pwait", StringComparison.OrdinalIgnoreCase) && s.Args.Count >= 3)
-                last[s.Args[0]] = ParseTorr(s.Args[1]);
+                last[NormalizeClusterController(s.Args[0])] = ParseTorr(s.Args[1]);
         }
         return last;
     }
+
+    private static string NormalizeClusterController(string token) =>
+        token switch
+        {
+            "C1_pm" or "C1_TV" => "C1_TC",
+            "C2_pm" or "C2_TV" => "C2_TC",
+            "C3_pm" or "C3_TV" => "C3_TC",
+            "C4_pm" or "C4_TV" => "C4_TC",
+            _ => token,
+        };
 
     private static bool SupplyHolds(
         List<DepositConditions> deposits,

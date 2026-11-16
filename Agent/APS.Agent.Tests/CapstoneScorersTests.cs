@@ -174,7 +174,7 @@ public sealed class CapstoneScorersTests
             "10:00:00.000  [Recipe]  Recipe started: CC1_CuW",
             "10:00:01.000  [Execute]    exec: transfer LL C1",
             "10:00:05.000  [Execute]    result: 0",
-            "10:00:06.000  [Execute]    exec: pwait C1_TC 0.003 300",
+            "10:00:06.000  [Execute]    exec: pwait C1_pm 0.003 300",
             "10:00:10.000  [Execute]    result: 0",
             "10:00:11.000  [Execute]    exec: set C1_PSU1 Current 250",
             "10:00:11.100  [Execute]    result: 0",
@@ -184,11 +184,11 @@ public sealed class CapstoneScorersTests
             "10:00:13.100  [Execute]    result: 0",
             "10:00:14.000  [Execute]    exec: deposit C1_Cu 80.0",
             "10:01:34.000  [Execute]    result: 0",
-            "10:01:35.000  [Execute]    exec: pwait C1_TC 0 1",
+            "10:01:35.000  [Execute]    exec: pwait C1_pm 0 1",
             "10:01:35.100  [Execute]    result: 0",
             "10:01:36.000  [Execute]    exec: transfer C1 C2",
             "10:01:40.000  [Execute]    result: 0",
-            "10:01:41.000  [Execute]    exec: pwait C2_TC 0.002 300",
+            "10:01:41.000  [Execute]    exec: pwait C2_pm 0.002 300",
             "10:01:45.000  [Execute]    result: 0",
             "10:01:46.000  [Execute]    exec: set C2_PSU Current 200",
             "10:01:46.100  [Execute]    result: 0",
@@ -198,7 +198,7 @@ public sealed class CapstoneScorersTests
             "10:01:48.100  [Execute]    result: 0",
             "10:01:49.000  [Execute]    exec: deposit W 200.0",
             "10:05:09.000  [Execute]    result: 0",
-            "10:05:10.000  [Execute]    exec: pwait C2_TC 0 1",
+            "10:05:10.000  [Execute]    exec: pwait C2_pm 0 1",
             "10:05:10.100  [Execute]    result: 0",
             "10:05:11.000  [Execute]    exec: transfer C2 LL",
             "10:05:15.000  [Execute]    result: 0",
@@ -211,7 +211,11 @@ public sealed class CapstoneScorersTests
         Assert.Equal(100.0, res.CuThicknessA!.Value, 2);
         Assert.Equal(150.0, res.WThicknessA!.Value, 2);
 
-        var noReleaseSteps = ProcessLogParser.Parse(string.Join("\n", logLines.Where(l => !l.Contains("C2_TC 0 1", StringComparison.Ordinal))));
+        var ctrlSteps = ProcessLogParser.Parse(string.Join("\n", logLines.Select(l => l.Replace("C1_pm", "C1_TC", StringComparison.Ordinal).Replace("C2_pm", "C2_TC", StringComparison.Ordinal))));
+        var ctrlRes = CapstoneScorers.ScoreCc1(ctrlSteps, rcpx, IdleStatus("TM", "LL", "C1", "C2", "C3", "C4"));
+        Assert.True(ctrlRes.Pass);
+
+        var noReleaseSteps = ProcessLogParser.Parse(string.Join("\n", logLines.Where(l => !l.Contains("C2_pm 0 1", StringComparison.Ordinal))));
         var badRes = CapstoneScorers.ScoreCc1(noReleaseSteps, rcpx, IdleStatus("TM", "LL", "C1", "C2", "C3", "C4"));
         Assert.False(badRes.Checks["throttles_released"]);
         Assert.False(badRes.Pass);
