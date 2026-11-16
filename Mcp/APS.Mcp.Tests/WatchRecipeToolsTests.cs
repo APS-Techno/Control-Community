@@ -291,4 +291,31 @@ public sealed class WatchRecipeToolsTests : IDisposable
             tools.WatchRecipe(poll_interval_seconds: pollS, max_wait_seconds: maxWaitS));
         Assert.Contains("bad_request", ex.Message);
     }
+
+    [Fact]
+    public async Task Progress_notification_includes_loop_total_and_active_telemetry_tokens()
+    {
+        var time = new FakeTimeProvider();
+        object[] psu = [new { id = "PSU_C", voltageV = 382.5, currentMa = 50.0, powerW = 19.1, supportsCurrent = true, setCurrentMa = 50.0, setPowerW = 0.0 }];
+        object[] press = [new { chamber = "Main", sensor = "pm", pressureTorr = 0.003 }];
+        object[] loops = [new { iteration = 2, total = 50 }];
+
+        var wireDelta = new ScriptedStatusWire();
+        wireDelta.Responses.Enqueue(StatusJson(stepSequence: 10, deposits: 2, loopStack: loops, loopIter: 2, psus: psu, pressures: press));
+        wireDelta.Responses.Enqueue(StatusJson(stepSequence: 12, deposits: 4, loopStack: loops, loopIter: 3, psus: psu, pressures: press));
+
+        var deltaProgress = new CapturingProgress();
+        await CreateTools(wireDelta, time, _telemetryDir).WatchRecipe(poll_interval_seconds: 2.0, wake_after_deposits: 2, progress: deltaProgress);
+        Assert.Contains("iter=2/50", deltaProgress.Values[0].Message);
+        Assert.Contains("deposits=2", deltaProgress.Values[0].Message);
+        Assert.Contains("psu=PSU_C:382.5V/50.0mA/19.1W", deltaProgress.Values[0].Message);
+        Assert.Contains("pressure=Main:0.003Torr", deltaProgress.Values[0].Message);
+        Assert.Equal(4, deltaProgress.Values[0].Total);
+
+        var wireLoopOnly = new ScriptedStatusWire();
+        wireLoopOnly.Responses.Enqueue(StatusJson(running: false, state: 4, stepSequence: 10, deposits: 2, loopStack: loops, loopIter: 2, psus: psu, pressures: press));
+        var loopProgress = new CapturingProgress();
+        await CreateTools(wireLoopOnly, time, _telemetryDir).WatchRecipe(poll_interval_seconds: 2.0, progress: loopProgress);
+        Assert.Equal(50, loopProgress.Values[0].Total);
+    }
 }

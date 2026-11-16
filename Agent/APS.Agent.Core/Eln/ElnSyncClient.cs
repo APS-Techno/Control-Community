@@ -4,10 +4,18 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using APS.Agent.Core.Providers;
+using APS.Agent.Core.Runtime;
 
 namespace APS.Agent.Core.Eln;
 
-public sealed record ElnConfig(Uri? EndpointUri, string? ApiKeyEnvVar, string LocalExportDir, bool AllowExternalEndpoint = false)
+public sealed record ElnConfig(
+    Uri? EndpointUri,
+    string? ApiKeyEnvVar,
+    string LocalExportDir,
+    bool AllowExternalEndpoint = false,
+    string? McpCommand = null,
+    IReadOnlyList<string>? McpArgs = null,
+    string McpToolName = "upload_run_bundle")
 {
     public static ElnConfig FromEnvironment(string? defaultExportDir = null)
     {
@@ -17,7 +25,24 @@ public sealed record ElnConfig(Uri? EndpointUri, string? ApiKeyEnvVar, string Lo
         string exportDir = Environment.GetEnvironmentVariable("APS_ELN_EXPORT_DIR")
             ?? defaultExportDir
             ?? Path.Combine(Path.GetTempPath(), "aps-eln-exports");
-        return new ElnConfig(uri, keyEnv, exportDir);
+        bool allowExternal = string.Equals(
+            Environment.GetEnvironmentVariable("APS_ELN_ALLOW_EXTERNAL"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+        string? mcpCommand = Environment.GetEnvironmentVariable("APS_ELN_MCP_COMMAND");
+        string? rawMcpArgs = Environment.GetEnvironmentVariable("APS_ELN_MCP_ARGS");
+        IReadOnlyList<string>? mcpArgs = string.IsNullOrWhiteSpace(rawMcpArgs)
+            ? null
+            : rawMcpArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string? mcpTool = Environment.GetEnvironmentVariable("APS_ELN_MCP_TOOL");
+        return new ElnConfig(
+            uri,
+            keyEnv,
+            exportDir,
+            allowExternal,
+            string.IsNullOrWhiteSpace(mcpCommand) ? null : mcpCommand.Trim(),
+            mcpArgs,
+            string.IsNullOrWhiteSpace(mcpTool) ? "upload_run_bundle" : mcpTool.Trim());
     }
 }
 
@@ -31,11 +56,14 @@ public sealed record ElnRunBundle(
 
 public sealed record ElnSyncResult(string Mode, bool Uploaded, string OutputLocation);
 
-public sealed class ElnSyncClient(ElnConfig config, HttpClient? httpClient = null)
+public sealed class ElnSyncClient(ElnConfig config, HttpClient? httpClient = null, IMcpToolInvoker? mcpInvoker = null)
 {
     public async Task<ElnSyncResult> PublishRunAsync(ElnRunBundle bundle, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(bundle);
+        if (mcpInvoker is not null || !string.IsNullOrWhiteSpace(config.McpCommand))
+            return await PublishViaMcpAsync(bundle, ct).ConfigureAwait(false);
+
         if (config.EndpointUri is null)
             return ExportLocalBundle(bundle);
 
@@ -45,17 +73,7 @@ public sealed class ElnSyncClient(ElnConfig config, HttpClient? httpClient = nul
             : null;
         HttpClient client = httpClient ?? owned!;
 
-        var payload = new JsonObject
-        {
-            ["runId"] = bundle.RunId,
-            ["recipeName"] = bundle.RecipeName,
-            ["outcome"] = bundle.Outcome,
-            ["artifacts"] = new JsonArray(),
-        };
-        var arts = (JsonArray)payload["artifacts"]!;
-        AddArtifactNode(arts, "recipe", bundle.RecipePath);
-        AddArtifactNode(arts, "journal", bundle.JournalPath);
-        AddArtifactNode(arts, "telemetryTsv", bundle.TelemetryTsvPath);
+        JsonObject payload = BuildPayload(bundle);
 
         using var req = new HttpRequestMessage(HttpMethod.Post, config.EndpointUri)
         {
@@ -71,6 +89,48 @@ public sealed class ElnSyncClient(ElnConfig config, HttpClient? httpClient = nul
             throw new HttpRequestException($"ELN sync failed with HTTP {(int)resp.StatusCode}: {body}");
 
         return new ElnSyncResult("http", true, config.EndpointUri.ToString());
+    }
+
+    private async Task<ElnSyncResult> PublishViaMcpAsync(ElnRunBundle bundle, CancellationToken ct)
+    {
+        JsonObject payload = BuildPayload(bundle);
+        using var doc = JsonDocument.Parse(payload.ToJsonString());
+
+        if (mcpInvoker is not null)
+        {
+            var receipt = await mcpInvoker.CallAsync(config.McpToolName, doc.RootElement, ct).ConfigureAwait(false);
+            if (receipt.IsError)
+                throw new InvalidOperationException($"ELN MCP sync failed: {receipt.Text}");
+            return new ElnSyncResult("mcp", true, config.McpCommand ?? config.McpToolName);
+        }
+
+        string cmd = config.McpCommand!;
+        string? wd = Path.GetDirectoryName(cmd);
+        await using var transient = await StdioMcpToolInvoker.ConnectAsync(
+            cmd,
+            config.McpArgs ?? [],
+            workingDirectory: string.IsNullOrWhiteSpace(wd) ? null : wd,
+            ct: ct).ConfigureAwait(false);
+        var remoteReceipt = await transient.CallAsync(config.McpToolName, doc.RootElement, ct).ConfigureAwait(false);
+        if (remoteReceipt.IsError)
+            throw new InvalidOperationException($"ELN MCP sync failed: {remoteReceipt.Text}");
+        return new ElnSyncResult("mcp", true, cmd);
+    }
+
+    private static JsonObject BuildPayload(ElnRunBundle bundle)
+    {
+        var payload = new JsonObject
+        {
+            ["runId"] = bundle.RunId,
+            ["recipeName"] = bundle.RecipeName,
+            ["outcome"] = bundle.Outcome,
+            ["artifacts"] = new JsonArray(),
+        };
+        var arts = (JsonArray)payload["artifacts"]!;
+        AddArtifactNode(arts, "recipe", bundle.RecipePath);
+        AddArtifactNode(arts, "journal", bundle.JournalPath);
+        AddArtifactNode(arts, "telemetryTsv", bundle.TelemetryTsvPath);
+        return payload;
     }
 
     private ElnSyncResult ExportLocalBundle(ElnRunBundle bundle)

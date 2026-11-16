@@ -157,11 +157,19 @@ internal sealed class RecipeWatchRunner(
                 }
             }
 
+            int loopTotal = loops.Count > 0 ? loops[^1].Total : 0;
+            string iterToken = loopTotal > 0
+                ? string.Create(CultureInfo.InvariantCulture, $"{loopIter}/{loopTotal}")
+                : loopIter.ToString(CultureInfo.InvariantCulture);
+            string telSuffix = FormatTelemetryBrief(psus, pressures);
+            float? progressTotal = opts.WakeAfterDeposits is int targetDelta
+                ? startDeposits + targetDelta
+                : loopTotal > 0 ? loopTotal : null;
             progress?.Report(new ProgressNotificationValue
             {
                 Progress = executedDeposits,
-                Total = opts.WakeAfterDeposits is int targetDelta ? startDeposits + targetDelta : null,
-                Message = $"{recipeState} step={stepSeq} iter={loopIter} deposits={executedDeposits}",
+                Total = progressTotal,
+                Message = string.Create(CultureInfo.InvariantCulture, $"{recipeState} step={stepSeq} iter={iterToken} deposits={executedDeposits}{telSuffix}"),
             });
 
             string? wakeReason = DetectTerminalWake(
@@ -434,10 +442,13 @@ internal sealed class RecipeWatchRunner(
     {
         string ts = nowUtc.ToString("O", CultureInfo.InvariantCulture);
         string el = elapsedS.ToString("F2", CultureInfo.InvariantCulture);
+        string seq = stepSeq.ToString(CultureInfo.InvariantCulture);
+        string iter = loopIter.ToString(CultureInfo.InvariantCulture);
+        string dep = deposits.ToString(CultureInfo.InvariantCulture);
 
         if (psus.Count == 0 && pressures.Count == 0)
         {
-            await writer.WriteLineAsync($"{ts}\t{el}\t{recipeState}\t{stepSeq}\t{loopIter}\t{deposits}\t\t\t\t\t\t\t").ConfigureAwait(false);
+            await writer.WriteLineAsync($"{ts}\t{el}\t{recipeState}\t{seq}\t{iter}\t{dep}\t\t\t\t\t\t\t").ConfigureAwait(false);
             return;
         }
 
@@ -455,7 +466,7 @@ internal sealed class RecipeWatchRunner(
             string pc = pu is null ? "" : pu.CurrentMa.ToString("F3", CultureInfo.InvariantCulture);
             string pw = pu is null ? "" : pu.PowerW.ToString("F3", CultureInfo.InvariantCulture);
 
-            await writer.WriteLineAsync($"{ts}\t{el}\t{recipeState}\t{stepSeq}\t{loopIter}\t{deposits}\t{ch}\t{sn}\t{pt}\t{pid}\t{pv}\t{pc}\t{pw}").ConfigureAwait(false);
+            await writer.WriteLineAsync($"{ts}\t{el}\t{recipeState}\t{seq}\t{iter}\t{dep}\t{ch}\t{sn}\t{pt}\t{pid}\t{pv}\t{pc}\t{pw}").ConfigureAwait(false);
         }
     }
 
@@ -561,5 +572,23 @@ internal sealed class RecipeWatchRunner(
         }
 
         return (psus, pressures);
+    }
+
+    private static string FormatTelemetryBrief(List<PsuSample> psus, List<PressureSample> pressures)
+    {
+        if (psus.Count == 0 && pressures.Count == 0)
+            return "";
+        var sb = new StringBuilder();
+        if (psus.Count > 0)
+        {
+            var p = psus[^1];
+            sb.Append(string.Create(CultureInfo.InvariantCulture, $" psu={p.Id}:{p.VoltageV:F1}V/{p.CurrentMa:F1}mA/{p.PowerW:F1}W"));
+        }
+        if (pressures.Count > 0)
+        {
+            var pr = pressures[0];
+            sb.Append(string.Create(CultureInfo.InvariantCulture, $" pressure={pr.Chamber}:{pr.PressureTorr:G4}Torr"));
+        }
+        return sb.ToString();
     }
 }

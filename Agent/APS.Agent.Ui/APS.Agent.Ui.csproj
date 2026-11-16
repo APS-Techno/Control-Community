@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>APS.Agent.Ui</AssemblyName>
+    <RootNamespace>APS.Agent.Ui</RootNamespace>
+    <OutputPath>$(ApsBinDir)</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <NoWarn>$(NoWarn);WFO1000;WFO5001</NoWarn>
+    <ApplicationIcon>..\..\Control\DepositionControl2_Icon.ico</ApplicationIcon>
+    <AssemblyTitle>APS Agent Operator Console</AssemblyTitle>
+    <Product>APS Agent</Product>
+    <Company>APS Technology</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\APS.Agent.Core\APS.Agent.Core.csproj" />
+    <ProjectReference Include="..\..\VacuumControls\VacuumControls.csproj" />
+  </ItemGroup>
+
+</Project>

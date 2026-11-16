@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using APS.Controls.Theme;
 using APS.SystemControl.Core.Remote.Agent;
 
@@ -40,6 +41,7 @@ public partial class FrmMain
             Font = new Font("Segoe UI", 10F),
             ForeColor = VacuumTheme.TextDim,
             Margin = new Padding(14, 0, 0, 0),
+            IsLink = false,
         };
         _mcpText = new ToolStripStatusLabel
         {
@@ -47,6 +49,9 @@ public partial class FrmMain
             ForeColor = Color.FromArgb(200, 214, 229),
             Margin = new Padding(3, 0, 6, 0),
         };
+
+        _mcpDot.Click += OnAgentStatusClicked;
+        _mcpText.Click += OnAgentStatusClicked;
 
         statusStrip1.Items.Add(_mcpDot);
         statusStrip1.Items.Add(_mcpText);
@@ -85,5 +90,27 @@ public partial class FrmMain
         _mcpText.Text = view.Text;
         _mcpDot.ToolTipText = view.Tooltip;
         _mcpText.ToolTipText = view.Tooltip;
+    }
+
+    private void OnAgentStatusClicked(object? sender, EventArgs e)
+    {
+        string uiExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "APS.Agent.Ui.exe");
+        if (!File.Exists(uiExe))
+        {
+            PublishEvent("Agent", $"APS.Agent.Ui.exe was not found in {AppDomain.CurrentDomain.BaseDirectory}.", APS.SystemControl.Core.Logging.LogEventLevel.Operator);
+            return;
+        }
+        try
+        {
+            using var proc = Process.Start(new ProcessStartInfo(uiExe)
+            {
+                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            PublishEvent("Agent", $"Failed to launch APS.Agent.Ui.exe: {ex.Message}", APS.SystemControl.Core.Logging.LogEventLevel.Operator);
+        }
     }
 }

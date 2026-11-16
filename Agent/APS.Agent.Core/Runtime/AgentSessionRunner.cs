@@ -6,6 +6,7 @@ using APS.Agent.Core.Journal;
 using APS.Agent.Core.Providers;
 using APS.Agent.Core.Schemas;
 using APS.Agent.Core.Skills;
+using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
@@ -14,7 +15,26 @@ namespace APS.Agent.Core.Runtime;
 public interface IMcpToolInvoker
 {
     IReadOnlyList<ToolDeclaration> Declarations { get; }
-    Task<ToolCallReceipt> CallAsync(string name, JsonElement arguments, CancellationToken ct);
+    Task<ToolCallReceipt> CallAsync(
+        string name,
+        JsonElement arguments,
+        CancellationToken ct,
+        IProgress<WatchProgressNotice>? watchProgress = null);
+}
+
+public interface IAgentSessionObserver
+{
+    void OnTurnStarted(int turnIndex) { }
+    void OnAssistantResponse(int turnIndex, ProviderTurnResponse response) { }
+    void OnToolCallStarted(string callId, string toolName, string argumentsJson) { }
+    void OnWatchProgress(WatchProgressNotice notice) { }
+    void OnToolCallCompleted(string callId, string toolName, ToolCallReceipt receipt) { }
+    void OnSessionCompleted(SessionResult result) { }
+}
+
+internal sealed class CallbackProgress<T>(Action<T> onReport) : IProgress<T>
+{
+    public void Report(T value) => onReport(value);
 }
 
 public sealed record SessionOptions(
@@ -31,7 +51,8 @@ public sealed record SessionOptions(
     bool StripHistoricalThinking = true,
     string ConfigDigest = "",
     string SkillDigest = "",
-    SandboxedSkillReadTool? SkillReadTool = null);
+    SandboxedSkillReadTool? SkillReadTool = null,
+    IAgentSessionObserver? Observer = null);
 
 public sealed record SessionResult(
     string Status,
@@ -75,16 +96,28 @@ public sealed class StdioMcpToolInvoker : IMcpToolInvoker, IAsyncDisposable
         }
         var transport = new StdioClientTransport(opts);
         var client = await McpClient.CreateAsync(transport, cancellationToken: ct).ConfigureAwait(false);
-        var listed = await client.ListToolsAsync(cancellationToken: ct).ConfigureAwait(false);
-        var decls = listed.Select(t => new ToolDeclaration(
-            t.Name,
-            t.Description ?? "",
-            t.JsonSchema)).ToList();
-        ToolSchemaValidator.ValidateToolSchemas(decls);
-        return new StdioMcpToolInvoker(client, decls);
+        try
+        {
+            var listed = await client.ListToolsAsync(cancellationToken: ct).ConfigureAwait(false);
+            var decls = listed.Select(t => new ToolDeclaration(
+                t.Name,
+                t.Description ?? "",
+                t.JsonSchema)).ToList();
+            ToolSchemaValidator.ValidateToolSchemas(decls);
+            return new StdioMcpToolInvoker(client, decls);
+        }
+        catch
+        {
+            await client.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
-    public async Task<ToolCallReceipt> CallAsync(string name, JsonElement arguments, CancellationToken ct)
+    public async Task<ToolCallReceipt> CallAsync(
+        string name,
+        JsonElement arguments,
+        CancellationToken ct,
+        IProgress<WatchProgressNotice>? watchProgress = null)
     {
         var dict = new Dictionary<string, object?>();
         if (arguments.ValueKind == JsonValueKind.Object)
@@ -92,7 +125,11 @@ public sealed class StdioMcpToolInvoker : IMcpToolInvoker, IAsyncDisposable
             foreach (var p in arguments.EnumerateObject())
                 dict[p.Name] = JsonSerializer.Deserialize<object>(p.Value.GetRawText());
         }
-        CallToolResult res = await _client.CallToolAsync(name, dict, cancellationToken: ct).ConfigureAwait(false);
+        IProgress<ProgressNotificationValue>? mcpProgress = watchProgress is null
+            ? null
+            : new CallbackProgress<ProgressNotificationValue>(p =>
+                watchProgress.Report(WatchProgressNotice.Parse(p.Progress, p.Total, p.Message)));
+        CallToolResult res = await _client.CallToolAsync(name, dict, progress: mcpProgress, cancellationToken: ct).ConfigureAwait(false);
         string text = string.Join("\n", res.Content
             .OfType<TextContentBlock>()
             .Select(b => b.Text));
@@ -156,8 +193,13 @@ public sealed class AgentSessionRunner(
                 skill_digest = options.SkillDigest,
             }, ct).ConfigureAwait(false);
 
+            IProgress<WatchProgressNotice>? watchProgress = options.Observer is null
+                ? null
+                : new CallbackProgress<WatchProgressNotice>(n => options.Observer.OnWatchProgress(n));
+
             for (int turn = 0; turn < options.MaxTurns; turn++)
             {
+                options.Observer?.OnTurnStarted(turn);
                 var prepared = ContextCompactor.PrepareHistory(
                     options.Protocol,
                     history,
@@ -170,6 +212,7 @@ public sealed class AgentSessionRunner(
                 var response = await provider.CompleteAsync(
                     new ProviderTurnRequest(options.SystemPrompt, prepared, exposedDecls), ct).ConfigureAwait(false);
 
+                options.Observer?.OnAssistantResponse(turn, response);
                 lastPromptTokens = response.Usage.InputTokens;
                 lastPromptMsgCount = history.Count;
                 double turnCost = response.Usage.EstimatedCostUsd ?? 0.0;
@@ -235,6 +278,7 @@ public sealed class AgentSessionRunner(
                 foreach (var tc in response.ToolCalls)
                 {
                     toolCallsCount++;
+                    options.Observer?.OnToolCallStarted(tc.CallId, tc.Name, tc.ArgumentsJson);
                     ToolCallReceipt receipt;
                     try
                     {
@@ -253,12 +297,12 @@ public sealed class AgentSessionRunner(
                             string recipeContent = cleanArgs.TryGetProperty("content", out var cp) ? cp.GetString() ?? "" : "";
                             var (ok, errCode, errMsg) = uploadGate.CanUpload(recipeContent, options.RequireValidatedUpload);
                             receipt = ok
-                                ? await InvokeSingleToolAsync(tc.Name, cleanArgs, ct).ConfigureAwait(false)
+                                ? await InvokeSingleToolAsync(tc.Name, cleanArgs, watchProgress, ct).ConfigureAwait(false)
                                 : new ToolCallReceipt($"{errCode}: {errMsg}", true);
                         }
                         else
                         {
-                            receipt = await InvokeSingleToolAsync(tc.Name, cleanArgs, ct).ConfigureAwait(false);
+                            receipt = await InvokeSingleToolAsync(tc.Name, cleanArgs, watchProgress, ct).ConfigureAwait(false);
                             if (tc.Name == "validate_recipe" && !receipt.IsError)
                             {
                                 string checkedContent = cleanArgs.TryGetProperty("content", out var cp) ? cp.GetString() ?? "" : "";
@@ -279,6 +323,7 @@ public sealed class AgentSessionRunner(
                         result = new { isError = receipt.IsError, text = receipt.Text },
                     }, ct).ConfigureAwait(false);
 
+                    options.Observer?.OnToolCallCompleted(tc.CallId, tc.Name, receipt);
                     history.Add(new ConversationMessage(
                         "tool_result",
                         receipt.Text,
@@ -303,17 +348,23 @@ public sealed class AgentSessionRunner(
         }
 
         string sha = AuditJournalWriter.ComputeFileSha256(journalPath);
-        return new SessionResult(status, finalAnswer, toolCallsCount, totalCost, usageRecords, errorCategory, sha);
+        var sessionResult = new SessionResult(status, finalAnswer, toolCallsCount, totalCost, usageRecords, errorCategory, sha);
+        options.Observer?.OnSessionCompleted(sessionResult);
+        return sessionResult;
     }
 
-    private Task<ToolCallReceipt> InvokeSingleToolAsync(string name, JsonElement cleanArgs, CancellationToken ct)
+    private Task<ToolCallReceipt> InvokeSingleToolAsync(
+        string name,
+        JsonElement cleanArgs,
+        IProgress<WatchProgressNotice>? watchProgress,
+        CancellationToken ct)
     {
         if (name == "skill_read" && options.SkillReadTool is not null)
         {
             string reqPath = cleanArgs.TryGetProperty("path", out var p) ? p.GetString() ?? "" : "";
             return Task.FromResult(options.SkillReadTool.Read(reqPath));
         }
-        return mcpInvoker.CallAsync(name, cleanArgs, ct);
+        return mcpInvoker.CallAsync(name, cleanArgs, ct, watchProgress);
     }
 
     private static bool TryReadValidFlag(string text)

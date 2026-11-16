@@ -26,6 +26,8 @@
     <ProjectReference Include="..\..\GUI_Libraries\Generic\APS.Controls.Generic.csproj" />
     <ProjectReference Include="../../Workers/Generic/APS.Workers.Generic.csproj" />
     <ProjectReference Include="..\..\APS.SystemControl.Plugin\APS.SystemControl.Plugin.csproj" />
+    <ProjectReference Include="..\..\..\Agent\APS.Agent.Core\APS.Agent.Core.csproj" />
+    <ProjectReference Include="..\..\..\Agent\APS.Agent.Ui\APS.Agent.Ui.csproj" />
   </ItemGroup>
 
   <ItemGroup>

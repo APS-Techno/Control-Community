@@ -53,7 +53,11 @@ public sealed class ContextAndJournalTests : IDisposable
 
         public IReadOnlyList<ToolDeclaration> Declarations { get; }
 
-        public Task<ToolCallReceipt> CallAsync(string name, JsonElement arguments, CancellationToken ct)
+        public Task<ToolCallReceipt> CallAsync(
+            string name,
+            JsonElement arguments,
+            CancellationToken ct,
+            IProgress<WatchProgressNotice>? watchProgress = null)
         {
             ExecutedCalls.Add(name);
             return Task.FromResult(_handler(name, arguments));
