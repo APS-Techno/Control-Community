@@ -37,7 +37,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>12</top>
+    <top>17</top>
   </panel>
   <panel>
     <id>C2_PSU</id>
@@ -50,7 +50,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>22.5</top>
+    <top>32</top>
   </panel>
   <panel>
     <id>C3_PSU1</id>
@@ -63,7 +63,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>32.75</top>
+    <top>47.25</top>
   </panel>
   <panel>
     <id>C3_PSU2</id>
@@ -76,7 +76,7 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>43.25</top>
+    <top>62.25</top>
   </panel>
   <panel>
     <id>C4_PSU</id>
@@ -89,15 +89,15 @@
     <col>0</col>
     <row>0</row>
     <left>86.5</left>
-    <top>53.5</top>
+    <top>77.5</top>
   </panel>
   <panel>
     <id>ClusterProcess</id>
     <caption>Cluster</caption>
     <lib>APS.Controls.Generic.dll</lib>
     <type>APS.Controls.Generic.ClusterProcessPanel</type>
-    <event></event>
-    <msghandler></msghandler>
+    <event />
+    <msghandler />
     <parent>tabProcess</parent>
     <col>0</col>
     <row>0</row>

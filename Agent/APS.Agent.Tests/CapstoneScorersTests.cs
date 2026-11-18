@@ -143,6 +143,21 @@ public sealed class CapstoneScorersTests
         var badRes = CapstoneScorers.ScoreSc1(steps, badRcpx, IdleStatus("Main"));
         Assert.False(badRes.Checks["sputter_2arg_deposit"]);
         Assert.False(badRes.Pass);
+
+        var withPriorPwait = new List<string>
+        {
+            "09:00:00.000  [Recipe]  Recipe started: Prior_ADS_Run",
+            "09:00:01.000  [Execute]    exec: pwait TC1 0.002 300",
+            "09:00:02.000  [Execute]    result: 0",
+            "09:00:03.000  [Execute]    exec: deposit Ru 30.0",
+            "09:00:33.000  [Execute]    result: 0",
+            "09:01:00.000  [Recipe]  Recipe complete: Prior_ADS_Run (01m 00s)",
+        };
+        withPriorPwait.AddRange(logLines);
+        var priorPwaitSteps = ProcessLogParser.Parse(string.Join("\n", withPriorPwait));
+        var priorPwaitRes = CapstoneScorers.ScoreSc1(priorPwaitSteps, rcpx, IdleStatus("Main"));
+        Assert.True(priorPwaitRes.Checks["no_pwait"]);
+        Assert.True(priorPwaitRes.Pass);
     }
 
     [Fact]

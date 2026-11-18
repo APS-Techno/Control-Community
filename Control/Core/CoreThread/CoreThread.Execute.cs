@@ -2093,9 +2093,9 @@ partial class CoreThread : BaseThread
         const int StallSamples = 25;    // 25 * 200 ms = 5 s
         var stallDetector = new Classes.SensorStallDetector(StallSamples);
 
-        int elapsedMs = 0;
         int timeoutMs = timeoutSeconds * 1000;
-        while (elapsedMs < timeoutMs)
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -2114,9 +2114,8 @@ partial class CoreThread : BaseThread
                 core.SendLogMesssage("pwait",
                     $"{sensorId} started updating again ({tick.Recovered.Value}).");
 
-            core.UpdateProgress($"Waiting for {sensorId}", (float)elapsedMs / timeoutMs);
+            core.UpdateProgress($"Waiting for {sensorId}", (float)sw.ElapsedMilliseconds / timeoutMs);
             await Task.Delay(PollIntervalMs, cancellationToken);
-            elapsedMs += PollIntervalMs;
         }
 
         float finalValue = sensor.Value();

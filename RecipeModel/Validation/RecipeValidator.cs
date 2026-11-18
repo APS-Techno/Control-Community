@@ -388,7 +388,8 @@ public class RecipeValidator
                 // When a real signature is available, ValidateArguments checks arity
                 // exactly; skip the hand-maintained minimum so the operator
                 // doesn't get two messages for one mistake.
-                if (argCount < minArgs && _semantics?.Signature(cmd) is null)
+                if (argCount < minArgs && _semantics?.Signature(cmd) is null
+                    && !(cmd.Equals("pwait", StringComparison.OrdinalIgnoreCase) && _semantics is not null))
                     errors.Add(new RecipeError(srcLine, srcCol,
                         $"'{cmd}' requires at least {minArgs} argument(s), got {argCount}"));
 
@@ -683,6 +684,7 @@ public class RecipeValidator
     {
         var literalVars = CollectLiteralVars(tokenLines);
         var energized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var zeroedSetpoints = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var currentlyOpen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var everOpened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var flowing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -709,7 +711,7 @@ public class RecipeValidator
 
         void TrackPwaitTarget(List<RecipeArg> args)
         {
-            if (_semantics is null || args.Count is not (2 or 3)) return;
+            if (_semantics is null || _semantics.Signature("pwait") is null || args.Count is not (2 or 3)) return;
             string? chamber = PwaitChamber(args, literalVars);
             if (chamber is null) return;
 
@@ -826,6 +828,34 @@ public class RecipeValidator
                         break;
                     }
 
+                case "set" when args.Count >= 3:
+                    {
+                        string? psuId = Literal(args[0]);
+                        string? paramName = Literal(args[1]);
+                        if (psuId is not null
+                            && paramName is not null
+                            && (paramName.Equals("Current", StringComparison.OrdinalIgnoreCase)
+                                || paramName.Equals("Power", StringComparison.OrdinalIgnoreCase))
+                            && double.TryParse(Literal(args[2]), System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out double spVal))
+                        {
+                            if (spVal == 0) zeroedSetpoints.Add(psuId);
+                            else if (spVal > 0) zeroedSetpoints.Remove(psuId);
+                        }
+                        break;
+                    }
+
+                case "ramp" when args.Count >= 2:
+                    {
+                        string? psuId = Literal(args[0]);
+                        if (psuId is not null
+                            && double.TryParse(Literal(args[1]), System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out double rVal)
+                            && rVal > 0)
+                            zeroedSetpoints.Remove(psuId);
+                        break;
+                    }
+
                 case "deposit" when args.Count >= 1:
                     if (!supplyTrackingLost
                         && _semantics is not null
@@ -836,8 +866,49 @@ public class RecipeValidator
                             $"deposit '{source}' runs while its power supply '{psu}' is not energized " +
                             $"('warmup' does not leave power on; add 'power {psu} on' before depositing)",
                             RecipeErrorSeverity.Warning));
+                    if (!supplyTrackingLost
+                        && _semantics is not null
+                        && Literal(args[0]) is { } srcForZero
+                        && _semantics.SourceToPsu.TryGetValue(srcForZero, out string? psuForZero)
+                        && zeroedSetpoints.Contains(psuForZero))
+                        errors.Add(new RecipeError(args[0].Token.Line, args[0].Column,
+                            $"deposit '{srcForZero}' runs while power supply '{psuForZero}' setpoint is 0 " +
+                            $"('warmup' is a timed dwell only and does not set Current or Power; add a non-zero 'set {psuForZero} Current/Power <value>' before depositing)",
+                            RecipeErrorSeverity.Warning));
                     CheckGateValves(head);
                     break;
+
+                case "swait" when args.Count >= 2:
+                    {
+                        string? swSensor = Literal(args[0]);
+                        string? swTargetText = Literal(args[1]);
+                        if (swSensor is not null
+                            && swTargetText is not null
+                            && Parsing.PressureParser.TryParseTorr(swTargetText, out float swTorr)
+                            && swTorr > 0)
+                        {
+                            if (_semantics is not null && swTorr <= 1e-7f)
+                                errors.Add(new RecipeError(args[1].Token.Line, args[1].Column,
+                                    $"swait '{swSensor} {swTargetText}' is at or below the 1e-7 Torr (0.0001mT) high-vacuum gauge floor and will time out; " +
+                                    "use a target above 1e-7 Torr and below the 1e-4 Torr Idle ceiling (for example '0.05mT' or '1e-3mT')",
+                                    RecipeErrorSeverity.Warning));
+
+                            if (_semantics?.ChamberOf(swSensor) is { } swChamber && swTorr <= 1e-4f)
+                            {
+                                var activeChamberMfcs = flowing
+                                    .Where(m => string.Equals(_semantics.ChamberOf(m), swChamber, StringComparison.OrdinalIgnoreCase))
+                                    .OrderBy(m => m, StringComparer.OrdinalIgnoreCase)
+                                    .ToList();
+                                if (activeChamberMfcs.Count > 0)
+                                    errors.Add(new RecipeError(head.Line, head.Column,
+                                        $"swait '{swSensor} {swTargetText}' waits for high vacuum while gas is still flowing on " +
+                                        $"{string.Join(", ", activeChamberMfcs)} in chamber '{swChamber}' — zero the MFCs ('mfc ... 0') " +
+                                        "after releasing the throttle ('pwait 0 1') and before 'swait'",
+                                        RecipeErrorSeverity.Warning));
+                            }
+                        }
+                        break;
+                    }
 
                 case "pwait":
                     lastPwait = line;
@@ -1246,7 +1317,15 @@ public class RecipeValidator
     private void ValidatePwait(List<Token> line, List<RecipeArg> args,
         Dictionary<string, Token> literalVars, List<RecipeError> errors)
     {
-        bool sensorIsInert = _semantics!.HasBoundDevice("pwait");
+        if (_semantics!.Signature("pwait") is null)
+        {
+            errors.Add(new RecipeError(line[0].Line, line[0].Column,
+                "'pwait' is not supported on this machine (no throttle-valve controller is declared in Worker.xml) — " +
+                "use 'swait <sensor> <target> <timeout>' for a passive pressure wait or 'delay <seconds>' for gas stabilization"));
+            return;
+        }
+
+        bool sensorIsInert = _semantics.HasBoundDevice("pwait");
         var head = line[0];
 
         if (args.Count == 2)

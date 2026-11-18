@@ -133,4 +133,35 @@ public class IdleGasOffValidationTests
 
         Assert.Empty(ChamberFixture.Warnings(v, "mfc Ar1 10\nmfc Ar1 0\n", Marker));
     }
+
+    [Fact]
+    public void Swait_high_vacuum_while_chamber_mfc_still_flowing_warns()
+    {
+        const string recipe = "mfc Ar1 40\npwait 2mT 60\npwait 0 1\nswait pm 0.05mT 300\nmfc Ar1 0\n";
+
+        var w = Assert.Single(ChamberFixture.Warnings(ChamberFixture.Bound(), recipe, "while gas is still flowing"));
+
+        Assert.Equal(4, w.Line);
+        Assert.Contains("Ar1", w.Message);
+        Assert.Contains("'Main'", w.Message);
+    }
+
+    [Fact]
+    public void Swait_after_mfc_zero_does_not_warn_for_gas_flow()
+    {
+        const string recipe = "mfc Ar1 40\npwait 2mT 60\npwait 0 1\nmfc Ar1 0\nswait pm 0.05mT 300\n";
+
+        Assert.Empty(ChamberFixture.Warnings(ChamberFixture.Bound(), recipe, "while gas is still flowing"));
+    }
+
+    [Fact]
+    public void Swait_at_or_below_hv_gauge_floor_warns()
+    {
+        var w = Assert.Single(ChamberFixture.Warnings(
+            ChamberFixture.Bound(), "swait pm 1e-4mT 600\n", "high-vacuum gauge floor"));
+
+        Assert.Equal(1, w.Line);
+        Assert.Empty(ChamberFixture.Warnings(
+            ChamberFixture.Bound(), "swait pm 1e-3mT 300\n", "high-vacuum gauge floor"));
+    }
 }

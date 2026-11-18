@@ -298,4 +298,52 @@ public class SourceTargetValidationTests
         Assert.Equal(10, LineOf("gauge floor"));
         Assert.Equal(8, LineOf("inlet gate valves"));
     }
+
+    [Theory]
+    [InlineData("pwait 3.00mT 300")]
+    [InlineData("pwait pm 3.00mT 300")]
+    public void Pwait_when_absent_from_worker_is_error(string recipe)
+    {
+        var ops = new List<(string Name, string? BoundDevice, IReadOnlyList<string> Vars)>
+        {
+            ("valve", null, ["Valve", "b"]),
+            ("mfc", null, ["MFC", "f"]),
+            ("deposit", null, ["s", "f"]),
+        };
+        var devices = new Dictionary<string, IReadOnlyCollection<string>>
+        {
+            ["Valve"] = new[] { "V1" },
+            ["MFC"] = new[] { "Ar1" },
+            ["Sensor"] = new[] { "pm" },
+        };
+        var semantics = RecipeSemantics.Build(ops, devices);
+        var v = new RecipeValidator(
+            RecipeValidator.AllKnownCommands,
+            knownDevices: semantics.AllDeviceNames,
+            semantics: semantics);
+
+        var errors = v.Validate(recipe).Where(e => e.Severity == RecipeErrorSeverity.Error).ToList();
+        var err = Assert.Single(errors);
+        Assert.Contains("not supported on this machine", err.Message);
+    }
+
+    [Fact]
+    public void Deposit_after_zero_setpoint_and_warmup_warns()
+    {
+        var v = Make(CToPsuB);
+
+        var w = Assert.Single(With(v,
+            "set PSU_B Current 0\npower PSU_B on\nwarmup 90 PSU_B 50\ndeposit C 133 Home",
+            "setpoint is 0"));
+        Assert.Equal(RecipeErrorSeverity.Warning, w.Severity);
+        Assert.Equal(4, w.Line);
+
+        Assert.Empty(With(v,
+            "set PSU_B Current 0\nset PSU_B Current 300\npower PSU_B on\nwarmup 90 PSU_B 50\ndeposit C 133 Home",
+            "setpoint is 0"));
+
+        Assert.Empty(With(v,
+            "set PSU_B Power 0\nramp PSU_B 150\npower PSU_B on\ndeposit C 133 Home",
+            "setpoint is 0"));
+    }
 }

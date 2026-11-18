@@ -148,7 +148,7 @@ public static partial class CapstoneScorers
             ["mo_pulse"] = SupplyHolds(conditions, "Mo", "PSU1", ("Frequency", 50.0), ("DutyCycle", 60.0)),
             ["sio2_supply_power"] = SupplyHolds(conditions, "SiO2", "PSU2", ("Power", 150.0)),
             ["sputter_2arg_deposit"] = AllDepositsHaveTwoArgs(rcpxXml),
-            ["no_pwait"] = !steps.Any(s => s.Command.Equals("pwait", StringComparison.OrdinalIgnoreCase)),
+            ["no_pwait"] = !run.Any(s => s.Command.Equals("pwait", StringComparison.OrdinalIgnoreCase)),
         };
 
         bool endClean = EndStateClean(finalSystemStatus, ["Main"]);
