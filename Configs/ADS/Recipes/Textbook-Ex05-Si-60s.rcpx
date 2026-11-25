@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Recipe>
+  <Description type="Sputtering">
+    <Title>Textbook Ex05: DC Si Sputtering in Pure Ar (60 s)</Title>
+    <Author>APS Control Community</Author>
+    <Created>2026-11-25</Created>
+    <Modified>2026-11-25</Modified>
+    <Notes>Pre-sputters Si (PSU_A, 250 mA DC) for 120 s in 20 sccm Ar1 at 2 mTorr (V2, V6, M1), deposits 60 s onto Si with shutter retract to Home, then powers off and opens TC1 before zeroing Ar1.</Notes>
+  </Description>
+  <Parameters />
+  <Script>
+valve M1 open
+valve V2 open
+valve V6 open
+mfc Ar1 20
+pwait 2mT 300
+set PSU_A Current 250
+power PSU_A on
+wait 120
+holder Si
+deposit Si 60 Home
+holder Home
+power PSU_A off
+set PSU_A Current 0
+pwait 0 1
+mfc Ar1 0
+valve V2 close
+valve V6 close
+valve M1 close
+  </Script>
+</Recipe>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Recipe>
+  <Description type="ReactiveSputtering">
+    <Title>Textbook Ex06: Reactive N2/Ar Sputtering Sweep (0-2-4-0 sccm)</Title>
+    <Author>APS Control Community</Author>
+    <Created>2026-11-25</Created>
+    <Modified>2026-11-25</Modified>
+    <Notes>Fixed 20 sccm Ar1, 2 mTorr TC1 pressure, and 250 mA DC on Si (PSU_A). Exposes 60 s after 90 s conditioning at N21 = 0, 2, 4, and 0 sccm (V1), then shuts down PSU_A, opens TC1, and clears Ar1.</Notes>
+  </Description>
+  <Parameters />
+  <Script>
+valve M1 open
+valve V2 open
+valve V6 open
+mfc Ar1 20
+pwait 2mT 300
+set PSU_A Current 250
+power PSU_A on
+wait 90
+holder Si
+deposit Si 60 Home
+valve V1 open
+mfc N21 2
+pwait 2mT 300
+wait 90
+deposit Si 60 Home
+mfc N21 4
+pwait 2mT 300
+wait 90
+deposit Si 60 Home
+mfc N21 0
+valve V1 close
+pwait 2mT 300
+wait 90
+deposit Si 60 Home
+holder Home
+power PSU_A off
+set PSU_A Current 0
+pwait 0 1
+mfc Ar1 0
+valve V2 close
+valve V6 close
+valve M1 close
+  </Script>
+</Recipe>

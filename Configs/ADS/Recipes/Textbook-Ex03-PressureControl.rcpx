@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Recipe>
+  <Description type="PressureControl">
+    <Title>Textbook Ex03: Throttle Pressure Control (2 / 4 / 2 mTorr N2)</Title>
+    <Author>APS Control Community</Author>
+    <Created>2026-11-25</Created>
+    <Modified>2026-11-25</Modified>
+    <Notes>Steps TC1 pressure setpoint 2 mTorr -> 4 mTorr -> 2 mTorr at 50 sccm N21 (V1, M1), then closes gas and pumps down to 10 uTorr on pm.</Notes>
+  </Description>
+  <Parameters />
+  <Script>
+valve M1 open
+valve V1 open
+MFC N21 50
+pwait 2mT 300
+wait 90
+wait 60
+pwait 4mT 300
+wait 90
+wait 60
+pwait 2mT 300
+wait 90
+wait 60
+MFC N21 0
+valve V1 close
+valve M1 close
+pwait 0 5
+swait pm 10uT 300
+  </Script>
+</Recipe>

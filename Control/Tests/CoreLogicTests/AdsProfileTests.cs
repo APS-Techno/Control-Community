@@ -1,6 +1,11 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using APS.Hardware.Demo;
+using APS.RecipeModel.Serialization;
+using APS.RecipeModel.Validation;
+using APS.SystemControl.Core.Classes;
 using APS.SystemControl.Core.Logging;
+using APS.SystemControl.Core.Remote.Agent;
 using APS.SystemControl.GUIControls.Process;
 using APS.SystemControl.Tests.Shared;
 using Xunit;
@@ -243,5 +248,107 @@ public class AdsProfileTests
         }
         foreach (var psu in new[] { "PSU_A", "PSU_B", "PSU_C", "PSU_RF1", "PSU_RF2" })
             Assert.Contains($"power {psu} off", failure);
+    }
+
+    private static RecipeValidator CreateAdsValidator()
+    {
+        var hwConfPath = ConfigsDir.Path("ADS/HWConf.xml");
+        var workerPath = ConfigsDir.Path("ADS/Worker.xml");
+        var sourcesPath = ConfigsDir.Path("ADS/Sources.xml");
+        var alarmsPath = ConfigsDir.Path("ADS/Alarms.xml");
+        var embedPath = ConfigsDir.Path("ADS/EmbedRecipes.xml");
+
+        var hw = XDocument.Load(hwConfPath);
+
+        var ops = RecipeSemantics.ReadWorkerOperations(workerPath);
+        var devices = RecipeSemantics.ReadDevicesByKind(hwConfPath);
+
+        var setpointNames = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var psuEl in hw.Descendants("powersupply"))
+        {
+            string id = psuEl.Value.Trim();
+            string mode = (string?)psuEl.Attribute("mode") ?? "";
+            using var psu = new LanPowerSupply(id, "127.0.0.1", 1, mode, "");
+            setpointNames[id] = psu.SetpointParameterNames;
+        }
+
+        var mfcGates = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var mfcEl in hw.Descendants("mfc"))
+        {
+            string? valves = (string?)mfcEl.Attribute("valve");
+            if (string.IsNullOrWhiteSpace(valves)) continue;
+            var list = valves.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (list.Length > 0) mfcGates[mfcEl.Value.Trim()] = list;
+        }
+
+        var deviceChamber = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var el in hw.Descendants().Where(e => e.Name.LocalName is "sensor" or "mfc" or "controller"))
+        {
+            string? chamber = (string?)el.Attribute("chamber");
+            if (!string.IsNullOrWhiteSpace(chamber))
+                deviceChamber[el.Value.Trim()] = chamber.Trim();
+        }
+
+        var alarmResult = AlarmConfigLoader.Load(alarmsPath);
+        var chamberLimits = APS.SystemControl.Core.Core.ChamberLimitsOf(alarmResult.ChamberAlarms);
+        var sourceToPsu = CoreAgentSystemAccess.SourceToPsuMap(
+            SourcesMapLoader.LoadFlangeSourceMap(ConfigsDir.Path("ADS")).Values);
+        bool rotationOperational = !HWConfDeviceReader.ReadNonOperationalStages(hwConfPath).Contains("rotation");
+
+        var semantics = RecipeSemantics.Build(
+            ops,
+            devices,
+            setpointNamesByDevice: setpointNames,
+            sourceToPsu: sourceToPsu,
+            mfcGateValves: mfcGates,
+            rotationOperational: rotationOperational,
+            chamberLimits: chamberLimits,
+            deviceChamber: deviceChamber);
+
+        return new RecipeValidator(
+            RecipeValidator.AllKnownCommands,
+            HWConfDeviceReader.ReadDeviceNames(hwConfPath),
+            SourcesReader.Read(sourcesPath),
+            EmbedRecipesReader.ReadRecipeNames(embedPath),
+            throttleValveSensor: "pm",
+            semantics: semantics);
+    }
+
+    [Fact]
+    public void TextbookRecipes_ValidateCleanlyAgainstAdsProfile()
+    {
+        var recipesDir = ConfigsDir.Path("ADS/Recipes");
+        Assert.True(Directory.Exists(recipesDir));
+
+        var files = Directory.GetFiles(recipesDir, "*.rcpx").OrderBy(f => f, StringComparer.Ordinal).ToList();
+        Assert.True(files.Count(f => Path.GetFileName(f).StartsWith("Textbook-", StringComparison.Ordinal)) >= 4);
+
+        var validator = CreateAdsValidator();
+        foreach (var file in files)
+        {
+            var recipe = RecipeSerializer.Load(file);
+            Assert.False(string.IsNullOrWhiteSpace(recipe.Script));
+            var errors = validator.Validate(recipe.FullScript)
+                .Where(e => e.Severity == RecipeErrorSeverity.Error)
+                .ToList();
+            Assert.True(errors.Count == 0,
+                $"{Path.GetFileName(file)}: {string.Join("; ", errors.Select(e => $"line {e.Line}: {e.Message}"))}");
+        }
+    }
+
+    [Fact]
+    public void AdsValidator_EnforcesDcSetpointsAndBoundPwait()
+    {
+        var validator = CreateAdsValidator();
+
+        var pulseErrors = validator.Validate("set PSU_A Pulse 0")
+            .Where(e => e.Severity == RecipeErrorSeverity.Error)
+            .ToList();
+        Assert.Contains(pulseErrors, e => e.Message.Contains("Pulse", StringComparison.Ordinal));
+
+        var pwaitWarnings = validator.Validate("pwait pm 2mT 300")
+            .Where(e => e.Severity == RecipeErrorSeverity.Warning)
+            .ToList();
+        Assert.Contains(pwaitWarnings, e => e.Message.Contains("2 argument(s)", StringComparison.Ordinal));
     }
 }
