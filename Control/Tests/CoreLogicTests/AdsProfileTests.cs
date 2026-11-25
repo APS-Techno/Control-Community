@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using APS.SystemControl.Core.Logging;
+using APS.SystemControl.GUIControls.Process;
 using APS.SystemControl.Tests.Shared;
 using Xunit;
 
@@ -139,5 +141,107 @@ public class AdsProfileTests
         var tc = hw.Descendants("controller").Single();
         Assert.Equal(new[] { "host", "port", "descr" }, tc.Attributes().Select(a => a.Name.LocalName).Take(3));
         Assert.Equal("TC1", tc.Value);
+    }
+
+    [Fact]
+    public void Config_HasManualLoggingClockSensorSimtime500Ms()
+    {
+        var ml = Load("Config.xml").Root!.Element("ManualLogging");
+        Assert.NotNull(ml);
+        Assert.Equal("simtime", (string?)ml!.Attribute("clockSensor"));
+        Assert.Equal("500", (string?)ml.Attribute("intervalMs"));
+
+        var settings = ManualLoggingSettings.Load(ConfigsDir.Path("ADS"));
+        Assert.Equal("simtime", settings.ClockSensorId);
+        Assert.Equal(500, settings.IntervalMs);
+    }
+
+    [Fact]
+    public void HwConf_DeclaresCmPfSimtimeThickWithEmulatorOnlyModelAttributes()
+    {
+        var emulatorOnly = new[] { "minPressure", "maxPressure", "source", "backingPump", "forelineVolume", "forelineLimit" };
+        foreach (var file in new[] { "HWConf.xml", "HWConf.Emulator.xml" })
+        {
+            var sensors = Load(file).Descendants("sensor").ToDictionary(s => s.Value.Trim(), s => s);
+            Assert.Equal("104", (string?)sensors["cm"].Attribute("address"));
+            Assert.Equal("108", (string?)sensors["pf"].Attribute("address"));
+            Assert.Equal("400", (string?)sensors["simtime"].Attribute("address"));
+            Assert.Equal("404", (string?)sensors["thick"].Attribute("address"));
+        }
+
+        var controlDoc = Load("HWConf.xml");
+        var controlSensors = controlDoc.Descendants("sensor").ToDictionary(s => s.Value.Trim(), s => s);
+        foreach (var id in new[] { "cm", "pf", "simtime", "thick" })
+            Assert.Null(controlSensors[id].Attribute("property"));
+        Assert.Contains("thickness", (string?)controlSensors["thick"].Attribute("descr") ?? "", StringComparison.OrdinalIgnoreCase);
+        Assert.All(controlDoc.Descendants(), e => Assert.All(emulatorOnly, a => Assert.Null(e.Attribute(a))));
+
+        var emuDoc = Load("HWConf.Emulator.xml");
+        var emuSensors = emuDoc.Descendants("sensor").ToDictionary(s => s.Value.Trim(), s => s);
+        Assert.Equal("1e-4", (string?)emuSensors["cm"].Attribute("minPressure"));
+        Assert.Equal("1e-2", (string?)emuSensors["cm"].Attribute("maxPressure"));
+        Assert.Equal("ForelinePressure", (string?)emuSensors["pf"].Attribute("property"));
+        Assert.Equal("TP", (string?)emuSensors["pf"].Attribute("source"));
+        Assert.Equal("SimTime", (string?)emuSensors["simtime"].Attribute("property"));
+        Assert.Equal("Thickness", (string?)emuSensors["thick"].Attribute("property"));
+
+        var tp = emuDoc.Descendants("pump").Single(p => p.Value.Trim() == "TP");
+        Assert.Equal("SP1", (string?)tp.Attribute("backingPump"));
+        Assert.Equal("2", (string?)tp.Attribute("forelineVolume"));
+        Assert.Equal("5", (string?)tp.Attribute("forelineLimit"));
+    }
+
+    [Fact]
+    public void ControlsAndProcessPanel_ExposeCmPfAndThickWithoutSimtime()
+    {
+        var ctrlSensors = Load("Controls.xml").Descendants("sensor")
+            .ToDictionary(s => (string)s.Attribute("id")!, s => s);
+        Assert.True(ctrlSensors.ContainsKey("cm"));
+        Assert.True(ctrlSensors.ContainsKey("pf"));
+        Assert.True(ctrlSensors.ContainsKey("thick"));
+        Assert.Equal("Film", ctrlSensors["thick"].Value.Trim());
+        Assert.Equal("nm", (string?)ctrlSensors["thick"].Attribute("unit"));
+        Assert.False(ctrlSensors.ContainsKey("simtime"));
+
+        var spec = ProcessPanelSpec.Load(ConfigsDir.Path("ADS/ProcessPanel.xml"));
+        Assert.Empty(spec.Errors);
+        var byId = spec.Readings.ToDictionary(r => r.Id);
+        Assert.True(byId.ContainsKey("cm"));
+        Assert.True(byId.ContainsKey("pf"));
+        Assert.True(byId.ContainsKey("thick"));
+        Assert.False(byId.ContainsKey("simtime"));
+        Assert.Equal("Film", byId["thick"].DisplayLabel);
+        Assert.Equal("nm", byId["thick"].Units);
+        Assert.Null(byId["cm"].Device);
+        Assert.Null(byId["pf"].Device);
+        Assert.Null(byId["thick"].Device);
+    }
+
+    [Fact]
+    public void InterlocksMain_EnforcesValvePpOpenAndValveFlClose()
+    {
+        var interlocks = Load("Interlocks/Interlocks.Main.xml").Descendants("interlock")
+            .ToDictionary(i => (string)i.Attribute("id")!, i => i.Elements("l").Select(l => l.Value.Trim()).ToList());
+
+        Assert.Equal(["Valve GVM closed", "Valve FL closed", "Pump SP1 on", "Pump TP off"], interlocks["Valve_PP_open"]);
+        Assert.Equal(["Valve GVM closed"], interlocks["Valve_FL_close"]);
+    }
+
+    [Fact]
+    public void EmbedRecipes_FailureProtocol_ShutsReactiveGasBeforePowerOff()
+    {
+        var failure = Load("EmbedRecipes.xml").Descendants("recipe")
+            .Single(r => (string?)r.Attribute("id") == "FAILURE_PROTOCOL")
+            .Elements("l").Select(l => l.Value.Trim()).ToList();
+
+        int firstPowerOff = failure.FindIndex(l => l.StartsWith("power ", StringComparison.Ordinal));
+        Assert.True(firstPowerOff >= 0);
+        foreach (var reactiveStep in new[] { "shutter Home", "holder Home", "MFC N21 0", "MFC N22 0", "valve V1 close", "valve V4 close" })
+        {
+            int idx = failure.IndexOf(reactiveStep);
+            Assert.True(idx >= 0 && idx < firstPowerOff, $"Expected '{reactiveStep}' before first power off, index={idx}, firstPowerOff={firstPowerOff}");
+        }
+        foreach (var psu in new[] { "PSU_A", "PSU_B", "PSU_C", "PSU_RF1", "PSU_RF2" })
+            Assert.Contains($"power {psu} off", failure);
     }
 }

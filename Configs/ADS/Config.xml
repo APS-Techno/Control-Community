@@ -8,4 +8,5 @@
 	<GUI>Controls</GUI>
 	<Panels>Panels</Panels>
 	<Graphs>Graphs</Graphs>
+	<ManualLogging clockSensor="simtime" intervalMs="500"/>
 </Configurations>

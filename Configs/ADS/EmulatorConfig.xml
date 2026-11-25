@@ -21,6 +21,7 @@
     <SubstrateHeatingCoeff>0.002</SubstrateHeatingCoeff>
     <SubstrateCoolingCoeff>0.005</SubstrateCoolingCoeff>
     <DischargePressureThreshold>0.001</DischargePressureThreshold>
+    <Deposition reactiveMfc="N21" ratePerAmp="1.0" poisonRate="0.00673" cleanRate="0.1" poisonedRateFraction="0.2" poisonedVoltageShift="100" />
     <Magnetrons>
       <Magnetron id="MAG1" voltage="400" />
       <Magnetron id="MAG2" voltage="400" />

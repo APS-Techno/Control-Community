@@ -33,7 +33,10 @@
   </mfcs>
   <sensors lib="S7" hwtype="APS.Hardware.S7.S7200Sensor" host="main">
     <sensor address="100" chamber="Main" descr="System">pm</sensor>
+    <sensor address="104" chamber="Main" descr="Capacitance manometer">cm</sensor>
+    <sensor address="108" chamber="Main" descr="Foreline pressure">pf</sensor>
     <sensor address="124" chamber="Main" property="Temperature" descr="Temp">tmp</sensor>
+    <sensor address="400" chamber="Main" descr="Simulation time">simtime</sensor>
   </sensors>
   <pumps lib="S7" hwtype="APS.Hardware.S7.S7200TurboPump" host="main">
     <pump address="17" writeaddr="0" writeindex="4" chamber="Main" gate="GVM" foreline="FL" descr="Main pump">TP</pump>

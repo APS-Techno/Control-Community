@@ -39,11 +39,15 @@
 	</mfcs>
 	<sensors lib="S7" hwtype="APS.Hardware.S7.S7200Sensor" host="main">
 		<sensor address="100" chamber="Main" descr="System">pm</sensor>
+		<sensor address="104" chamber="Main" minPressure="1e-4" maxPressure="1e-2" descr="Capacitance manometer">cm</sensor>
+		<sensor address="108" chamber="Main" property="ForelinePressure" source="TP" descr="Foreline pressure">pf</sensor>
 		<sensor address="280" chamber="Loadlock" descr="Loadlock">pl</sensor>
 		<sensor address="124" chamber="Main" property="Temperature" descr="Temp">tmp</sensor>
+		<sensor address="400" chamber="Main" property="SimTime" descr="Simulation time">simtime</sensor>
+		<sensor address="404" chamber="Main" property="Thickness" descr="Film thickness">thick</sensor>
 	</sensors>
 	<pumps lib="S7" hwtype="APS.Hardware.S7.S7200TurboPump" host="main">
-		<pump address="17" writeaddr="0" writeindex="4" speed="2300" chamber="Main" gate="GVM" foreline="FL" descr="Main pump">TP</pump>
+		<pump address="17" writeaddr="0" writeindex="4" speed="2300" chamber="Main" gate="GVM" foreline="FL" backingPump="SP1" forelineVolume="2" forelineLimit="5" descr="Main pump">TP</pump>
 	</pumps>
 	<pumps lib="S7" hwtype="APS.Hardware.S7.S7200Pump" host="main">
 		<pump address="0" index="5" speed="83.33" chamber="Main" gate="PP" descr="Main roughing pump">SP1</pump>

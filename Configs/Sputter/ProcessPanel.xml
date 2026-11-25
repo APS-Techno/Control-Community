@@ -5,6 +5,8 @@
     <reading id="N21" label="N21" group="MassFlow" format="F1" unit="sccm" accent="N2"/>
 
     <reading id="pm" label="pm" group="Pressure" format="E1" unit="Torr" scale="Log" accent="Vacuum"/>
+    <reading id="cm" label="cm" group="Pressure" format="E1" unit="Torr" scale="Log" accent="Vacuum"/>
+    <reading id="pf" label="pf" group="Pressure" format="E1" unit="Torr" scale="Log" accent="Vacuum"/>
     <reading id="tmp" label="tmp" group="Pressure" format="F0" unit="°C" accent="Temperature"/>
 
     <reading id="PSU1_V" label="PSU1 V" group="Power" format="F0" unit="V" accent="DcPower" device="PSU1"/>

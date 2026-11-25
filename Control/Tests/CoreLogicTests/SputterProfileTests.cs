@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using APS.SystemControl.Core.Logging;
+using APS.SystemControl.GUIControls.Process;
 using APS.SystemControl.Tests.Shared;
 using Xunit;
 
@@ -75,5 +77,70 @@ public class SputterProfileTests
             .Where(t => t.Length > 1 && commands.Contains(t[0].ToLowerInvariant()))
             .Select(t => t[1]);
         Assert.All(used, d => Assert.Contains(d, ids));
+    }
+
+    [Fact]
+    public void Config_HasManualLoggingClockSensorSimtime500Ms()
+    {
+        var ml = XDocument.Load(ConfigsDir.Path("Sputter/Config.xml")).Root!.Element("ManualLogging");
+        Assert.NotNull(ml);
+        Assert.Equal("simtime", (string?)ml!.Attribute("clockSensor"));
+        Assert.Equal("500", (string?)ml.Attribute("intervalMs"));
+
+        var settings = ManualLoggingSettings.Load(ConfigsDir.Path("Sputter"));
+        Assert.Equal("simtime", settings.ClockSensorId);
+        Assert.Equal(500, settings.IntervalMs);
+    }
+
+    [Fact]
+    public void HwConf_DeclaresCmPfSimtimeWithEmulatorOnlyModelAttributes()
+    {
+        var emulatorOnly = new[] { "minPressure", "maxPressure", "source", "backingPump", "forelineVolume", "forelineLimit" };
+        foreach (var file in HwConfFiles)
+        {
+            var doc = XDocument.Load(ConfigsDir.Path(file));
+            var sensors = doc.Descendants("sensor").ToDictionary(s => s.Value.Trim(), s => s);
+            Assert.Equal("104", (string?)sensors["cm"].Attribute("address"));
+            Assert.Equal("108", (string?)sensors["pf"].Attribute("address"));
+            Assert.Equal("400", (string?)sensors["simtime"].Attribute("address"));
+        }
+
+        var controlDoc = XDocument.Load(ConfigsDir.Path("Sputter/HWConf.xml"));
+        var controlSensors = controlDoc.Descendants("sensor").ToDictionary(s => s.Value.Trim(), s => s);
+        foreach (var id in new[] { "cm", "pf", "simtime" })
+            Assert.Null(controlSensors[id].Attribute("property"));
+        Assert.All(controlDoc.Descendants(), e => Assert.All(emulatorOnly, a => Assert.Null(e.Attribute(a))));
+
+        var emuDoc = XDocument.Load(ConfigsDir.Path("Sputter/HWConf.Emulator.xml"));
+        var emuSensors = emuDoc.Descendants("sensor").ToDictionary(s => s.Value.Trim(), s => s);
+        Assert.Equal("1e-4", (string?)emuSensors["cm"].Attribute("minPressure"));
+        Assert.Equal("1e-2", (string?)emuSensors["cm"].Attribute("maxPressure"));
+        Assert.Equal("ForelinePressure", (string?)emuSensors["pf"].Attribute("property"));
+        Assert.Equal("TP", (string?)emuSensors["pf"].Attribute("source"));
+        Assert.Equal("SimTime", (string?)emuSensors["simtime"].Attribute("property"));
+
+        var tp = emuDoc.Descendants("pump").Single(p => p.Value.Trim() == "TP");
+        Assert.Equal("SP1", (string?)tp.Attribute("backingPump"));
+        Assert.Equal("2", (string?)tp.Attribute("forelineVolume"));
+        Assert.Equal("5", (string?)tp.Attribute("forelineLimit"));
+    }
+
+    [Fact]
+    public void ControlsAndProcessPanel_ExposeCmAndPfWithoutSimtime()
+    {
+        var ctrlSensors = XDocument.Load(ConfigsDir.Path("Sputter/Controls.xml")).Descendants("sensor")
+            .ToDictionary(s => (string)s.Attribute("id")!, s => s);
+        Assert.True(ctrlSensors.ContainsKey("cm"));
+        Assert.True(ctrlSensors.ContainsKey("pf"));
+        Assert.False(ctrlSensors.ContainsKey("simtime"));
+
+        var spec = ProcessPanelSpec.Load(ConfigsDir.Path("Sputter/ProcessPanel.xml"));
+        Assert.Empty(spec.Errors);
+        var ids = spec.Readings.Select(r => r.Id).ToHashSet();
+        Assert.Contains("cm", ids);
+        Assert.Contains("pf", ids);
+        Assert.DoesNotContain("simtime", ids);
+        Assert.Null(spec.Readings.Single(r => r.Id == "cm").Device);
+        Assert.Null(spec.Readings.Single(r => r.Id == "pf").Device);
     }
 }

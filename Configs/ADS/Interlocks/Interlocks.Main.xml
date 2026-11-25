@@ -20,8 +20,14 @@
 		<l>Sensor pm less 2.0e-1</l>
 		<l>Valve PP closed</l>
 	</interlock>
+	<interlock id="Valve_FL_close">
+		<l>Valve GVM closed</l>
+	</interlock>
 	<interlock id="Valve_PP_open">
+		<l>Valve GVM closed</l>
+		<l>Valve FL closed</l>
 		<l>Pump SP1 on</l>
+		<l>Pump TP off</l>
 	</interlock>
 	<interlock id="Pump_SP1_off">
 		<l>Valve FL closed</l>

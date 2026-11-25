@@ -25,8 +25,11 @@
     </MFCs>
     <sensors type="APS.Controls.General.LEDPanel">
       <sensor id="pm" left="34.5" top="52" scale="1" unit="Torr" format="0.##e-0" color="Red" direction="hor">PM</sensor>
+      <sensor id="cm" left="42.4" top="52" scale="0.9" unit="Torr" format="0.##e-0" color="Yellow" direction="hor">CM</sensor>
+      <sensor id="pf" left="16" top="62" scale="1" unit="Torr" format="0.##e-0" color="Gold" direction="hor">PF</sensor>
       <sensor id="pl" left="65.8" top="51.2" scale="0.9" unit="Torr" format="0.##e-0" color="Red" direction="hor">LL</sensor>
       <sensor id="tmp" left="34.5" top="47.2" scale="1" unit="C" format="F2" color="DarkOrange" direction="hor">Temp</sensor>
+      <sensor id="thick" left="42.4" top="47.2" scale="0.9" unit="nm" format="F1" color="Cyan" direction="hor">Film</sensor>
     </sensors>
     <leds type="APS.Controls.General.LedControl">
       <led id="POWER" left="4" top="88" scale="1" align="right" color="Green" bgcolor="">Power</led>
