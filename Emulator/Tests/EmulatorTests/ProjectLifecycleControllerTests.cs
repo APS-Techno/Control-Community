@@ -490,4 +490,29 @@ public class ProjectLifecycleControllerTests
         }
         finally { Directory.Delete(root, recursive: true); }
     }
+
+    [Fact]
+    public void OpenProject_WithStateOverride_PreservesRestoredSimTimeAcrossSubsequentTicks()
+    {
+        string root = MakeTempConfigsRoot();
+        try
+        {
+            CreateProjectWithConfig(root, "DemoProfile");
+            string dir = Path.Combine(root, "DemoProfile");
+            string stateFile = Path.Combine(dir, "explicit.emstate");
+            File.WriteAllText(stateFile, MinimalSnapshotJson.Replace("\"SimTime\": 0,", "\"SimTime\": 3271.9,"));
+
+            var settings = new EmulatorSettings { ConfigsRoot = root, LoadLastStateOnStartup = false };
+            var ctrl = new ProjectLifecycleController(settings, Regs, Path.Combine(root, "settings.json"));
+
+            ctrl.OpenProject("DemoProfile", stateFile);
+            ctrl.Engine!.Time.Start();
+            ctrl.Engine.Tick();
+
+            Assert.Equal(3272.0f, ctrl.Engine.State.SimTime, 0.05f);
+            Assert.Equal(3272.0f, ctrl.Engine.Time.SimTime, 0.05f);
+            ctrl.Engine.Dispose();
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
 }

@@ -251,6 +251,13 @@ public class SimulationEngine : IDisposable
             Resume();
     }
 
+    public void RestoreSnapshot(SimulationSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        SnapshotService.Restore(snapshot, _state, _devices);
+        _time.SetSimTime(_state.SimTime);
+    }
+
     public void Pause()
     {
         _paused = true;

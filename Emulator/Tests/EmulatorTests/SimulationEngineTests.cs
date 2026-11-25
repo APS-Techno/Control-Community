@@ -258,6 +258,47 @@ public class SimulationEngineTests
         Assert.Equal(afterStop, engine.State.SimTime);
     }
 
+    [Fact]
+    public void Pause_RestoreSnapshot_Resume_ContinuesFromRestoredSimTime()
+    {
+        using var engine = new SimulationEngine { TickIntervalMs = 100 };
+        InitializeChamberDefaults(engine);
+        engine.Time.Start();
+        engine.Tick();
+        engine.Tick();
+        engine.Pause();
+
+        var snapshot = new SimulationSnapshot
+        {
+            SimTime = 3271.9f,
+            Chambers = new Dictionary<string, ChamberSnapshot>
+            {
+                ["Main"] = new ChamberSnapshot { Id = "Main", Pressure = 1e-7f, Volume = 50f },
+            },
+        };
+
+        engine.RestoreSnapshot(snapshot);
+
+        Assert.Equal(3271.9f, engine.State.SimTime, 0.01f);
+        Assert.Equal(3271.9f, engine.Time.SimTime, 0.01f);
+
+        engine.Resume();
+        engine.Tick();
+
+        Assert.Equal(3272.0f, engine.State.SimTime, 0.01f);
+        Assert.Equal(3272.0f, engine.Time.SimTime, 0.01f);
+    }
+
+    [Theory]
+    [InlineData(-0.1f)]
+    [InlineData(float.NaN)]
+    [InlineData(float.PositiveInfinity)]
+    [InlineData(float.NegativeInfinity)]
+    public void TimeManager_SetSimTime_RejectsInvalidValues(float invalid)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new TimeManager().SetSimTime(invalid));
+    }
+
     /// <summary>
     /// SimulationState does not pre-seed chambers, so engine-based tests must
     /// populate the dict explicitly.

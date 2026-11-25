@@ -11,6 +11,13 @@ public class TimeManager
     public void Start() => _running = true;
     public void Stop() => _running = false;
 
+    public void SetSimTime(float simTime)
+    {
+        if (!float.IsFinite(simTime) || simTime < 0f)
+            throw new ArgumentOutOfRangeException(nameof(simTime), "SimTime must be finite and nonnegative.");
+        SimTime = simTime;
+    }
+
     public void Reset()
     {
         SimTime = 0f;

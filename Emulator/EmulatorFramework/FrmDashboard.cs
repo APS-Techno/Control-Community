@@ -1212,7 +1212,7 @@ public class FrmDashboard : Form
         {
             _engine.Pause();
             var snapshot = SnapshotService.LoadFromFile(dlg.FileName);
-            SnapshotService.Restore(snapshot, _engine.State, _engine.Devices);
+            _engine.RestoreSnapshot(snapshot);
             _controller.RememberStateFile(dlg.FileName);
             ThemedMessageBox.Show(this, $"State loaded from:\n{dlg.FileName}", "Load State",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);

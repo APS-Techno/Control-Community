@@ -171,7 +171,7 @@ public class ProjectLifecycleController
                 throw new FileNotFoundException($"State file not found: {path}", path);
 
             var snapshot = SnapshotService.LoadFromFile(path);
-            SnapshotService.Restore(snapshot, Engine!.State, Engine.Devices);
+            Engine!.RestoreSnapshot(snapshot);
             StateAutoloaded?.Invoke(path);
         }
         catch (Exception ex)
